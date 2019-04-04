@@ -40,3 +40,16 @@ class LucidMainWindow(QMainWindow):
         """QDockWidget children"""
         return [widget for widget in self.children()
                 if isinstance(widget, QDockWidget)]
+
+    @classmethod
+    def find_window(cls, widget):
+        """
+        Navigate the widget hierarchy to find instance of LucidMainWindow
+        """
+        parent = widget.parent()
+        if isinstance(parent, cls):
+            return parent
+        elif parent is None:
+            raise EnvironmentError("No LucidMainWindow can be found "
+                                   "in widget hierarchy")
+        return cls.find_window(parent)
