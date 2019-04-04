@@ -1,0 +1,30 @@
+{% set data = load_setup_py_data() %}
+
+package:
+  name: lucid
+  version : {{ data.get('version') }}
+
+source:
+  path: ..
+
+build:
+  number: 1
+
+requirements:
+  build:
+    - python {{PY_VER}}*,>=3
+    - setuptools
+
+  run:
+    - python {{PY_VER}}*,>=3
+    - pydm
+    - qtpy
+
+test:
+  imports:
+    - lucid
+
+about:
+  home: https://github.com/pcdshub/lucid
+  license: SLAC Open License
+  summary: LCLS User Control and Interface Design
