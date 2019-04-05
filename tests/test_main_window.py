@@ -36,3 +36,23 @@ def test_main_window_find_window_with_orphan(qtbot):
     qtbot.addWidget(widget)
     with pytest.raises(EnvironmentError):
         LucidMainWindow.find_window(widget)
+
+
+def test_main_window_in_dock(main_window):
+
+    @LucidMainWindow.in_dock
+    def create_widget():
+        return QWidget(parent=main_window)
+
+    create_widget()
+    assert len(main_window._docks) == 1
+
+
+def test_main_window_in_dock_with_area(main_window):
+
+    @LucidMainWindow.in_dock(area=Qt.RightDockWidgetArea)
+    def create_widget():
+        return QWidget(parent=main_window)
+
+    create_widget()
+    assert len(main_window._docks) == 1
