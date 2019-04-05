@@ -11,7 +11,22 @@ logger = logging.getLogger(__name__)
 
 
 class LucidMainWindow(QMainWindow):
-    """QMainWindow for Lucid Applications"""
+    """
+    QMainWindow for LUCID Applications
+
+    The skeleton of the LUCID application, the window consists of a static
+    toolbar, a variety of central views for devices and scripts required for
+    operation, and also the docking system for launching detailed windows.
+
+    Attributes
+    ----------
+    allowed_docks: tuple
+        ``Qt.DockWidgetAreas`` that accept QWidgets
+
+    Parameters
+    ----------
+    parent: optional
+    """
     allowed_docks = (Qt.RightDockWidgetArea, )
 
     def __init__(self, *args):
@@ -27,7 +42,22 @@ class LucidMainWindow(QMainWindow):
         self.addToolBar(Qt.TopToolBarArea, LucidToolBar())
 
     def addDockWidget(self, area, dock):
-        """Wrapped QMainWindow.addDockWidget"""
+        """
+        Wrapped QMainWindow.addDockWidget
+
+        Add a QDockWidget to the LucidMainWindow. This is necessary in order to
+        force the tabbed behavior desired in the window. In addition it
+        performs the basic setup so the QDockWidget can be dragged to the
+        proper areas of the window, and also sets the focus on the dock so it
+        is immediately visible. This should rarely be called by external
+        users instead use the :meth:`.in_dock` decorator.
+
+        Parameters
+        ----------
+        area: Qt.DockWidgetArea
+
+        dock: QDockWidget
+        """
         # Force the dockwidget to only be allowed in areas determined by the
         # LucidMainWindow.allowed_docks
         allowed_flags = functools.reduce(operator.or_, self.allowed_docks)
@@ -56,6 +86,14 @@ class LucidMainWindow(QMainWindow):
     def find_window(cls, widget):
         """
         Navigate the widget hierarchy to find instance of LucidMainWindow
+
+        Parameters
+        ----------
+        widget: QWidget
+
+        Returns
+        -------
+        window: LucidMainWindow
         """
         parent = widget.parent()
         if isinstance(parent, cls):
@@ -67,7 +105,25 @@ class LucidMainWindow(QMainWindow):
 
     @classmethod
     def in_dock(cls, func=None, area=None):
-        """Wrapper to show QWidget in LucidMainWindow"""
+        """
+        Wrapper to show QWidget in ``LucidMainWindow``
+
+        This allows any widget that is contained within the ``LucidMainWindow``
+        the ability to display a widget in the docking system without needing
+        to have direct access to the ``LucidMainWindow`` itself.
+
+        The widget returned **must** share a parent hierarchy with a
+        ``LucidMainWindow``. See :meth:`.find_window` for more detail.
+
+        Example
+        -------
+        .. code:: python
+
+            @LucidMainWindow.in_dock
+            def dock_my_button(parent):
+                button = QPushButton(parent=parent)
+                return button
+        """
         # Use first allowed area if None supplied
         area = area or cls.allowed_docks[0]
         # When the decorator is not called
