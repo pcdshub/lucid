@@ -56,3 +56,15 @@ def test_main_window_in_dock_with_area(main_window):
 
     create_widget()
     assert len(main_window._docks) == 1
+
+
+def test_main_window_in_dock_with_orphan(qtbot):
+
+    @LucidMainWindow.in_dock
+    def create_widget():
+        widget = QWidget()
+        qtbot.addWidget(widget)
+        return widget
+
+    widget = create_widget()
+    assert widget.isVisible()
