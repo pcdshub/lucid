@@ -37,6 +37,10 @@ class LucidMainWindow(QMainWindow):
                           and curr_dock.isVisible()]
         if embedded_docks:
             super().tabifyDockWidget(embedded_docks[0], dock)
+        # Raise to visible
+        dock.show()
+        dock.raise_()
+        dock.setFocus()
 
     @property
     def _docks(self):
