@@ -2,7 +2,9 @@ import functools
 import logging
 import operator
 
-from qtpy.QtWidgets import QMainWindow, QDockWidget, QStackedWidget
+from qtpy.QtWidgets import (QMainWindow, QDockWidget, QStackedWidget,
+                            QToolBar, QStyle, QLineEdit, QSizePolicy,
+                            QWidget)
 from qtpy.QtCore import Qt
 
 logger = logging.getLogger(__name__)
@@ -21,6 +23,8 @@ class LucidMainWindow(QMainWindow):
         # Adjust corners
         self.setCorner(Qt.TopRightCorner, Qt.RightDockWidgetArea)
         self.setCorner(Qt.BottomRightCorner, Qt.RightDockWidgetArea)
+        # Add toolbar
+        self.addToolBar(Qt.TopToolBarArea, LucidToolBar())
 
     def addDockWidget(self, area, dock):
         """Wrapped QMainWindow.addDockWidget"""
@@ -92,3 +96,27 @@ class LucidMainWindow(QMainWindow):
             return widget
 
         return wrapper
+
+
+class LucidToolBar(QToolBar):
+    """LucidToolBar for LucidMainWindow"""
+    def __init__(self, parent=None):
+        super().__init__(parent=parent)
+        # Toolbar Configuration
+        self.setMovable(False)
+        self.setLayoutDirection(Qt.LeftToRight)
+        # Back and Forward
+        self.addAction(self.style().standardIcon(QStyle.SP_ArrowLeft),
+                       'Back')
+        self.addAction(self.style().standardIcon(QStyle.SP_ArrowRight),
+                       'Forward')
+        self.addSeparator()
+        # Spacer
+        spacer = QWidget()
+        spacer.setSizePolicy(QSizePolicy.MinimumExpanding,
+                             QSizePolicy.MinimumExpanding)
+        self.addWidget(spacer)
+        # Search
+        edit = QLineEdit()
+        edit.setPlaceholderText("Search ...")
+        self.addWidget(edit)
