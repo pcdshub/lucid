@@ -1,8 +1,11 @@
 import functools
+import logging
 import operator
 
 from qtpy.QtWidgets import QMainWindow, QDockWidget, QStackedWidget
 from qtpy.QtCore import Qt
+
+logger = logging.getLogger(__name__)
 
 
 class LucidMainWindow(QMainWindow):
@@ -53,3 +56,35 @@ class LucidMainWindow(QMainWindow):
             raise EnvironmentError("No LucidMainWindow can be found "
                                    "in widget hierarchy")
         return cls.find_window(parent)
+
+    @classmethod
+    def in_dock(cls, func=None, area=None):
+        """Wrapper to show QWidget in LucidMainWindow"""
+        # Use first allowed area if None supplied
+        area = area or cls.allowed_docks[0]
+        # When the decorator is not called
+        if not func:
+            return functools.partial(cls.in_dock, area=area)
+
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            # Retrieve widget
+            widget = func()
+            try:
+                window = cls.find_window(widget)
+            except EnvironmentError:
+                logger.error("No LucidMainWindow found! Unable to "
+                             "embed %r in dock", widget)
+                # Escape hatch to display the widget that was created even
+                # if a LucidMainWindow has not been created yet. Launch as a
+                # QDialog
+                widget.setWindowFlags(Qt.Dialog)
+                widget.show()
+            else:
+                # Create a DockWidget
+                dock = QDockWidget()
+                dock.setWidget(widget)
+                window.addDockWidget(area, dock)
+            return widget
+
+        return wrapper
