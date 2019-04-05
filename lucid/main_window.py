@@ -29,8 +29,8 @@ class LucidMainWindow(QMainWindow):
     """
     allowed_docks = (Qt.RightDockWidgetArea, )
 
-    def __init__(self, *args):
-        super().__init__(*args)
+    def __init__(self, parent=None):
+        super().__init__(parent=parent)
         # This means when multiple docks are pulled into an area, we create a
         # tab system. Splitting docks is still possible through API
         self.setDockOptions(self.AnimatedDocks | self.ForceTabbedDocks)
