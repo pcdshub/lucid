@@ -12,9 +12,11 @@ def main_window(qtbot):
     return main_window
 
 
-def test_add_multiple_docks(main_window):
+def test_add_multiple_docks(main_window, qtbot):
     first_dock = QDockWidget()
     second_dock = QDockWidget()
+    for dock in (first_dock, second_dock):
+        qtbot.addWidget(dock)
     main_window.addDockWidget(Qt.RightDockWidgetArea, first_dock)
     assert main_window.dockWidgetArea(first_dock) == Qt.RightDockWidgetArea
     assert first_dock in main_window._docks
@@ -23,9 +25,11 @@ def test_add_multiple_docks(main_window):
     assert main_window.dockWidgetArea(second_dock) == Qt.RightDockWidgetArea
 
 
-def test_main_window_find_window(main_window):
+def test_main_window_find_window(main_window, qtbot):
     widget = QWidget()
+    qtbot.addWidget(widget)
     dock = QDockWidget()
+    qtbot.addWidget(dock)
     dock.setWidget(widget)
     main_window.addDockWidget(Qt.RightDockWidgetArea, dock)
     assert LucidMainWindow.find_window(widget) == main_window
@@ -38,21 +42,25 @@ def test_main_window_find_window_with_orphan(qtbot):
         LucidMainWindow.find_window(widget)
 
 
-def test_main_window_in_dock(main_window):
+def test_main_window_in_dock(main_window, qtbot):
 
     @LucidMainWindow.in_dock
     def create_widget():
-        return QWidget(parent=main_window)
+        widget = QWidget(parent=main_window)
+        qtbot.addWidget(widget)
+        return widget
 
     create_widget()
     assert len(main_window._docks) == 1
 
 
-def test_main_window_in_dock_with_area(main_window):
+def test_main_window_in_dock_with_area(main_window, qtbot):
 
     @LucidMainWindow.in_dock(area=Qt.RightDockWidgetArea)
     def create_widget():
-        return QWidget(parent=main_window)
+        widget = QWidget(parent=main_window)
+        qtbot.addWidget(widget)
+        return widget
 
     create_widget()
     assert len(main_window._docks) == 1
