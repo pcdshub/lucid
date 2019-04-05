@@ -80,6 +80,10 @@ class LucidMainWindow(QMainWindow):
             widget = func()
             try:
                 window = cls.find_window(widget)
+            except AttributeError:
+                logger.error("Method %r was expected to return a QObject. "
+                             "Instead, %r was received.",
+                             func.__name__, widget)
             except EnvironmentError:
                 logger.error("No LucidMainWindow found! Unable to "
                              "embed %r in dock", widget)
