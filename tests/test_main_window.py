@@ -89,3 +89,30 @@ def test_main_window_in_dock_repeat(main_window, qtbot):
     dock = widget.parent()
     create_widget()
     assert dock == widget.parent()
+
+
+@pytest.mark.parametrize('start_floating,close,finish_floating',
+                         ((False, False, False),
+                          (False, True, False),
+                          (True, False, True),
+                          (True, False, True)),
+                         ids=('in tab', 'closed from tab',
+                              'floating', 'closed from floating'))
+def test_main_window_raise(main_window, qtbot,
+                           start_floating, close, finish_floating):
+    # Add our docks
+    dock1 = QDockWidget()
+    qtbot.addWidget(dock1)
+    dock2 = QDockWidget()
+    qtbot.addWidget(dock2)
+    main_window.addDockWidget(Qt.RightDockWidgetArea, dock1)
+    main_window.addDockWidget(Qt.RightDockWidgetArea, dock2)
+    # Setup dock
+    dock1.setFloating(start_floating)
+    if close:
+        dock1.close()
+    # Re-raise
+    main_window.raise_dock(dock1)
+    assert dock1.isFloating() == finish_floating
+    if not finish_floating:
+        assert main_window.tabifiedDockWidgets(dock2) == [dock1]
