@@ -49,8 +49,10 @@ def test_main_window_reopen_dock(main_window):
 
 def test_main_window_in_dock(main_window, qtbot):
     widget_name = 'my_dock'
+    title = 'Test Dock'
 
-    @LucidMainWindow.in_dock
+    @LucidMainWindow.in_dock(area=Qt.RightDockWidgetArea,
+                             title=title)
     def create_widget():
         widget = QWidget(parent=main_window)
         widget.setObjectName(widget_name)
