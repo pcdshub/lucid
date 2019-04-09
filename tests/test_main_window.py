@@ -77,3 +77,15 @@ def test_main_window_in_dock_with_orphan(qtbot):
 
     widget = create_widget()
     assert widget.isVisible()
+
+
+def test_main_window_in_dock_repeat(main_window, qtbot):
+    # Function to create show QWidget
+    widget = QWidget(parent=main_window)
+    qtbot.addWidget(widget)
+    create_widget = LucidMainWindow.in_dock(lambda: widget)
+    # Show widget once
+    create_widget()
+    dock = widget.parent()
+    create_widget()
+    assert dock == widget.parent()
