@@ -91,8 +91,7 @@ class LucidMainWindow(QMainWindow):
                                    "in widget hierarchy")
         return cls.find_window(parent)
 
-    @classmethod
-    def in_dock(cls, func=None):
+    def in_dock(cls, func=None, title=None, area=None):
         """
         Wrapper to show QWidget in ``LucidMainWindow``
 
@@ -114,7 +113,7 @@ class LucidMainWindow(QMainWindow):
         """
         # When the decorator is not called
         if not func:
-            return functools.partial(cls.in_dock)
+            return functools.partial(cls.in_dock, area=area, title=title)
 
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
@@ -142,6 +141,7 @@ class LucidMainWindow(QMainWindow):
                 dock.set_widget(widget)
                 window.dock_manager.add_dock_widget_tab(
                     QtAds.DockWidgetArea.center, dock)
+
             return widget
 
         return wrapper
