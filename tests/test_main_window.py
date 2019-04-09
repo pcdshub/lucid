@@ -1,3 +1,5 @@
+from unittest.mock import Mock
+
 import pytest
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QDockWidget, QWidget
@@ -89,6 +91,23 @@ def test_main_window_in_dock_repeat(main_window, qtbot):
     dock = widget.parent()
     create_widget()
     assert dock == widget.parent()
+
+
+def test_main_window_in_dock_active_slot(main_window, qtbot):
+    with qtbot.wait_exposed(main_window):
+        main_window.show()
+    # Function to create show QWidget
+    widget = QWidget(parent=main_window)
+    qtbot.addWidget(widget)
+    cb = Mock()
+    create_widget = LucidMainWindow.in_dock(func=lambda:
+                                            widget, active_slot=cb)
+    create_widget()
+    assert cb.called
+    cb.assert_called_with(True)
+    with qtbot.waitSignal(widget.parent().stateChanged):
+        widget.parent().close()
+    cb.assert_called_with(False)
 
 
 @pytest.mark.parametrize('start_floating,close,finish_floating',
