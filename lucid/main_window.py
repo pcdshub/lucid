@@ -90,7 +90,8 @@ class LucidMainWindow(QMainWindow):
                                    "in widget hierarchy")
         return cls.find_window(parent)
 
-    def in_dock(cls, func=None, title=None, area=None):
+    @classmethod
+    def in_dock(cls, func=None, title=None, area=None, active_slot=None):
         """
         Wrapper to show QWidget in ``LucidMainWindow``
 
@@ -101,18 +102,43 @@ class LucidMainWindow(QMainWindow):
         The widget returned **must** share a parent hierarchy with a
         ``LucidMainWindow``. See :meth:`.find_window` for more detail.
 
+        Parameters
+        ----------
+        cls: ``LucidMainWindow``
+
+        func: callable
+            Method which returns a QWidget whose parentage can be traced back
+            to a ``LucidMainWindow`` instance
+
+        title: str, optional
+            Title for QDockWidget. This is what will be displayed in the tab
+            system
+
+        area: ``QDockWidgetArea``, optional
+            If None, this wil be the first area in
+            ``LucidMainWindow.allowed_docks``
+
+        active_slot: callable, optional
+            Callable which accepts a boolean argument. This will be called when
+            the widget is closed or opened. This does not include when the
+            QDockWidget is hidden behind another tab in the docking system.
+            This will only be connected the first time a widget is added to the
+            docking system
+
         Example
         -------
         .. code:: python
 
-            @LucidMainWindow.in_dock
+            @LucidMainWindow.in_dock(title='My Button')
             def dock_my_button(parent):
                 button = QPushButton(parent=parent)
                 return button
+
         """
         # When the decorator is not called
         if not func:
-            return functools.partial(cls.in_dock, area=area, title=title)
+            return functools.partial(cls.in_dock, area=area, title=title,
+                                     active_slot=active_slot)
 
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
