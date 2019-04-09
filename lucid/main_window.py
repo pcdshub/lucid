@@ -60,7 +60,6 @@ class LucidMainWindow(QMainWindow):
         # Force the dockwidget to only be allowed in areas determined by the
         # LucidMainWindow.allowed_docks
         allowed_flags = functools.reduce(operator.or_, self.allowed_docks)
-
         self.main_dock.setAllowedAreas(allowed_flags)
         # Place the dockmanager inside the dock
         self.dock_manager = QtAds.DockManager(self.main_dock)
