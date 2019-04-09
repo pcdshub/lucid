@@ -155,6 +155,32 @@ class LucidMainWindow(QMainWindow):
             self.main_dock = None
 
 
+class LucidDockWidget(QDockWidget):
+    """
+    Subclass QDockWidget to signal widget state
+
+    ``QDockWidget.visibilityChanged`` is not sufficient as this returns the
+    same value when the ``QDockWidget`` is closed as when it is deselected via
+    the tab bar.
+
+    Attributes
+    ----------
+    stateChanged : Signal
+        This will report ``True`` if the widget is made visible, and ``False``
+        if the widget is closed either when floating or from the
+        ``QDockWidget`` itself.
+    """
+    stateChanged = Signal(bool)
+
+    def showEvent(self, event):
+        self.stateChanged.emit(True)
+        return super().showEvent(event)
+
+    def closeEvent(self, event):
+        self.stateChanged.emit(False)
+        return super().closeEvent(event)
+
+
 class LucidToolBar(QToolBar):
     """LucidToolBar for LucidMainWindow"""
     def __init__(self, parent=None):
