@@ -2,12 +2,12 @@ import functools
 import logging
 import operator
 
-from qtpy.QtCore import Qt
-from qtpy.QtWidgets import (QLineEdit, QMainWindow, QSizePolicy,
-                            QStackedWidget, QStyle, QToolBar, QWidget)
+from qtpy.QtWidgets import (QMainWindow, QDockWidget, QStackedWidget,
+                            QToolBar, QStyle, QLineEdit, QSizePolicy,
+                            QWidget, QApplication)
+from qtpy.QtGui import QCursor
+from qtpy.QtCore import Qt, Signal, QPoint
 from PyQtAds import QtAds
-
-from .widgets import QDockWidget
 
 logger = logging.getLogger(__name__)
 
@@ -60,6 +60,7 @@ class LucidMainWindow(QMainWindow):
         # Force the dockwidget to only be allowed in areas determined by the
         # LucidMainWindow.allowed_docks
         allowed_flags = functools.reduce(operator.or_, self.allowed_docks)
+
         self.main_dock.setAllowedAreas(allowed_flags)
         # Place the dockmanager inside the dock
         self.dock_manager = QtAds.DockManager(self.main_dock)
