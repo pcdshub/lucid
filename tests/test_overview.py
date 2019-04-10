@@ -42,10 +42,13 @@ def test_indicator_cell_show_device_repeated(cell, qtbot):
     assert cell._device_displays[motor.name] == widget
 
 
-def test_indicator_cell_show_devices(cell):
+def test_indicator_cell_show_devices(cell, main_window):
+    main_window.show()
+    cell.setParent(main_window)  # Need this to fire selection cb
     cell.add_device(motor)
-    suite = cell.show_devices()
-    assert suite.devices == [motor]
+    cell.clicked.emit()
+    assert cell._suite.devices == [motor]
+    assert cell.selected
 
 
 def test_indicator_cell_show_devices_repeated(cell):
@@ -55,3 +58,9 @@ def test_indicator_cell_show_devices_repeated(cell):
     cell.show_devices()
     assert suite == cell._suite
     assert suite.devices == [motor]
+
+
+def test_indicator_cell_selection(cell):
+    cell._selecting_widgets.append(cell)
+    cell._devices_shown(False)
+    assert not cell.selected
