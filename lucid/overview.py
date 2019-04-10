@@ -1,11 +1,11 @@
 """Overview of the Experimental Area"""
-from qtpy.QtCore import QEvent, Qt, Slot
+from qtpy.QtCore import QEvent, Qt, Property, Slot
 from qtpy.QtGui import QContextMenuEvent
 from qtpy.QtWidgets import QPushButton, QMenu
 
 from lucid import LucidMainWindow
 from lucid.utils import (SnakeLayout, indicator_for_device, display_for_device,
-                         suite_for_devices)
+                         suite_for_devices, reload_widget_stylesheet)
 
 
 class IndicatorCell(QPushButton):
@@ -26,13 +26,21 @@ class IndicatorCell(QPushButton):
         # References for created devices
         self._device_displays = {}
         self._suite = None
+        self._selecting_widgets = list()
         # Setup Menu
         self.setContextMenuPolicy(Qt.DefaultContextMenu)
         self.device_menu = QMenu()
         self._displays = []
         # Click button action
-        self.clicked.connect(LucidMainWindow.in_dock(self.show_devices,
-                                                     title=self.title))
+        self.clicked.connect(LucidMainWindow.in_dock(
+                                        self.show_devices,
+                                        title=self.title,
+                                        active_slot=self._devices_shown))
+
+    @Property(bool)
+    def selected(self):
+        """Whether the devices in this cell have been selected"""
+        return self._selecting_widgets != []
 
     def add_indicator(self, widget):
         """Add an indicator to the Panel"""
@@ -92,3 +100,14 @@ class IndicatorCell(QPushButton):
                 if device not in self._suite.devices:
                     self._suite.add_device(device)
         return self._suite
+
+    def _devices_shown(self, shown):
+        """Callback when correspoinding ``TyphonSuite`` is accessed"""
+        # On first selection
+        if shown and self not in self._selecting_widgets:
+            self._selecting_widgets.append(self)
+            reload_widget_stylesheet(self)
+        # On closure
+        elif not shown and self in self._selecting_widgets:
+            self._selecting_widgets.remove(self)
+            reload_widget_stylesheet(self)
