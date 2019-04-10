@@ -2,7 +2,6 @@ import pytest
 
 from ophyd.sim import SynAxis, motor
 from qtpy.QtWidgets import QWidget
-from typhon import TyphonSuite
 
 from lucid.overview import IndicatorCell
 
@@ -14,53 +13,59 @@ def cell(qtbot):
     return cell
 
 
+def test_base_device_button_menu(cell):
+    device_count = 12
+    for i in range(device_count):
+        motor = SynAxis(name=f'motor_{i}')
+        cell.add_device(motor)
+    cell._menu_shown()
+    for device in cell.devices:
+        assert device.name in [action.text()
+                               for action in cell.device_menu.actions()]
+
+
+def test_base_device_button_show_device(cell):
+    display = cell.show_device(motor)
+    assert display.devices[0] == motor
+    assert motor.name in cell._device_displays
+
+
+def test_base_device_button_show_device_repeated(cell, qtbot):
+    widget = QWidget()
+    qtbot.addWidget(widget)
+    cell._device_displays[motor.name] = widget
+    cell.show_device(motor)
+    assert cell._device_displays[motor.name] == widget
+
+
+def test_base_device_button_show_all(cell):
+    cell.devices = [motor]
+    suite = cell.show_all()
+    assert suite.devices == [motor]
+
+
+def test_base_device_button_show_all_repeated(cell):
+    cell.devices = [motor]
+    suite = cell.show_all()
+    cell.show_all()
+    assert suite == cell._suite
+    assert suite.devices == [motor]
+
+
 def test_indicator_cell_add_device(cell):
     device_count = 12
     for i in range(device_count):
         motor = SynAxis(name=f'motor_{i}')
         cell.add_device(motor)
     assert len(cell.devices) == 12
-    for device in cell.devices:
-        assert device.name in [action.text()
-                               for action in cell.device_menu.actions()]
-
-
-def test_indicator_cell_show_device(cell):
-    cell.add_device(motor)
-    action = cell.device_menu.actions()[0]
-    action.trigger()
-    assert motor.name in cell._device_displays
-
-
-def test_indicator_cell_show_device_repeated(cell, qtbot):
-    cell.add_device(motor)
-    action = cell.device_menu.actions()[0]
-    widget = QWidget()
-    qtbot.addWidget(widget)
-    cell._device_displays[motor.name] = widget
-    action.trigger()
-    assert cell._device_displays[motor.name] == widget
-
-
-def test_indicator_cell_show_devices(cell, main_window):
-    main_window.show()
-    cell.setParent(main_window)  # Need this to fire selection cb
-    cell.add_device(motor)
-    cell.clicked.emit()
-    assert cell._suite.devices == [motor]
-    assert cell.selected
-
-
-def test_indicator_cell_show_devices_repeated(cell):
-    cell.add_device(motor)
-    suite = TyphonSuite(parent=cell)
-    cell._suite = suite
-    cell.show_devices()
-    assert suite == cell._suite
-    assert suite.devices == [motor]
 
 
 def test_indicator_cell_selection(cell):
+    cell._devices_shown(True)
+    assert cell.selected
+
+
+def test_indicator_cell_deselection(cell):
     cell._selecting_widgets.append(cell)
     cell._devices_shown(False)
     assert not cell.selected
