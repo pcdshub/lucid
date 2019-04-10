@@ -2,7 +2,7 @@ import logging
 
 from pydm.widgets import PyDMDrawingCircle
 from qtpy.QtCore import Qt
-from qtpy.QtWidgets import QGridLayout, QWidget
+from qtpy.QtWidgets import QGridLayout
 from typhon import TyphonDeviceDisplay, TyphonSuite
 
 logger = logging.getLogger(__name__)
@@ -93,14 +93,3 @@ def suite_for_devices(devices):
     for device in devices:
         suite.add_device(device)
     return suite
-
-
-def reload_widget_stylesheet(widget, cascade=False):
-    """Reload the stylesheet of the provided widget"""
-    widget.style().unpolish(widget)
-    widget.style().polish(widget)
-    widget.update()
-    if cascade:
-        for child in widget.children():
-            if isinstance(child, QWidget):
-                reload_widget_stylesheet(child, cascade=True)

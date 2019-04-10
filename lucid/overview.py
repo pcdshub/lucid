@@ -5,7 +5,8 @@ from qtpy.QtWidgets import QPushButton, QMenu
 
 from lucid import LucidMainWindow
 from lucid.utils import (SnakeLayout, indicator_for_device, display_for_device,
-                         suite_for_devices, reload_widget_stylesheet)
+                         suite_for_devices)
+from typhon.utils import reload_widget_stylesheet
 
 
 class IndicatorCell(QPushButton):
