@@ -1,10 +1,11 @@
 """Overview of the Experimental Area"""
+from collections import OrderedDict
 from functools import partial
 
-from qtpy.QtCore import QEvent, Qt, Property
-from qtpy.QtGui import QContextMenuEvent
-from qtpy.QtWidgets import QPushButton, QMenu
-
+from qtpy.QtCore import QEvent, Qt, Property, QSize
+from qtpy.QtGui import QContextMenuEvent, QHoverEvent
+from qtpy.QtWidgets import (QPushButton, QMenu, QGridLayout, QWidget,
+                            QVBoxLayout, QSizePolicy, QSpacerItem)
 from lucid import LucidMainWindow
 from lucid.utils import (SnakeLayout, indicator_for_device, display_for_device,
                          suite_for_devices)
@@ -28,7 +29,6 @@ class BaseDeviceButton(QPushButton):
         self.setContextMenuPolicy(Qt.DefaultContextMenu)
         self.device_menu = QMenu()
         self.device_menu.aboutToShow.connect(self._menu_shown)
-        self.devices = list()
 
     def contextMenuEvent(self, event):
         """QWidget.contextMenuEvent to display available devices"""
@@ -75,17 +75,18 @@ class BaseDeviceButton(QPushButton):
 class IndicatorCell(BaseDeviceButton):
     """Single Cell of Indicator Lights in the Overview Grid"""
     max_columns = 6
-    icon_size = (12, 12)
-
+    icon_size = 12
+    spacing = 2
+    margin = 10
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # Disable borders on the widget unless a hover occurs
         self.setStyleSheet('QPushButton:!hover {border: None}')
         self.setLayout(SnakeLayout(self.max_columns))
-        self.layout().setContentsMargins(20, 20, 20, 20)
-        self.layout().setHorizontalSpacing(2)
-        self.layout().setVerticalSpacing(2)
+        self.layout().setSpacing(self.spacing)
+        self.layout().setContentsMargins(*4*[self.margin])
         self._selecting_widgets = list()
+        self.devices = list()
 
     @Property(bool)
     def selected(self):
@@ -94,7 +95,8 @@ class IndicatorCell(BaseDeviceButton):
 
     def add_indicator(self, widget):
         """Add an indicator to the Panel"""
-        widget.setFixedSize(*self.icon_size)
+        widget.setFixedSize(self.icon_size, self.icon_size)
+        widget.setMinimumSize(self.icon_size, self.icon_size)
         widget.installEventFilter(self)
         self.layout().addWidget(widget)
 
@@ -123,13 +125,95 @@ class IndicatorCell(BaseDeviceButton):
         # False means do not filter
         return False
 
-    def _devices_shown(self, shown):
-        """Callback when correspoinding ``TyphonSuite`` is accessed"""
+    def sizeHint(self):
+        size_per_icon = self.icon_size + self.spacing
+        rows = self.layout().count() / self.max_columns + 1
+        return QSize(self.max_columns * size_per_icon
+                     + self.spacing + 2*self.margin,
+                     70)
+
+    def _devices_shown(self, shown, selector=None):
+        """Callback when corresponding ``TyphonSuite`` is accessed"""
+        selector = selector or self
         # On first selection
-        if shown and self not in self._selecting_widgets:
-            self._selecting_widgets.append(self)
+        if shown and selector not in self._selecting_widgets:
+            self._selecting_widgets.append(selector)
             reload_widget_stylesheet(self)
         # On closure
-        elif not shown and self in self._selecting_widgets:
-            self._selecting_widgets.remove(self)
+        elif not shown and selector in self._selecting_widgets:
+            self._selecting_widgets.remove(selector)
             reload_widget_stylesheet(self)
+
+
+class IndicatorGroup(BaseDeviceButton):
+    """QPushButton to select an entire row or column of devices"""
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.setText(str(self.title))
+        self.cells = []
+        self.installEventFilter(self)
+
+    def add_cell(self, cell):
+        self.cells.append(cell)
+
+    @property
+    def devices(self):
+        """All devices contained in the ``IndicatorGroup``"""
+        return [device for cell in self.cells for device in cell.devices]
+
+    def eventFilter(self, obj, event):
+        """Share QHoverEvents with all cells in the group"""
+        if isinstance(event, QHoverEvent):
+            for cell in self.cells:
+                cell.event(event)
+                return False
+        return False
+
+    def _devices_shown(self, shown):
+        """Selecting this button, selects all contained cells"""
+        for cell in self.cells:
+            cell._devices_shown(shown, selector=self)
+
+
+class IndicatorGrid(QWidget):
+    """GridLayout of all Indicators"""
+    def __init__(self, parent=None):
+        super().__init__(parent=parent)
+        self.setLayout(QGridLayout())
+        self.layout().setSpacing(0)
+        self.layout().setSizeConstraint(QGridLayout.SetFixedSize)
+        self._groups = dict()
+        self.setStyleSheet(
+            'QWidget[selected="true"] '
+            '{background-color: rgba(20, 140, 210, 150)}')
+
+    def add_devices(self, devices, system=None, stand=None):
+        # Create cell
+        cell = IndicatorCell(title=f'{stand} {system}')
+        for device in devices:
+            cell.add_device(device)
+        # Add to proper location in grid
+        coords = []
+        for i, group_name in enumerate((system, stand)):
+            # Create the group if not present
+            if group_name not in self._groups:
+                self._add_group(group_name, bool(i))
+            # Add cell to group
+            # Coordinate of group
+            group = self._groups[group_name]
+            idx = self.layout().indexOf(group)
+            coords.append(self.layout().getItemPosition(idx)[i])
+            group.add_cell(cell)
+        # Add cell to correct location in grid
+        self.layout().addWidget(cell, *coords, Qt.AlignTop)
+
+    def _add_group(self, group, as_row):
+        # Add to layout
+        group = IndicatorGroup(title=group)
+        self._groups[group.title] = group
+        # Find the correct position
+        if as_row:
+            (row, column) = (0, self.layout().columnCount())
+        else:
+            (row, column) = (self.layout().rowCount(), 0)
+        self.layout().addWidget(group, row, column, Qt.AlignVCenter)
