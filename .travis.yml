@@ -28,10 +28,14 @@ install:
   # Useful for debugging any issues with conda
   - conda info -a
   # Test conda build
-  - conda build -q conda-recipe --python $TRAVIS_PYTHON_VERSION --output-folder bld-dir
-  - conda config --add channels "file://`pwd`/bld-dir"
+  #- conda build -q conda-recipe --python $TRAVIS_PYTHON_VERSION --output-folder bld-dir
+  #- conda config --add channels "file://`pwd`/bld-dir"
   #Grab all dependencies
-  - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION lucid --file dev-requirements.txt
+  - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION --file dev-requirements.txt
+  - python setup.py install
+  # Install the rest of the dependencies that are not in CONDA or PyPI. This will
+  # hopefully be removed when qtpydocking is available on CONDA 
+  - pip install -Ur requirements.txt
   #Launch Conda environment
   - source activate test-environment
 
