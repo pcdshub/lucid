@@ -1,0 +1,4 @@
+pydm
+git+https://github.com/klauer/qtpydocking
+qtpy
+
