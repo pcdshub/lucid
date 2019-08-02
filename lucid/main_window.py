@@ -3,9 +3,9 @@ import logging
 import operator
 
 import qtpydocking
-from qtpy.QtWidgets import (QMainWindow, QStackedWidget, QToolBar, QStyle,
-                            QDockWidget, QLineEdit, QSizePolicy, QWidget)
-from qtpy.QtCore import Qt, QEvent
+from qtpy.QtCore import QEvent, Qt
+from qtpy.QtWidgets import (QDockWidget, QLineEdit, QMainWindow, QSizePolicy,
+                            QStackedWidget, QStyle, QToolBar, QWidget)
 
 logger = logging.getLogger(__name__)
 
