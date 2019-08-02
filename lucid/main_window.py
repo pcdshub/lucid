@@ -2,10 +2,12 @@ import functools
 import logging
 import operator
 
-from qtpy.QtWidgets import (QMainWindow, QDockWidget, QStackedWidget,
-                            QToolBar, QStyle, QLineEdit, QSizePolicy,
-                            QWidget)
 from qtpy.QtCore import Qt
+from qtpy.QtWidgets import (QLineEdit, QMainWindow, QSizePolicy,
+                            QStackedWidget, QStyle, QToolBar, QWidget)
+import qtpydocking
+
+from .widgets import QDockWidget
 
 logger = logging.getLogger(__name__)
 
@@ -30,57 +32,42 @@ class LucidMainWindow(QMainWindow):
     allowed_docks = (Qt.RightDockWidgetArea, )
 
     def __init__(self, parent=None):
+        self.main_dock = None
+        self.dock_manager = None
         super().__init__(parent=parent)
+        self.setup_ui()
+
+    def setup_ui(self):
         # This means when multiple docks are pulled into an area, we create a
         # tab system. Splitting docks is still possible through API
-        self.setDockOptions(self.AnimatedDocks | self.ForceTabbedDocks)
-        self.setCentralWidget(QStackedWidget())
         # Adjust corners
         self.setCorner(Qt.TopRightCorner, Qt.RightDockWidgetArea)
         self.setCorner(Qt.BottomRightCorner, Qt.RightDockWidgetArea)
-        # Add toolbar
+        # Central Widget
+        self.central_widget = QStackedWidget()
+        self.setCentralWidget(self.central_widget)
+        # Toolbar
+        self.toolbar = LucidToolBar()
         self.addToolBar(Qt.TopToolBarArea, LucidToolBar())
 
-    def addDockWidget(self, area, dock):
-        """
-        Wrapped QMainWindow.addDockWidget
-
-        Add a QDockWidget to the LucidMainWindow. This is necessary in order to
-        force the tabbed behavior desired in the window. In addition it
-        performs the basic setup so the QDockWidget can be dragged to the
-        proper areas of the window, and also sets the focus on the dock so it
-        is immediately visible. This should rarely be called by external
-        users instead use the :meth:`.in_dock` decorator.
-
-        Parameters
-        ----------
-        area: Qt.DockWidgetArea
-
-        dock: QDockWidget
-        """
+    def setup_dock(self):
+        """Setup the qtpydocking system inside a standard Qt DockWidget"""
+        # If we've already loaded the docking system just return the active one
+        if self.main_dock:
+            return self.main_dock
+        # Docked DockWidget
+        self.main_dock = QDockWidget()
         # Force the dockwidget to only be allowed in areas determined by the
         # LucidMainWindow.allowed_docks
         allowed_flags = functools.reduce(operator.or_, self.allowed_docks)
-        dock.setAllowedAreas(allowed_flags)
-        super().addDockWidget(area, dock)
-        # If we already have an embedded dock, add it to existing dock. This
-        # needs to exist because even with ForceTabbedDocks the dock will be
-        # split if we add with regular API
-        embedded_docks = [curr_dock for curr_dock in self._docks
-                          if self.dockWidgetArea(curr_dock) == area
-                          and curr_dock.isVisible()]
-        if embedded_docks:
-            super().tabifyDockWidget(embedded_docks[0], dock)
-        # Raise to visible
-        dock.show()
-        dock.raise_()
-        dock.setFocus()
-
-    @property
-    def _docks(self):
-        """QDockWidget children"""
-        return [widget for widget in self.children()
-                if isinstance(widget, QDockWidget)]
+        self.main_dock.setAllowedAreas(allowed_flags)
+        # Place the dockmanager inside the dock
+        self.dock_manager = qtpydocking.DockManager(self.main_dock)
+        self.main_dock.setWidget(self.dock_manager)
+        self.main_dock.closed.connect(self._dock_closed)
+        # Add to the first allowed location
+        self.addDockWidget(self.allowed_docks[0], self.main_dock)
+        return self.main_dock
 
     @classmethod
     def find_window(cls, widget):
@@ -104,7 +91,7 @@ class LucidMainWindow(QMainWindow):
         return cls.find_window(parent)
 
     @classmethod
-    def in_dock(cls, func=None, area=None):
+    def in_dock(cls, func=None):
         """
         Wrapper to show QWidget in ``LucidMainWindow``
 
@@ -124,11 +111,9 @@ class LucidMainWindow(QMainWindow):
                 button = QPushButton(parent=parent)
                 return button
         """
-        # Use first allowed area if None supplied
-        area = area or cls.allowed_docks[0]
         # When the decorator is not called
         if not func:
-            return functools.partial(cls.in_dock, area=area)
+            return functools.partial(cls.in_dock)
 
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
@@ -149,13 +134,25 @@ class LucidMainWindow(QMainWindow):
                 widget.setWindowFlags(Qt.Dialog)
                 widget.show()
             else:
-                # Create a DockWidget
-                dock = QDockWidget()
-                dock.setWidget(widget)
-                window.addDockWidget(area, dock)
+                # Create the dock if not already exists
+                window.setup_dock()
+                # Add the widget to the dock
+                dock = qtpydocking.DockWidget(widget.objectName())
+                dock.set_widget(widget)
+                window.dock_manager.add_dock_widget_tab(
+                                            qtpydocking.DockWidgetArea.center,
+                                            dock)
             return widget
 
         return wrapper
+
+    def _dock_closed(self):
+        """Handle closures of the docking system"""
+        # If the user closes the docking system clean up our internal state
+        if self.main_dock and self.dock_manager:
+            self.dock_manager.deleteLater()
+            self.dock_manager = None
+            self.main_dock = None
 
 
 class LucidToolBar(QToolBar):

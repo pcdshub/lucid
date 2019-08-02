@@ -12,19 +12,6 @@ def main_window(qtbot):
     return main_window
 
 
-def test_add_multiple_docks(main_window, qtbot):
-    first_dock = QDockWidget()
-    second_dock = QDockWidget()
-    for dock in (first_dock, second_dock):
-        qtbot.addWidget(dock)
-    main_window.addDockWidget(Qt.RightDockWidgetArea, first_dock)
-    assert main_window.dockWidgetArea(first_dock) == Qt.RightDockWidgetArea
-    assert first_dock in main_window._docks
-    main_window.addDockWidget(Qt.RightDockWidgetArea, second_dock)
-    assert main_window.dockWidgetArea(first_dock) == Qt.RightDockWidgetArea
-    assert main_window.dockWidgetArea(second_dock) == Qt.RightDockWidgetArea
-
-
 def test_main_window_find_window(main_window, qtbot):
     widget = QWidget()
     qtbot.addWidget(widget)
@@ -42,28 +29,40 @@ def test_main_window_find_window_with_orphan(qtbot):
         LucidMainWindow.find_window(widget)
 
 
+def test_main_window_setup_dock(main_window):
+    dock = main_window.setup_dock()
+    assert main_window.dock_manager is not None
+
+
+def test_main_window_repeat_setup_dock(main_window):
+    dock = main_window.setup_dock()
+    assert id(dock) == id(main_window.setup_dock())
+
+
+def test_main_window_reopen_dock(main_window):
+    dock = main_window.setup_dock()
+    dock.close()
+    assert main_window.dock_manager is None
+    dock = main_window.setup_dock()
+    assert main_window.dock_manager is not None
+
+
 def test_main_window_in_dock(main_window, qtbot):
+    widget_name = 'my_dock'
 
     @LucidMainWindow.in_dock
     def create_widget():
         widget = QWidget(parent=main_window)
+        widget.setObjectName(widget_name)
         qtbot.addWidget(widget)
         return widget
 
-    create_widget()
-    assert len(main_window._docks) == 1
+    widget = create_widget()
 
-
-def test_main_window_in_dock_with_area(main_window, qtbot):
-
-    @LucidMainWindow.in_dock(area=Qt.RightDockWidgetArea)
-    def create_widget():
-        widget = QWidget(parent=main_window)
-        qtbot.addWidget(widget)
-        return widget
-
-    create_widget()
-    assert len(main_window._docks) == 1
+    assert main_window.dock_manager is not None
+    dock = main_window.dock_manager.find_dock_widget(widget_name)
+    assert dock is not None
+    assert dock.widget() == widget
 
 
 def test_main_window_in_dock_with_orphan(qtbot):
