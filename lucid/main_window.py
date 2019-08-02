@@ -2,10 +2,12 @@ import functools
 import logging
 import operator
 
-import qtpydocking
-from qtpy.QtCore import QEvent, Qt
-from qtpy.QtWidgets import (QDockWidget, QLineEdit, QMainWindow, QSizePolicy,
+from qtpy.QtCore import Qt
+from qtpy.QtWidgets import (QLineEdit, QMainWindow, QSizePolicy,
                             QStackedWidget, QStyle, QToolBar, QWidget)
+import qtpydocking
+
+from .widgets import QDockWidget
 
 logger = logging.getLogger(__name__)
 
@@ -62,21 +64,10 @@ class LucidMainWindow(QMainWindow):
         # Place the dockmanager inside the dock
         self.dock_manager = qtpydocking.DockManager(self.main_dock)
         self.main_dock.setWidget(self.dock_manager)
-        self.main_dock.installEventFilter(self)
+        self.main_dock.closed.connect(self._dock_closed)
         # Add to the first allowed location
         self.addDockWidget(self.allowed_docks[0], self.main_dock)
         return self.main_dock
-
-    def eventFilter(self, obj, event):
-        """Qt eventFilter to watch for closures of the docking system"""
-        # If the user closes the docking system clean up our internal state
-        if (self.main_dock
-           and self.main_dock == obj
-           and event.type() == QEvent.Close):
-            self.dock_manager.deleteLater()
-            self.dock_manager = None
-            self.main_dock = None
-        return False
 
     @classmethod
     def find_window(cls, widget):
@@ -154,6 +145,14 @@ class LucidMainWindow(QMainWindow):
             return widget
 
         return wrapper
+
+    def _dock_closed(self):
+        """Handle closures of the docking system"""
+        # If the user closes the docking system clean up our internal state
+        if self.main_dock and self.dock_manager:
+            self.dock_manager.deleteLater()
+            self.dock_manager = None
+            self.main_dock = None
 
 
 class LucidToolBar(QToolBar):
