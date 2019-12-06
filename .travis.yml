@@ -31,7 +31,6 @@ install:
   - conda update -q conda conda-build
   - conda config --add channels pcds-tag
   - conda config --append channels conda-forge
-  - conda config --append channels hhslepicka
   # Useful for debugging any issues with conda
   - conda info -a
   # Test conda build
