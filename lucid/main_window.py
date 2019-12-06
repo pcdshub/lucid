@@ -2,12 +2,13 @@ import functools
 import logging
 import operator
 
-from qtpy.QtWidgets import (QMainWindow, QDockWidget, QStackedWidget,
-                            QToolBar, QStyle, QLineEdit, QSizePolicy,
-                            QWidget, QApplication)
+from qtpy.QtWidgets import (QMainWindow, QStackedWidget, QToolBar, QStyle,
+                            QLineEdit, QSizePolicy, QWidget, QApplication)
 from qtpy.QtGui import QCursor
 from qtpy.QtCore import Qt, Signal, QPoint
 from PyQtAds import QtAds
+
+from .widgets import QDockWidget
 
 logger = logging.getLogger(__name__)
 
@@ -62,7 +63,7 @@ class LucidMainWindow(QMainWindow):
         allowed_flags = functools.reduce(operator.or_, self.allowed_docks)
         self.main_dock.setAllowedAreas(allowed_flags)
         # Place the dockmanager inside the dock
-        self.dock_manager = QtAds.DockManager(self.main_dock)
+        self.dock_manager = QtAds.CDockManager(self.main_dock)
         self.main_dock.setWidget(self.dock_manager)
         self.main_dock.closed.connect(self._dock_closed)
         # Add to the first allowed location
@@ -162,10 +163,10 @@ class LucidMainWindow(QMainWindow):
                 # Create the dock if not already exists
                 window.setup_dock()
                 # Add the widget to the dock
-                dock = QtAds.DockWidget(widget.objectName())
-                dock.set_widget(widget)
-                window.dock_manager.add_dock_widget_tab(
-                    QtAds.DockWidgetArea.center, dock)
+                dock = QtAds.CDockWidget(widget.objectName())
+                dock.setWidget(widget)
+                window.dock_manager.addDockWidgetTab(
+                    QtAds.CenterDockWidgetArea, dock)
 
             return widget
 
