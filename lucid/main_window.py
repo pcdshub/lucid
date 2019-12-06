@@ -174,6 +174,10 @@ class LucidMainWindow(QMainWindow):
                 window.main_dock.setVisible(True)
                 widget.raise_()
 
+                if active_slot:
+                    # TODO: active_slot(False) is not called
+                    active_slot(True)
+
             return widget
 
         return wrapper
