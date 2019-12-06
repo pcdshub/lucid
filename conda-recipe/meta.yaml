@@ -19,6 +19,7 @@ requirements:
     - python {{PY_VER}}*,>=3
     - pydm
     - qtpy
+    - pyqtads
 
 test:
   imports:

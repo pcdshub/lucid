@@ -5,7 +5,7 @@ import operator
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import (QLineEdit, QMainWindow, QSizePolicy,
                             QStackedWidget, QStyle, QToolBar, QWidget)
-import qtpydocking
+from PyQtAds import QtAds
 
 from .widgets import QDockWidget
 
@@ -51,7 +51,7 @@ class LucidMainWindow(QMainWindow):
         self.addToolBar(Qt.TopToolBarArea, LucidToolBar())
 
     def setup_dock(self):
-        """Setup the qtpydocking system inside a standard Qt DockWidget"""
+        """Setup the PyQtAds system inside a standard Qt DockWidget"""
         # If we've already loaded the docking system just return the active one
         if self.main_dock:
             return self.main_dock
@@ -62,7 +62,7 @@ class LucidMainWindow(QMainWindow):
         allowed_flags = functools.reduce(operator.or_, self.allowed_docks)
         self.main_dock.setAllowedAreas(allowed_flags)
         # Place the dockmanager inside the dock
-        self.dock_manager = qtpydocking.DockManager(self.main_dock)
+        self.dock_manager = QtAds.DockManager(self.main_dock)
         self.main_dock.setWidget(self.dock_manager)
         self.main_dock.closed.connect(self._dock_closed)
         # Add to the first allowed location
@@ -137,11 +137,10 @@ class LucidMainWindow(QMainWindow):
                 # Create the dock if not already exists
                 window.setup_dock()
                 # Add the widget to the dock
-                dock = qtpydocking.DockWidget(widget.objectName())
+                dock = QtAds.DockWidget(widget.objectName())
                 dock.set_widget(widget)
                 window.dock_manager.add_dock_widget_tab(
-                                            qtpydocking.DockWidgetArea.center,
-                                            dock)
+                    QtAds.DockWidgetArea.center, dock)
             return widget
 
         return wrapper
