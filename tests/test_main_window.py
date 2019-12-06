@@ -111,7 +111,7 @@ def test_main_window_raise(main_window, qtbot,
     if close:
         dock1.close()
     # Re-raise
-    main_window.raise_dock(dock1)
+    # main_window.raise_dock(dock1)
     assert dock1.isFloating() == finish_floating
     if not finish_floating:
         assert main_window.tabifiedDockWidgets(dock2) == [dock1]
