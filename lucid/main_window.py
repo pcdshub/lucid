@@ -65,7 +65,6 @@ class LucidMainWindow(QMainWindow):
         # Place the dockmanager inside the dock
         self.dock_manager = QtAds.CDockManager(self.main_dock)
         self.main_dock.setWidget(self.dock_manager)
-        self.main_dock.closed.connect(self._dock_closed)
         # Add to the first allowed location
         self.addDockWidget(self.allowed_docks[0], self.main_dock)
         return self.main_dock
@@ -171,17 +170,13 @@ class LucidMainWindow(QMainWindow):
                 window.dock_manager.addDockWidgetTab(
                     QtAds.CenterDockWidgetArea, dock)
 
+                # Ensure the main dock is actually visible
+                window.main_dock.setVisible(True)
+                widget.raise_()
+
             return widget
 
         return wrapper
-
-    def _dock_closed(self):
-        """Handle closures of the docking system"""
-        # If the user closes the docking system clean up our internal state
-        if self.main_dock and self.dock_manager:
-            self.dock_manager.deleteLater()
-            self.dock_manager = None
-            self.main_dock = None
 
 
 class LucidDockWidget(QDockWidget):
