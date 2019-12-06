@@ -163,7 +163,10 @@ class LucidMainWindow(QMainWindow):
                 # Create the dock if not already exists
                 window.setup_dock()
                 # Add the widget to the dock
-                dock = QtAds.CDockWidget(widget.objectName())
+                title = widget.objectName()
+                if not title:
+                    title = widget.__class__.__name__ + hex(id(widget))[:5]
+                dock = QtAds.CDockWidget(title)
                 dock.setWidget(widget)
                 window.dock_manager.addDockWidgetTab(
                     QtAds.CenterDockWidgetArea, dock)
