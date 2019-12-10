@@ -40,9 +40,6 @@ install:
   - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION pip pyqt=5 --file dev-requirements.txt
   #Launch Conda environment
   - source activate test-environment
-  # Install the rest of the dependencies that are not in CONDA or PyPI. This will
-  # hopefully be removed when qtpydocking is available on CONDA 
-  - pip install -Ur requirements.txt
   - python setup.py install
 
 before_script:

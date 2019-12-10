@@ -1,3 +1,5 @@
+from unittest.mock import Mock
+
 import pytest
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QDockWidget, QWidget
@@ -39,18 +41,12 @@ def test_main_window_repeat_setup_dock(main_window):
     assert id(dock) == id(main_window.setup_dock())
 
 
-def test_main_window_reopen_dock(main_window):
-    dock = main_window.setup_dock()
-    dock.close()
-    assert main_window.dock_manager is None
-    dock = main_window.setup_dock()
-    assert main_window.dock_manager is not None
-
-
 def test_main_window_in_dock(main_window, qtbot):
     widget_name = 'my_dock'
+    title = 'Test Dock'
 
-    @LucidMainWindow.in_dock
+    @LucidMainWindow.in_dock(area=Qt.RightDockWidgetArea,
+                             title=title)
     def create_widget():
         widget = QWidget(parent=main_window)
         widget.setObjectName(widget_name)
@@ -60,7 +56,7 @@ def test_main_window_in_dock(main_window, qtbot):
     widget = create_widget()
 
     assert main_window.dock_manager is not None
-    dock = main_window.dock_manager.find_dock_widget(widget_name)
+    dock = main_window.dock_manager.findDockWidget(widget_name)
     assert dock is not None
     assert dock.widget() == widget
 
@@ -75,3 +71,48 @@ def test_main_window_in_dock_with_orphan(qtbot):
 
     widget = create_widget()
     assert widget.isVisible()
+
+
+def test_main_window_in_dock_active_slot(main_window, qtbot):
+    with qtbot.wait_exposed(main_window):
+        main_window.show()
+    # Function to create show QWidget
+    widget = QWidget(parent=main_window)
+    qtbot.addWidget(widget)
+    cb = Mock()
+    create_widget = LucidMainWindow.in_dock(func=lambda: widget,
+                                            active_slot=cb)
+    create_widget()
+    assert cb.called
+    cb.assert_called_with(True)
+    # with qtbot.waitSignal(widget.parent().stateChanged):
+    #     widget.parent().close()
+    # cb.assert_called_with(False)
+
+
+@pytest.mark.parametrize('start_floating,close,finish_floating',
+                         ((False, False, False),
+                          (False, True, False),
+                          (True, False, True),
+                          (True, False, True)),
+                         ids=('in tab', 'closed from tab',
+                              'floating', 'closed from floating'))
+def test_main_window_raise(main_window, qtbot,
+                           start_floating, close, finish_floating):
+    # Add our docks
+    dock1 = QDockWidget()
+    qtbot.addWidget(dock1)
+    dock2 = QDockWidget()
+    qtbot.addWidget(dock2)
+    main_window.addDockWidget(Qt.RightDockWidgetArea, dock1)
+    main_window.addDockWidget(Qt.RightDockWidgetArea, dock2)
+    # Setup dock
+    dock1.setFloating(start_floating)
+    if close:
+        dock1.close()
+    # Re-raise
+    # main_window.raise_dock(dock1)
+    assert dock1.isFloating() == finish_floating
+    # TODO
+    # if not finish_floating:
+    #     assert main_window.tabifiedDockWidgets(dock2) == [dock1]
