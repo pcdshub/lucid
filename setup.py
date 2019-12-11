@@ -18,4 +18,10 @@ setup(name='lucid',
       install_requires=requirements,
       packages=find_packages(),
       description='LCLS User Controls and Inteface Design',
-      include_package_data=True)
+      include_package_data=True,
+      entry_points={
+          'gui_scripts': [
+              'lucid=lucid.launcher:main'
+          ]
+      }
+      )
