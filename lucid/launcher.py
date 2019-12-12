@@ -109,12 +109,16 @@ def main():
                            for i in range(device_count)]
                 grid.add_devices(devices, stand=stand, system=system)
 
-    dock = QtAds.CDockWidget('Grid')
-    dock.setWidget(grid)
-    window.dock_manager.addDockWidgetTab(QtAds.CenterDockWidgetArea, dock)
-    dock.setFeature(dock.DockWidgetClosable, False)
-    dock.setFeature(dock.DockWidgetFloatable, False)
-    dock.setFeature(dock.DockWidgetMovable, False)
+    dock_widget = QtAds.CDockWidget('Grid')
+    dock_widget.setWidget(grid)
+
+    dock_widget.setToggleViewActionMode(QtAds.CDockWidget.ActionModeShow)
+
+    dock_widget.setFeature(dock_widget.DockWidgetClosable, False)
+    dock_widget.setFeature(dock_widget.DockWidgetFloatable, False)
+    dock_widget.setFeature(dock_widget.DockWidgetMovable, False)
+
+    window.dock_manager.addDockWidget(QtAds.LeftDockWidgetArea, dock_widget)
     window.show()
 
     app.exec_()

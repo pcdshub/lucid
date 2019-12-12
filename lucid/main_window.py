@@ -21,16 +21,10 @@ class LucidMainWindow(QMainWindow):
     toolbar, a variety of central views for devices and scripts required for
     operation, and also the docking system for launching detailed windows.
 
-    Attributes
-    ----------
-    allowed_docks: tuple
-        ``Qt.DockWidgetAreas`` that accept QWidgets
-
     Parameters
     ----------
     parent: optional
     """
-    allowed_docks = (Qt.RightDockWidgetArea, )
 
     def __init__(self, parent=None):
         self.dock_manager = None
