@@ -1,15 +1,11 @@
 import functools
-import pathlib
 import logging
-import operator
+import pathlib
 
-from qtpy.QtWidgets import (QMainWindow, QStackedWidget, QToolBar, QStyle,
-                            QLineEdit, QSizePolicy, QWidget, QApplication)
-from qtpy.QtGui import QCursor
-from qtpy.QtCore import Qt, Signal, QPoint
 from PyQtAds import QtAds
-
-from .widgets import QDockWidget
+from qtpy.QtCore import Qt
+from qtpy.QtWidgets import (QMainWindow, QToolBar, QStyle,
+                            QLineEdit, QSizePolicy, QWidget)
 
 logger = logging.getLogger(__name__)
 
@@ -42,7 +38,8 @@ class LucidMainWindow(QMainWindow):
         # Use the dockmanager for the main window - it will set itself as the
         # central widget
         self.dock_manager = QtAds.CDockManager(self)
-        self.dock_manager.setStyleSheet(open(MODULE_PATH / 'dock_style.css', 'rt').read())
+        self.dock_manager.setStyleSheet(
+            open(MODULE_PATH / 'dock_style.css', 'rt').read())
 
     @classmethod
     def find_window(cls, widget):
@@ -140,7 +137,7 @@ class LucidMainWindow(QMainWindow):
                     title = widget.__class__.__name__ + hex(id(widget))[:5]
                 dock = QtAds.CDockWidget(title)
                 dock.setWidget(widget)
-                tab = window.dock_manager.addDockWidgetTab(
+                window.dock_manager.addDockWidgetTab(
                     QtAds.RightDockWidgetArea, dock)
 
                 # Ensure the main dock is actually visible
@@ -157,6 +154,7 @@ class LucidMainWindow(QMainWindow):
 
 class LucidToolBar(QToolBar):
     """LucidToolBar for LucidMainWindow"""
+
     def __init__(self, parent=None):
         super().__init__(parent=parent)
         # Toolbar Configuration

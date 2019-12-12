@@ -1,11 +1,9 @@
 """Overview of the Experimental Area"""
-from collections import OrderedDict
 from functools import partial
 
 from qtpy.QtCore import QEvent, Qt, Property, QSize
 from qtpy.QtGui import QContextMenuEvent, QHoverEvent
-from qtpy.QtWidgets import (QPushButton, QMenu, QGridLayout, QWidget,
-                            QVBoxLayout, QSizePolicy, QSpacerItem)
+from qtpy.QtWidgets import (QPushButton, QMenu, QGridLayout, QWidget)
 from lucid import LucidMainWindow
 from lucid.utils import (SnakeLayout, indicator_for_device, display_for_device,
                          suite_for_devices)
@@ -78,6 +76,7 @@ class IndicatorCell(BaseDeviceButton):
     icon_size = 12
     spacing = 2
     margin = 10
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # Disable borders on the widget unless a hover occurs
@@ -127,7 +126,6 @@ class IndicatorCell(BaseDeviceButton):
 
     def sizeHint(self):
         size_per_icon = self.icon_size + self.spacing
-        rows = self.layout().count() / self.max_columns + 1
         return QSize(self.max_columns * size_per_icon
                      + self.spacing + 2*self.margin,
                      70)

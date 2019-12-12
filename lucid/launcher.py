@@ -61,7 +61,8 @@ def parse_arguments(*args, **kwargs):
     return parser.parse_args(*args, **kwargs)
 
 
-def launch(beamline, *, toolbar=None, row_group_key="location_group", col_group_key="functional_group", log_level="INFO"):
+def launch(beamline, *, toolbar=None, row_group_key="location_group",
+           col_group_key="functional_group", log_level="INFO"):
     import logging
     from qtpy.QtWidgets import QApplication
     import happi
@@ -128,6 +129,7 @@ def launch(beamline, *, toolbar=None, row_group_key="location_group", col_group_
     window.show()
 
     app.exec_()
+
 
 def main():
     args = parse_arguments()
