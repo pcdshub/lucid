@@ -17,15 +17,9 @@ def get_happi_entry_value(entry, key, search_extraneous=True):
     return value
 
 
-def main():
-    import logging
+def parse_arguments(*args, **kwargs):
     import argparse
-    from qtpy.QtWidgets import QApplication
-    import happi
-    import typhon
     from . import __version__
-    from .main_window import LucidMainWindow
-    from .overview import IndicatorGrid
 
     proj_desc = "LUCID - LCLS User Control and Interface Design"
     parser = argparse.ArgumentParser(description=proj_desc)
@@ -64,8 +58,16 @@ def main():
         choices=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
         default='INFO'
     )
+    return parser.parse_args(*args, **kwargs)
 
-    lucid_args = parser.parse_args()
+
+def launch(beamline, *, toolbar=None, row_group_key="location_group", col_group_key="functional_group", log_level="INFO"):
+    import logging
+    from qtpy.QtWidgets import QApplication
+    import happi
+    import typhon
+    from .main_window import LucidMainWindow
+    from .overview import IndicatorGrid
 
     logger = logging.getLogger('')
     handler = logging.StreamHandler()
@@ -73,8 +75,8 @@ def main():
         '[%(asctime)s] [%(levelname)-8s] - %(message)s')
     handler.setFormatter(formatter)
     logger.addHandler(handler)
-    logger.setLevel(lucid_args.log_level)
-    handler.setLevel(lucid_args.log_level)
+    logger.setLevel(log_level)
+    handler.setLevel(log_level)
 
     app = QApplication([])
 
@@ -82,15 +84,15 @@ def main():
     typhon.use_stylesheet(dark=False)
     grid = IndicatorGrid()
 
-    if lucid_args.beamline != 'DEMO':
+    if beamline != 'DEMO':
         # Fill with Data from Happi
         cli = happi.Client.from_config()
-        devices = cli.search(beamline=lucid_args.beamline)
+        devices = cli.search(beamline=beamline)
 
         for dev in devices:
             try:
-                stand = get_happi_entry_value(dev, lucid_args.row_group_key)
-                system = get_happi_entry_value(dev, lucid_args.col_group_key)
+                stand = get_happi_entry_value(dev, row_group_key)
+                system = get_happi_entry_value(dev, col_group_key)
                 dev_obj = [happi.loader.from_container(dev)]
                 grid.add_devices(dev_obj, stand=stand, system=system)
             except ValueError as ex:
@@ -122,11 +124,12 @@ def main():
     dock_widget.setFeature(dock_widget.DockWidgetFloatable, False)
     dock_widget.setFeature(dock_widget.DockWidgetMovable, False)
 
-    area = window.dock_manager.addDockWidget(QtAds.LeftDockWidgetArea, dock_widget)
+    window.dock_manager.addDockWidget(QtAds.LeftDockWidgetArea, dock_widget)
     window.show()
 
     app.exec_()
 
-
-if __name__ == '__main__':
-    main()
+def main():
+    args = parse_arguments()
+    kwargs = vars(args)
+    launch(**kwargs)
