@@ -8,7 +8,8 @@ source:
   path: ..
 
 build:
-  number: 1
+  noarch: python
+  script: "{{ PYTHON }} -m pip install . -vv"
 
 requirements:
   build:
@@ -18,8 +19,10 @@ requirements:
   run:
     - python {{PY_VER}}*,>=3
     - pydm
-    - qtpy
     - pyqtads
+    - ophyd
+    - qtpy
+    - typhon
 
 test:
   imports:
