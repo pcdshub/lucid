@@ -1,3 +1,6 @@
+from PyQtAds import QtAds
+
+
 def get_happi_entry_value(entry, key, search_extraneous=True):
     extraneous = entry.extraneous
     value = getattr(entry, key, None)
@@ -106,7 +109,12 @@ def main():
                            for i in range(device_count)]
                 grid.add_devices(devices, stand=stand, system=system)
 
-    window.setCentralWidget(grid)
+    dock = QtAds.CDockWidget('Grid')
+    dock.setWidget(grid)
+    window.dock_manager.addDockWidgetTab(QtAds.CenterDockWidgetArea, dock)
+    dock.setFeature(dock.DockWidgetClosable, False)
+    dock.setFeature(dock.DockWidgetFloatable, False)
+    dock.setFeature(dock.DockWidgetMovable, False)
     window.show()
 
     app.exec_()
