@@ -22,7 +22,7 @@ requirements:
     - pyqtads
     - ophyd
     - qtpy
-    - typhon
+    - typhon >=0.4
 
 test:
   imports:

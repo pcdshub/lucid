@@ -1,46 +1,45 @@
 dist: xenial
 language: python
+sudo: false
 
 services:
   - xvfb
 
 addons:
-    apt:
-      packages:
-        - herbstluftwm
-        - libxkbcommon-x11-0
+  apt:
+    packages:
+      - herbstluftwm
+      - libxkbcommon-x11-0
 
 env:
-   global:
-      - OFFICIAL_REPO="pcdshub/lucid"
-matrix: 
+  global:
+    - OFFICIAL_REPO="slaclab/lucid"
+
+matrix:
   include:
-     - python: 3.6
-       env: BUILD_DOCS=1
-     - python: 3.7
+    - python: 3.6
+#      env: BUILD_DOCS=0
+    - python: 3.7
 
 install:
-  # We do this conditionally because it saves us some downloading if the
-  # version is the same.
-  - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
+  # Install, configure conda
+  - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
   - bash miniconda.sh -b -p $HOME/miniconda
   - export PATH="$HOME/miniconda/bin:$PATH"
-  - hash -r
   - conda config --set always_yes yes --set changeps1 no
   - conda install conda-build anaconda-client
   - conda update -q conda conda-build
   - conda config --add channels pcds-tag
   - conda config --append channels conda-forge
-  # Useful for debugging any issues with conda
+  # Useful for debugging
   - conda info -a
-  # Test conda build
-  #- conda build -q conda-recipe --python $TRAVIS_PYTHON_VERSION --output-folder bld-dir
-  #- conda config --add channels "file://`pwd`/bld-dir"
-  #Grab all dependencies
-  - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION pip pyqt=5 --file dev-requirements.txt
-  #Launch Conda environment
-  - source activate test-environment
-  - python setup.py install
+  - conda build -q conda-recipe --python $TRAVIS_PYTHON_VERSION --output-folder bld-dir
+  - conda config --add channels "file://`pwd`/bld-dir"
+  # Manage conda environment
+  - conda create -n lucid-env python=$TRAVIS_PYTHON_VERSION lucid pip pyqt --file dev-requirements.txt
+  - source activate lucid-env
+  # Useful for debugging
+  - conda list
 
 before_script:
   # Run windows manager
@@ -48,10 +47,26 @@ before_script:
   - sleep 1
 
 script:
+  - flake8 lucid
   - coverage run run_tests.py
   - coverage report -m
-  - flake8 lucid 
   - set -e
-
+  - |
+    if [[ $TRAVIS_REPO_SLUG == $OFFICIAL_REPO && $BUILD_DOCS ]]; then
+      pushd docs
+      make html
+      popd
+      doctr deploy . --built-docs docs/_build/html --deploy-branch-name gh-pages --command "touch .nojekyll; git add .nojekyll"
+    fi
 after_success:
   - codecov
+  - |
+    if [[ $TRAVIS_PULL_REQUEST == false && $TRAVIS_REPO_SLUG == $OFFICIAL_REPO && $TRAVIS_BRANCH == $TRAVIS_TAG  && $TRAVIS_TAG != '' ]]; then
+      export ANACONDA_API_TOKEN=$CONDA_UPLOAD_TOKEN_TAG
+      anaconda upload bld-dir/linux-64/*.tar.bz2
+    fi
+  - |
+    if [[ $TRAVIS_PULL_REQUEST == false && $TRAVIS_REPO_SLUG == $OFFICIAL_REPO && $TRAVIS_BRANCH == 'master' ]]; then
+      export ANACONDA_API_TOKEN=$CONDA_UPLOAD_TOKEN_DEV
+      anaconda upload bld-dir/linux-64/*.tar.bz2
+    fi
