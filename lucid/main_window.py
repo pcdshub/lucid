@@ -1,4 +1,5 @@
 import functools
+import pathlib
 import logging
 import operator
 
@@ -11,6 +12,8 @@ from PyQtAds import QtAds
 from .widgets import QDockWidget
 
 logger = logging.getLogger(__name__)
+
+MODULE_PATH = pathlib.Path(__file__).parent
 
 
 class LucidMainWindow(QMainWindow):
@@ -39,9 +42,7 @@ class LucidMainWindow(QMainWindow):
         # Use the dockmanager for the main window - it will set itself as the
         # central widget
         self.dock_manager = QtAds.CDockManager(self)
-        def test():
-            print('destroyed?')
-        self.dock_manager.destroyed.connect(test)
+        self.dock_manager.setStyleSheet(open(MODULE_PATH / 'dock_style.css', 'rt').read())
 
     @classmethod
     def find_window(cls, widget):
@@ -139,7 +140,7 @@ class LucidMainWindow(QMainWindow):
                     title = widget.__class__.__name__ + hex(id(widget))[:5]
                 dock = QtAds.CDockWidget(title)
                 dock.setWidget(widget)
-                window.dock_manager.addDockWidgetTab(
+                tab = window.dock_manager.addDockWidgetTab(
                     QtAds.RightDockWidgetArea, dock)
 
                 # Ensure the main dock is actually visible
