@@ -144,7 +144,8 @@ class LucidMainWindow(QMainWindow):
                 widget.raise_()
 
                 if active_slot:
-                    # TODO: active_slot(False) is not called
+                    # Connect dock closed callback to active_slot False
+                    dock.closed.connect(functools.partial(active_slot, False))
                     active_slot(True)
 
             return widget
