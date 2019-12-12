@@ -19,10 +19,10 @@ class BaseDeviceButton(QPushButton):
         self._device_displays = {}
         self._suite = None
         # Click button action
-        self.clicked.connect(LucidMainWindow.in_dock(
+        self.clicked.connect(partial(LucidMainWindow.in_dock(
                                         self.show_all,
                                         title=self.title,
-                                        active_slot=self._devices_shown))
+                                        active_slot=self._devices_shown), title=self.title))
         # Setup Menu
         self.setContextMenuPolicy(Qt.DefaultContextMenu)
         self.device_menu = QMenu()

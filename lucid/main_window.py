@@ -24,11 +24,21 @@ class LucidMainWindow(QMainWindow):
     ----------
     parent: optional
     """
+    __instance = None
 
     def __init__(self, parent=None):
+        if self.__initialized:
+            return
         self.dock_manager = None
         super().__init__(parent=parent)
         self.setup_ui()
+        self.__initialized = True
+
+    def __new__(cls, *args, **kwargs):
+        if cls.__instance is None:
+            cls.__instance = QMainWindow.__new__(LucidMainWindow)
+            cls.__instance.__initialized = False
+        return cls.__instance
 
     def setup_ui(self):
         # Toolbar
@@ -114,39 +124,35 @@ class LucidMainWindow(QMainWindow):
 
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
+            nonlocal title
+
             # Retrieve widget
             widget = func()
-            try:
-                window = cls.find_window(widget)
-            except AttributeError:
-                logger.error("Method %r was expected to return a QObject. "
-                             "Instead, %r was received.",
-                             func.__name__, widget)
-            except EnvironmentError:
-                logger.error("No LucidMainWindow found! Unable to "
-                             "embed %r in dock", widget)
-                # Escape hatch to display the widget that was created even
-                # if a LucidMainWindow has not been created yet. Launch as a
-                # QDialog
-                widget.setWindowFlags(Qt.Dialog)
-                widget.show()
-            else:
-                # Add the widget to the dock
+            window = LucidMainWindow()
+            title = kwargs.get('title', None)
+            # Add the widget to the dock
+            if not title:
                 title = widget.objectName()
-                if not title:
-                    title = widget.__class__.__name__ + hex(id(widget))[:5]
-                dock = QtAds.CDockWidget(title)
-                dock.setWidget(widget)
-                window.dock_manager.addDockWidgetTab(
-                    QtAds.RightDockWidgetArea, dock)
+                title = widget.__class__.__name__ + hex(id(widget))[:5]
 
-                # Ensure the main dock is actually visible
-                widget.raise_()
+            dock = window.dock_manager.findDockWidget(title)
+            if dock:
+                window.dock_manager.dockArea(0).setCurrentDockWidget(dock)
+                return widget
 
-                if active_slot:
-                    # Connect dock closed callback to active_slot False
-                    dock.closed.connect(functools.partial(active_slot, False))
-                    active_slot(True)
+            dock = QtAds.CDockWidget(title)
+            dock.setWidget(widget)
+            widget.setParent(dock)
+            window.dock_manager.addDockWidgetTab(
+                QtAds.RightDockWidgetArea, dock)
+
+            # Ensure the main dock is actually visible
+            widget.raise_()
+
+            if active_slot:
+                # Connect dock closed callback to active_slot False
+                dock.closed.connect(functools.partial(active_slot, False))
+                active_slot(True)
 
             return widget
 
