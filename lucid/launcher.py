@@ -1,4 +1,8 @@
+import pathlib
+
 from PyQtAds import QtAds
+
+MODULE_PATH = pathlib.Path(__file__).parent
 
 
 def get_happi_entry_value(entry, key, search_extraneous=True):
@@ -75,7 +79,7 @@ def main():
     app = QApplication([])
 
     window = LucidMainWindow()
-    typhon.use_stylesheet(dark=True)
+    typhon.use_stylesheet(dark=False)
     grid = IndicatorGrid()
 
     if lucid_args.beamline != 'DEMO':
@@ -118,7 +122,7 @@ def main():
     dock_widget.setFeature(dock_widget.DockWidgetFloatable, False)
     dock_widget.setFeature(dock_widget.DockWidgetMovable, False)
 
-    window.dock_manager.addDockWidget(QtAds.LeftDockWidgetArea, dock_widget)
+    area = window.dock_manager.addDockWidget(QtAds.LeftDockWidgetArea, dock_widget)
     window.show()
 
     app.exec_()
