@@ -17,11 +17,17 @@ env:
 
 matrix:
   include:
+    - name: flake8 linting
+      python: 3.6
+      env: LINT_PYTHON=lucid
     - python: 3.6
 #      env: BUILD_DOCS=0
     - python: 3.7
 
 install:
+  - git clone --depth 1 git://github.com/pcdshub/pcds-ci-helpers.git
+  - source pcds-ci-helpers/travis/init.sh
+ 
   # Install, configure conda
   - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
   - bash miniconda.sh -b -p $HOME/miniconda
