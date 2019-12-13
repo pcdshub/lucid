@@ -1,16 +1,15 @@
 import functools
 import logging
-import operator
+import pathlib
 
-from qtpy.QtWidgets import (QMainWindow, QStackedWidget, QToolBar, QStyle,
-                            QLineEdit, QSizePolicy, QWidget, QApplication)
-from qtpy.QtGui import QCursor
-from qtpy.QtCore import Qt, Signal, QPoint
 from PyQtAds import QtAds
-
-from .widgets import QDockWidget
+from qtpy.QtCore import Qt
+from qtpy.QtWidgets import (QMainWindow, QToolBar, QStyle,
+                            QLineEdit, QSizePolicy, QWidget)
 
 logger = logging.getLogger(__name__)
+
+MODULE_PATH = pathlib.Path(__file__).parent
 
 
 class LucidMainWindow(QMainWindow):
@@ -21,53 +20,26 @@ class LucidMainWindow(QMainWindow):
     toolbar, a variety of central views for devices and scripts required for
     operation, and also the docking system for launching detailed windows.
 
-    Attributes
-    ----------
-    allowed_docks: tuple
-        ``Qt.DockWidgetAreas`` that accept QWidgets
-
     Parameters
     ----------
     parent: optional
     """
-    allowed_docks = (Qt.RightDockWidgetArea, )
 
     def __init__(self, parent=None):
-        self.main_dock = None
         self.dock_manager = None
         super().__init__(parent=parent)
         self.setup_ui()
 
     def setup_ui(self):
-        # This means when multiple docks are pulled into an area, we create a
-        # tab system. Splitting docks is still possible through API
-        # Adjust corners
-        self.setCorner(Qt.TopRightCorner, Qt.RightDockWidgetArea)
-        self.setCorner(Qt.BottomRightCorner, Qt.RightDockWidgetArea)
-        # Central Widget
-        self.central_widget = QStackedWidget()
-        self.setCentralWidget(self.central_widget)
         # Toolbar
         self.toolbar = LucidToolBar()
         self.addToolBar(Qt.TopToolBarArea, LucidToolBar())
 
-    def setup_dock(self):
-        """Setup the PyQtAds system inside a standard Qt DockWidget"""
-        # If we've already loaded the docking system just return the active one
-        if self.main_dock:
-            return self.main_dock
-        # Docked DockWidget
-        self.main_dock = QDockWidget()
-        # Force the dockwidget to only be allowed in areas determined by the
-        # LucidMainWindow.allowed_docks
-        allowed_flags = functools.reduce(operator.or_, self.allowed_docks)
-        self.main_dock.setAllowedAreas(allowed_flags)
-        # Place the dockmanager inside the dock
-        self.dock_manager = QtAds.CDockManager(self.main_dock)
-        self.main_dock.setWidget(self.dock_manager)
-        # Add to the first allowed location
-        self.addDockWidget(self.allowed_docks[0], self.main_dock)
-        return self.main_dock
+        # Use the dockmanager for the main window - it will set itself as the
+        # central widget
+        self.dock_manager = QtAds.CDockManager(self)
+        self.dock_manager.setStyleSheet(
+            open(MODULE_PATH / 'dock_style.css', 'rt').read())
 
     @classmethod
     def find_window(cls, widget):
@@ -159,8 +131,6 @@ class LucidMainWindow(QMainWindow):
                 widget.setWindowFlags(Qt.Dialog)
                 widget.show()
             else:
-                # Create the dock if not already exists
-                window.setup_dock()
                 # Add the widget to the dock
                 title = widget.objectName()
                 if not title:
@@ -168,10 +138,9 @@ class LucidMainWindow(QMainWindow):
                 dock = QtAds.CDockWidget(title)
                 dock.setWidget(widget)
                 window.dock_manager.addDockWidgetTab(
-                    QtAds.CenterDockWidgetArea, dock)
+                    QtAds.RightDockWidgetArea, dock)
 
                 # Ensure the main dock is actually visible
-                window.main_dock.setVisible(True)
                 widget.raise_()
 
                 if active_slot:
@@ -183,34 +152,9 @@ class LucidMainWindow(QMainWindow):
         return wrapper
 
 
-class LucidDockWidget(QDockWidget):
-    """
-    Subclass QDockWidget to signal widget state
-
-    ``QDockWidget.visibilityChanged`` is not sufficient as this returns the
-    same value when the ``QDockWidget`` is closed as when it is deselected via
-    the tab bar.
-
-    Attributes
-    ----------
-    stateChanged : Signal
-        This will report ``True`` if the widget is made visible, and ``False``
-        if the widget is closed either when floating or from the
-        ``QDockWidget`` itself.
-    """
-    stateChanged = Signal(bool)
-
-    def showEvent(self, event):
-        self.stateChanged.emit(True)
-        return super().showEvent(event)
-
-    def closeEvent(self, event):
-        self.stateChanged.emit(False)
-        return super().closeEvent(event)
-
-
 class LucidToolBar(QToolBar):
     """LucidToolBar for LucidMainWindow"""
+
     def __init__(self, parent=None):
         super().__init__(parent=parent)
         # Toolbar Configuration

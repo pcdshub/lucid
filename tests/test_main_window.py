@@ -32,13 +32,7 @@ def test_main_window_find_window_with_orphan(qtbot):
 
 
 def test_main_window_setup_dock(main_window):
-    dock = main_window.setup_dock()
     assert main_window.dock_manager is not None
-
-
-def test_main_window_repeat_setup_dock(main_window):
-    dock = main_window.setup_dock()
-    assert id(dock) == id(main_window.setup_dock())
 
 
 def test_main_window_in_dock(main_window, qtbot):
