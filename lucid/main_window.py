@@ -137,7 +137,7 @@ class LucidMainWindow(QMainWindow):
 
             dock = window.dock_manager.findDockWidget(title)
             if dock:
-                window.dock_manager.dockArea(0).setCurrentDockWidget(dock)
+                dock.toggleView(True)
                 return widget
 
             dock = QtAds.CDockWidget(title)
