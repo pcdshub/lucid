@@ -129,7 +129,7 @@ class LucidMainWindow(QMainWindow):
             # Retrieve widget
             widget = func()
             window = LucidMainWindow()
-            title = kwargs.get('title', None)
+
             # Add the widget to the dock
             if not title:
                 title = widget.objectName()
@@ -148,6 +148,7 @@ class LucidMainWindow(QMainWindow):
 
             # Ensure the main dock is actually visible
             widget.raise_()
+            widget.setVisible(True)
 
             if active_slot:
                 # Connect dock closed callback to active_slot False

@@ -8,9 +8,8 @@ from lucid import LucidMainWindow
 
 
 @pytest.fixture(scope='function')
-def main_window(qtbot):
+def main_window():
     main_window = LucidMainWindow()
-    qtbot.addWidget(main_window)
     return main_window
 
 
@@ -42,46 +41,32 @@ def test_main_window_in_dock(main_window, qtbot):
     @LucidMainWindow.in_dock(area=Qt.RightDockWidgetArea,
                              title=title)
     def create_widget():
-        widget = QWidget(parent=main_window)
+        widget = QWidget()
         widget.setObjectName(widget_name)
-        qtbot.addWidget(widget)
         return widget
 
     widget = create_widget()
 
     assert main_window.dock_manager is not None
-    dock = main_window.dock_manager.findDockWidget(widget_name)
+    dock = main_window.dock_manager.findDockWidget(title)
     assert dock is not None
     assert dock.widget() == widget
-
-
-def test_main_window_in_dock_with_orphan(qtbot):
-
-    @LucidMainWindow.in_dock
-    def create_widget():
-        widget = QWidget()
-        qtbot.addWidget(widget)
-        return widget
-
-    widget = create_widget()
-    assert widget.isVisible()
 
 
 def test_main_window_in_dock_active_slot(main_window, qtbot):
     with qtbot.wait_exposed(main_window):
         main_window.show()
     # Function to create show QWidget
-    widget = QWidget(parent=main_window)
-    qtbot.addWidget(widget)
+    widget = QWidget()
     cb = Mock()
     create_widget = LucidMainWindow.in_dock(func=lambda: widget,
                                             active_slot=cb)
     create_widget()
     assert cb.called
     cb.assert_called_with(True)
-    # with qtbot.waitSignal(widget.parent().stateChanged):
-    #     widget.parent().close()
-    # cb.assert_called_with(False)
+    with qtbot.waitSignal(widget.parent().closed):
+        widget.parent().toggleView(False)
+    cb.assert_called_with(False)
 
 
 @pytest.mark.parametrize('start_floating,close,finish_floating',
