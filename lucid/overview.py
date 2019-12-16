@@ -4,14 +4,16 @@ from functools import partial
 from qtpy.QtCore import QEvent, Qt, Property, QSize
 from qtpy.QtGui import QContextMenuEvent, QHoverEvent
 from qtpy.QtWidgets import (QPushButton, QMenu, QGridLayout, QWidget)
+from typhon.utils import reload_widget_stylesheet
+
 from lucid import LucidMainWindow
 from lucid.utils import (SnakeLayout, indicator_for_device, display_for_device,
                          suite_for_devices)
-from typhon.utils import reload_widget_stylesheet
 
 
 class BaseDeviceButton(QPushButton):
     """Base class for QPushButton to show devices"""
+
     def __init__(self, title, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.title = title
@@ -20,9 +22,9 @@ class BaseDeviceButton(QPushButton):
         self._suite = None
         # Click button action
         self.clicked.connect(LucidMainWindow.in_dock(
-                                        self.show_all,
-                                        title=self.title,
-                                        active_slot=self._devices_shown))
+            self.show_all,
+            title=self.title,
+            active_slot=self._devices_shown))
         # Setup Menu
         self.setContextMenuPolicy(Qt.DefaultContextMenu)
         self.device_menu = QMenu()
@@ -65,8 +67,8 @@ class BaseDeviceButton(QPushButton):
             if device.name not in menu_devices:
                 # Add to device menu
                 show_device = LucidMainWindow.in_dock(
-                                        partial(self.show_device, device),
-                                        title=device.name)
+                    partial(self.show_device, device),
+                    title=device.name)
                 self.device_menu.addAction(device.name, show_device)
 
 
@@ -83,7 +85,7 @@ class IndicatorCell(BaseDeviceButton):
         self.setStyleSheet('QPushButton:!hover {border: None}')
         self.setLayout(SnakeLayout(self.max_columns))
         self.layout().setSpacing(self.spacing)
-        self.layout().setContentsMargins(*4*[self.margin])
+        self.layout().setContentsMargins(*4 * [self.margin])
         self._selecting_widgets = list()
         self.devices = list()
 
@@ -127,7 +129,7 @@ class IndicatorCell(BaseDeviceButton):
     def sizeHint(self):
         size_per_icon = self.icon_size + self.spacing
         return QSize(self.max_columns * size_per_icon
-                     + self.spacing + 2*self.margin,
+                     + self.spacing + 2 * self.margin,
                      70)
 
     def _devices_shown(self, shown, selector=None):
@@ -145,6 +147,7 @@ class IndicatorCell(BaseDeviceButton):
 
 class IndicatorGroup(BaseDeviceButton):
     """QPushButton to select an entire row or column of devices"""
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.setText(str(self.title))
@@ -175,6 +178,7 @@ class IndicatorGroup(BaseDeviceButton):
 
 class IndicatorGrid(QWidget):
     """GridLayout of all Indicators"""
+
     def __init__(self, parent=None):
         super().__init__(parent=parent)
         self.setLayout(QGridLayout())
