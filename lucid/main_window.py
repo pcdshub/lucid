@@ -132,8 +132,9 @@ class LucidMainWindow(QMainWindow):
 
             # Add the widget to the dock
             if not title:
-                title = widget.objectName()
-                title = widget.__class__.__name__ + hex(id(widget))[:5]
+                title = (widget.objectName() or
+                         (widget.__class__.__name__ + hex(id(widget))[:5])
+                         )
 
             dock = window.dock_manager.findDockWidget(title)
             if dock:
