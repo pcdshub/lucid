@@ -132,14 +132,15 @@ class LucidMainWindow(QMainWindow):
 
             # Add the widget to the dock
             if not title:
-                title = widget.objectName()
-                title = widget.__class__.__name__ + hex(id(widget))[:5]
+                title = (widget.objectName() or
+                         (widget.__class__.__name__ + hex(id(widget))[:5])
+                         )
 
             dock = window.dock_manager.findDockWidget(title)
             if dock:
-                active_slot(True)
-                window.dock_manager.addDockWidgetTab(
-                    QtAds.RightDockWidgetArea, dock)
+                if dock.isFloating():
+                    window.dock_manager.addDockWidgetTab(
+                        QtAds.RightDockWidgetArea, dock)
                 dock.toggleView(True)
                 return widget
 
@@ -154,8 +155,7 @@ class LucidMainWindow(QMainWindow):
             widget.setVisible(True)
 
             if active_slot:
-                # Connect dock closed callback to active_slot False
-                dock.closed.connect(functools.partial(active_slot, False))
+                dock.viewToggled.connect(active_slot)
                 active_slot(True)
 
             return widget
