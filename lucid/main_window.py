@@ -155,8 +155,7 @@ class LucidMainWindow(QMainWindow):
             widget.setVisible(True)
 
             if active_slot:
-                # Connect dock closed callback to active_slot False
-                dock.closed.connect(functools.partial(active_slot, False))
+                dock.viewToggled.connect(active_slot)
                 active_slot(True)
 
             return widget
