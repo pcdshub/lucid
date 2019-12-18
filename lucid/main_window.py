@@ -2,6 +2,8 @@ import functools
 import logging
 import pathlib
 
+import lucid
+
 from PyQtAds import QtAds
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import (QMainWindow, QToolBar, QStyle,
@@ -183,6 +185,28 @@ class LucidToolBar(QToolBar):
                              QSizePolicy.MinimumExpanding)
         self.addWidget(spacer)
         # Search
-        edit = QLineEdit()
-        edit.setPlaceholderText("Search ...")
-        self.addWidget(edit)
+        self.search_edit = QLineEdit()
+        self.search_edit.setPlaceholderText("Search...")
+        self.search_edit.textChanged.connect(self.highlight_matches)
+        self.addWidget(self.search_edit)
+
+    @property
+    def _main_window(self):
+        return self.parent()
+
+    def highlight_matches(self, text):
+        text = text.strip()
+
+        if not text:
+            self.clear_highlight()
+            return
+
+        main = self._main_window
+        for grid in main.findChildren(lucid.overview.IndicatorGrid):
+            for group_name, group in grid.groups.items():
+                for device, indicator in group.device_to_indicator.items():
+                    indicator.highlighted = text.lower() in device.name.lower()
+                    print(indicator, device.name, indicator.highlighted)
+
+    def clear_highlight(self):
+        ...

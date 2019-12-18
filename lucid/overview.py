@@ -6,9 +6,9 @@ from qtpy.QtGui import QContextMenuEvent, QHoverEvent
 from qtpy.QtWidgets import (QPushButton, QMenu, QGridLayout, QWidget)
 from typhon.utils import reload_widget_stylesheet
 
-from lucid import LucidMainWindow
-from lucid.utils import (SnakeLayout, indicator_for_device, display_for_device,
-                         suite_for_devices)
+import lucid
+from .utils import (SnakeLayout, indicator_for_device, display_for_device,
+                    suite_for_devices)
 
 
 class BaseDeviceButton(QPushButton):
@@ -21,7 +21,7 @@ class BaseDeviceButton(QPushButton):
         self._device_displays = {}
         self._suite = None
         # Click button action
-        self.clicked.connect(LucidMainWindow.in_dock(
+        self.clicked.connect(lucid.LucidMainWindow.in_dock(
             self.show_all,
             title=self.title,
             active_slot=self._devices_shown))
@@ -66,7 +66,7 @@ class BaseDeviceButton(QPushButton):
         for device in self.devices:
             if device.name not in menu_devices:
                 # Add to device menu
-                show_device = LucidMainWindow.in_dock(
+                show_device = lucid.LucidMainWindow.in_dock(
                     partial(self.show_device, device),
                     title=device.name)
                 self.device_menu.addAction(device.name, show_device)
@@ -87,12 +87,25 @@ class IndicatorCell(BaseDeviceButton):
         self.layout().setSpacing(self.spacing)
         self.layout().setContentsMargins(*4 * [self.margin])
         self._selecting_widgets = list()
+        self._highlighted = False
         self.devices = list()
 
     @Property(bool)
     def selected(self):
         """Whether the devices in this cell have been selected"""
-        return self._selecting_widgets != []
+        return len(self._selecting_widgets)
+
+    @Property(bool)
+    def highlighted(self):
+        """Whether the devices in this cell have been highlighted"""
+        return self._highlighted
+
+    @highlighted.setter
+    def highlighted(self, value):
+        old = self._highlighted
+        self._highlighted = bool(value)
+        if old != self._highlighted:
+            reload_widget_stylesheet(self)
 
     def add_indicator(self, widget):
         """Add an indicator to the Panel"""
@@ -162,6 +175,14 @@ class IndicatorGroup(BaseDeviceButton):
         """All devices contained in the ``IndicatorGroup``"""
         return [device for cell in self.cells for device in cell.devices]
 
+    @property
+    def device_to_indicator(self):
+        """Dictionary of Device to IndicatorCell"""
+        return {device: cell
+                for cell in self.cells
+                for device in cell.devices
+                }
+
     def eventFilter(self, obj, event):
         """Share QHoverEvents with all cells in the group"""
         if isinstance(event, QHoverEvent):
@@ -186,8 +207,15 @@ class IndicatorGrid(QWidget):
         self.layout().setSizeConstraint(QGridLayout.SetFixedSize)
         self._groups = dict()
         self.setStyleSheet(
-            'QWidget[selected="true"] '
-            '{background-color: rgba(20, 140, 210, 150)}')
+            '''\
+QWidget[selected="true"] {background-color: rgba(20, 140, 210, 150);}
+QWidget[highlighted="true"][selected="false"] {background: qlineargradient( x1:0 y1:0, x2:1 y2:0, stop:0 cyan, stop:1 blue);}
+            ''')
+
+    @property
+    def groups(self):
+        'A dictionary of name to IndicatorGroup'
+        return dict(self._groups)
 
     def add_devices(self, devices, system=None, stand=None):
         # Create cell
