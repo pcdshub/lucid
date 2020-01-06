@@ -7,7 +7,7 @@ import lucid
 import fuzzywuzzy.fuzz
 
 from PyQtAds import QtAds
-from qtpy.QtCore import Qt
+from qtpy.QtCore import Qt, Signal
 from qtpy.QtWidgets import (QMainWindow, QToolBar, QStyle,
                             QLineEdit, QSizePolicy, QWidget)
 
@@ -167,6 +167,19 @@ class LucidMainWindow(QMainWindow):
         return wrapper
 
 
+class SearchLineEdit(QLineEdit):
+    cancel_request = Signal()
+
+    def __init__(self):
+        super().__init__()
+
+        self.setPlaceholderText("Search...")
+        # self.cancelRequest.connect(self.clear_highlight)
+
+    # def keyPressEvent(self, ev):
+
+
+
 class LucidToolBar(QToolBar):
     """LucidToolBar for LucidMainWindow"""
 
@@ -187,8 +200,7 @@ class LucidToolBar(QToolBar):
                              QSizePolicy.MinimumExpanding)
         self.addWidget(spacer)
         # Search
-        self.search_edit = QLineEdit()
-        self.search_edit.setPlaceholderText("Search...")
+        self.search_edit = SearchLineEdit()
         self.search_edit.textChanged.connect(self.highlight_matches)
         self.addWidget(self.search_edit)
 
@@ -211,8 +223,9 @@ class LucidToolBar(QToolBar):
             for group_name, group in grid.groups.items():
                 for cell in group.cells:
                     old_ratio = grid.overlay.cell_to_percentage.get(cell, 0.0)
-                    new_ratio = max(fuzzywuzzy.fuzz.ratio(device.name, text) / 100.0
-                                    for device in cell.devices)
+                    new_ratio = max(fuzzywuzzy.fuzz.ratio(name.lower(),
+                                                          text.lower()) / 100.0
+                                    for name in cell.matchable_names)
                     if old_ratio != new_ratio:
                         grid.overlay.cell_to_percentage[cell] = new_ratio
                         updated = True

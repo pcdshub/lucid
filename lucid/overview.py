@@ -91,6 +91,11 @@ class IndicatorCell(BaseDeviceButton):
         self._selecting_widgets = list()
         self.devices = list()
 
+    @property
+    def matchable_names(self):
+        """All names used for text searching"""
+        return [self.title] + [device.name for device in self.devices]
+
     @Property(bool)
     def selected(self):
         """Whether the devices in this cell have been selected"""
@@ -274,7 +279,10 @@ class IndicatorOverlay(QWidget):
                     cx = center_pos.x() - radius
                     cy = center_pos.y() - radius
                     cell_rect = QtCore.QRectF(cx, cy, diameter, diameter)
-                    yield cell, cell_rect, radius
+                    percent = self.cell_to_percentage.get(cell, 0.0)
+                    if percent > draw_threshold:
+                        percent = (percent - draw_threshold) / (1 - draw_threshold)
+                        yield cell, cell_rect, radius, percent
 
         painter.begin(buffer)
         painter.setRenderHint(painter.Antialiasing)
@@ -282,15 +290,24 @@ class IndicatorOverlay(QWidget):
         painter.setBackgroundMode(Qt.TransparentMode)
         painter.fillRect(buffer.rect(), QtGui.QColor(0, 0, 0, 127))
 
-        pen_size = 20
-        for cell, cell_rect, radius in cell_to_radius():
+        pen_size = 40
+        max_percent = max(self.cell_to_percentage.values())
+        draw_threshold = max_percent * 0.8
+
+        for cell, cell_rect, radius, percent in cell_to_radius():
             gradient = QtGui.QRadialGradient(cell_rect.center(), radius)
-            percent = self.cell_to_percentage.get(cell, 0.0)
-            gradient.setColorAt(percent, QtGui.QColor.fromRgbF(1, 1, 1, percent))
+            if percent >= 0.95:
+                color = (0, 1, 0, 1.0)
+            else:
+                color = (1, 1, 1, percent)
+
+            if percent > 0.5:
+                print(cell.title, percent)
+            gradient.setColorAt(0.7, QtGui.QColor.fromRgbF(*color))
             gradient.setColorAt(1, QtGui.QColor.fromRgbF(0, 0, 0, 0))
 
             brush = QtGui.QBrush(gradient)
-            pen = QtGui.QPen(brush, pen_size + 5)
+            pen = QtGui.QPen(brush, pen_size)
             painter.setPen(pen)
             painter.drawEllipse(cell_rect)
 
@@ -298,8 +315,9 @@ class IndicatorOverlay(QWidget):
         painter.setPen(Qt.NoPen)
         painter.setBrush(Qt.transparent)
 
-        for cell, cell_rect, radius in cell_to_radius():
-            margin = pen_size / 2
+        for cell, cell_rect, radius, percent in cell_to_radius():
+            margin = max(((1.0 - percent) * (pen_size / 2),
+                          5))
             inner_ellipse = cell_rect.marginsRemoved(
                 QtCore.QMarginsF(margin, margin, margin, margin))
             painter.drawEllipse(inner_ellipse)
