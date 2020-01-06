@@ -1,5 +1,8 @@
 import pathlib
 
+import lucid
+
+from qtpy import QtWidgets
 from PyQtAds import QtAds
 
 MODULE_PATH = pathlib.Path(__file__).parent
@@ -68,7 +71,6 @@ def launch(beamline, *, toolbar=None, row_group_key="location_group",
     import happi
     import typhon
     from .main_window import LucidMainWindow
-    from .overview import IndicatorGrid
 
     logger = logging.getLogger('')
     handler = logging.StreamHandler()
@@ -83,7 +85,7 @@ def launch(beamline, *, toolbar=None, row_group_key="location_group",
 
     window = LucidMainWindow()
     typhon.use_stylesheet(dark=False)
-    grid = IndicatorGrid()
+    grid = lucid.overview.IndicatorGridWithOverlay()
 
     if beamline != 'DEMO':
         # Fill with Data from Happi
@@ -117,7 +119,7 @@ def launch(beamline, *, toolbar=None, row_group_key="location_group",
                 grid.add_devices(devices, stand=stand, system=system)
 
     dock_widget = QtAds.CDockWidget('Grid')
-    dock_widget.setWidget(grid)
+    dock_widget.setWidget(grid.frame)
 
     dock_widget.setToggleViewActionMode(QtAds.CDockWidget.ActionModeShow)
 
@@ -126,6 +128,7 @@ def launch(beamline, *, toolbar=None, row_group_key="location_group",
     dock_widget.setFeature(dock_widget.DockWidgetMovable, False)
 
     window.dock_manager.addDockWidget(QtAds.LeftDockWidgetArea, dock_widget)
+    window.setMinimumSize(400, 400)
     window.show()
 
     app.exec_()

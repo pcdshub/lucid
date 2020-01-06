@@ -1,6 +1,8 @@
 """Overview of the Experimental Area"""
+import weakref
 from functools import partial
 
+from qtpy import QtWidgets, QtGui, QtCore
 from qtpy.QtCore import QEvent, Qt, Property, QSize
 from qtpy.QtGui import QContextMenuEvent, QHoverEvent
 from qtpy.QtWidgets import (QPushButton, QMenu, QGridLayout, QWidget)
@@ -87,25 +89,12 @@ class IndicatorCell(BaseDeviceButton):
         self.layout().setSpacing(self.spacing)
         self.layout().setContentsMargins(*4 * [self.margin])
         self._selecting_widgets = list()
-        self._highlighted = False
         self.devices = list()
 
     @Property(bool)
     def selected(self):
         """Whether the devices in this cell have been selected"""
         return len(self._selecting_widgets)
-
-    @Property(bool)
-    def highlighted(self):
-        """Whether the devices in this cell have been highlighted"""
-        return self._highlighted
-
-    @highlighted.setter
-    def highlighted(self, value):
-        old = self._highlighted
-        self._highlighted = bool(value)
-        if old != self._highlighted:
-            reload_widget_stylesheet(self)
 
     def add_indicator(self, widget):
         """Add an indicator to the Panel"""
@@ -209,7 +198,6 @@ class IndicatorGrid(QWidget):
         self.setStyleSheet(
             '''\
 QWidget[selected="true"] {background-color: rgba(20, 140, 210, 150);}
-QWidget[highlighted="true"][selected="false"] {background: qlineargradient( x1:0 y1:0, x2:1 y2:0, stop:0 cyan, stop:1 blue);}
             ''')
 
     @property
@@ -247,3 +235,89 @@ QWidget[highlighted="true"][selected="false"] {background: qlineargradient( x1:0
         else:
             (row, column) = (self.layout().rowCount(), 0)
         self.layout().addWidget(group, row, column, Qt.AlignVCenter)
+
+
+class IndicatorOverlay(QWidget):
+    def __init__(self, parent, grid):
+        super().__init__(parent)
+
+        self.grid = grid
+        self.setAttribute(Qt.WA_NoSystemBackground, True)
+        self.setAttribute(Qt.WA_TransparentForMouseEvents, True)
+        self.setAttribute(Qt.WA_TranslucentBackground, True)
+        self.setWindowFlags(self.windowFlags() | Qt.WindowStaysOnTopHint)
+
+        self.cell_to_percentage = weakref.WeakKeyDictionary()
+
+    def paintEvent(self, ev):
+        self.resize(self.grid.size())
+
+        dpr = self.grid.devicePixelRatioF()
+        buffer = QtGui.QPixmap(self.grid.width() * dpr,
+                               self.grid.height() * dpr)
+        buffer.setDevicePixelRatio(dpr)
+
+        buffer.fill(Qt.transparent)
+
+        painter = QtGui.QPainter()
+
+        def cell_to_radius():
+            for name, group in self.grid._groups.items():
+                for cell in group.cells:
+                    diameter = max((cell.width(), cell.height()))
+                    radius = diameter / 2
+
+                    cell_rect = cell.rect()
+                    cell_rect.moveTopLeft(cell.pos())
+                    center_pos = cell_rect.center()
+
+                    cx = center_pos.x() - radius
+                    cy = center_pos.y() - radius
+                    cell_rect = QtCore.QRectF(cx, cy, diameter, diameter)
+                    yield cell, cell_rect, radius
+
+        painter.begin(buffer)
+        painter.setRenderHint(painter.Antialiasing)
+
+        painter.setBackgroundMode(Qt.TransparentMode)
+        painter.fillRect(buffer.rect(), QtGui.QColor(0, 0, 0, 127))
+
+        pen_size = 20
+        for cell, cell_rect, radius in cell_to_radius():
+            gradient = QtGui.QRadialGradient(cell_rect.center(), radius)
+            percent = self.cell_to_percentage.get(cell, 0.0)
+            gradient.setColorAt(percent, QtGui.QColor.fromRgbF(1, 1, 1, percent))
+            gradient.setColorAt(1, QtGui.QColor.fromRgbF(0, 0, 0, 0))
+
+            brush = QtGui.QBrush(gradient)
+            pen = QtGui.QPen(brush, pen_size + 5)
+            painter.setPen(pen)
+            painter.drawEllipse(cell_rect)
+
+        painter.setCompositionMode(painter.CompositionMode_Clear)
+        painter.setPen(Qt.NoPen)
+        painter.setBrush(Qt.transparent)
+
+        for cell, cell_rect, radius in cell_to_radius():
+            margin = pen_size / 2
+            inner_ellipse = cell_rect.marginsRemoved(
+                QtCore.QMarginsF(margin, margin, margin, margin))
+            painter.drawEllipse(inner_ellipse)
+
+        painter.end()
+
+        painter.begin(self)
+        painter.setCompositionMode(painter.CompositionMode_SourceOver)
+        painter.drawPixmap(self.rect(), buffer, buffer.rect())
+        painter.end()
+
+
+class IndicatorGridWithOverlay(IndicatorGrid):
+    def __init__(self, parent=None):
+        super().__init__(parent=None)
+        self.frame = QtWidgets.QFrame(parent)
+        self.setParent(self.frame)
+
+        self.overlay = IndicatorOverlay(self.frame, self)
+        self.overlay.setVisible(False)
+        self.stackUnder(self.overlay)

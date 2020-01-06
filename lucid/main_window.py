@@ -4,6 +4,8 @@ import pathlib
 
 import lucid
 
+import fuzzywuzzy.fuzz
+
 from PyQtAds import QtAds
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import (QMainWindow, QToolBar, QStyle,
@@ -202,11 +204,27 @@ class LucidToolBar(QToolBar):
             return
 
         main = self._main_window
+
         for grid in main.findChildren(lucid.overview.IndicatorGrid):
+            updated = False
+            min_ratio = 0.0
             for group_name, group in grid.groups.items():
-                for device, indicator in group.device_to_indicator.items():
-                    indicator.highlighted = text.lower() in device.name.lower()
-                    print(indicator, device.name, indicator.highlighted)
+                for cell in group.cells:
+                    old_ratio = grid.overlay.cell_to_percentage.get(cell, 0.0)
+                    new_ratio = max(fuzzywuzzy.fuzz.ratio(device.name, text) / 100.0
+                                    for device in cell.devices)
+                    if old_ratio != new_ratio:
+                        grid.overlay.cell_to_percentage[cell] = new_ratio
+                        updated = True
+
+                    min_ratio = max((min_ratio, new_ratio))
+
+            grid.overlay.setVisible(True)
+
+            if updated:
+                grid.overlay.repaint()
 
     def clear_highlight(self):
-        ...
+        main = self._main_window
+        for grid in main.findChildren(lucid.overview.IndicatorGrid):
+            grid.overlay.setVisible(False)
