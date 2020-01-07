@@ -165,7 +165,6 @@ class LucidMainWindow(QMainWindow):
         settings = QtCore.QSettings(app.organizationName(), app.applicationName())
         settings.setValue('geometry', self.saveGeometry())
         for key, value in self.settings.items():
-            print('saving', key, value)
             settings.setValue(key, value)
 
     def keyPressEvent(self, ev):

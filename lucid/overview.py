@@ -305,8 +305,6 @@ class IndicatorOverlay(QWidget):
             else:
                 color = (1, 1, 1, percent)
 
-            if percent > 0.5:
-                print(cell.title, percent)
             gradient.setColorAt(0.7, QtGui.QColor.fromRgbF(*color))
             gradient.setColorAt(1, QtGui.QColor.fromRgbF(0, 0, 0, 0))
 

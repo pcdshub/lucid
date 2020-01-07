@@ -1,3 +1,4 @@
+import logging
 import pathlib
 
 import lucid
@@ -66,11 +67,8 @@ def parse_arguments(*args, **kwargs):
 
 def launch(beamline, *, toolbar=None, row_group_key="location_group",
            col_group_key="functional_group", log_level="INFO"):
-    import logging
-    from qtpy.QtWidgets import QApplication
     import happi
     import typhon
-    from .main_window import LucidMainWindow
 
     logger = logging.getLogger('')
     handler = logging.StreamHandler()
@@ -81,11 +79,11 @@ def launch(beamline, *, toolbar=None, row_group_key="location_group",
     logger.setLevel(log_level)
     handler.setLevel(log_level)
 
-    app = QApplication([])
+    app = QtWidgets.QApplication([])
     app.setOrganizationName("SLAC National Accelerator Laboratory")
     app.setOrganizationDomain("slac.stanford.edu")
     app.setApplicationName("LUCID")
-    window = LucidMainWindow()
+    window = lucid.main_window.LucidMainWindow()
     typhon.use_stylesheet(dark=False)
     grid = lucid.overview.IndicatorGridWithOverlay()
 
