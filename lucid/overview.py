@@ -291,7 +291,11 @@ class IndicatorOverlay(QWidget):
         painter.fillRect(buffer.rect(), QtGui.QColor(0, 0, 0, 127))
 
         pen_size = 40
-        max_percent = max(self.cell_to_percentage.values())
+        try:
+            max_percent = max(self.cell_to_percentage.values())
+        except ValueError:
+            max_percent = 0.0
+
         draw_threshold = max_percent * 0.8
 
         for cell, cell_rect, radius, percent in cell_to_radius():

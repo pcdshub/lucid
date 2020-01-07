@@ -29,6 +29,7 @@ class LucidMainWindow(QMainWindow):
     parent: optional
     """
     __instance = None
+    escape_pressed = Signal()
 
     def __init__(self, parent=None):
         if self.__initialized:
@@ -46,14 +47,19 @@ class LucidMainWindow(QMainWindow):
 
     def setup_ui(self):
         # Toolbar
-        self.toolbar = LucidToolBar()
-        self.addToolBar(Qt.TopToolBarArea, LucidToolBar())
+        self.toolbar = LucidToolBar(self)
+        self.addToolBar(Qt.TopToolBarArea, self.toolbar)
 
         # Use the dockmanager for the main window - it will set itself as the
         # central widget
         self.dock_manager = QtAds.CDockManager(self)
         self.dock_manager.setStyleSheet(
             open(MODULE_PATH / 'dock_style.css', 'rt').read())
+
+    def keyPressEvent(self, ev):
+        if ev.key() == Qt.Key_Escape:
+            self.escape_pressed.emit()
+        super().keyPressEvent(ev)
 
     @classmethod
     def find_window(cls, widget):
@@ -170,14 +176,61 @@ class LucidMainWindow(QMainWindow):
 class SearchLineEdit(QLineEdit):
     cancel_request = Signal()
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, *, main_window, parent=None):
+        super().__init__(parent=parent)
 
+        self.main = main_window
         self.setPlaceholderText("Search...")
-        # self.cancelRequest.connect(self.clear_highlight)
+        self.textChanged.connect(self.highlight_matches)
 
-    # def keyPressEvent(self, ev):
+        def clear_highlight():
+            if self.hasFocus():
+                self.setText('')
+            self.clear_highlight()
 
+        self.main.escape_pressed.connect(clear_highlight)
+
+    @property
+    def overlay_visible(self):
+        'Are any overlays visible?'
+        for grid in self.main.findChildren(lucid.overview.IndicatorGrid):
+            if grid.overlay.visible():
+                return True
+
+        return False
+
+    def highlight_matches(self, text):
+        'Highlight cell matches given `text`'
+        text = text.strip()
+
+        if not text:
+            self.clear_highlight()
+            return
+
+        for grid in self.main.findChildren(lucid.overview.IndicatorGrid):
+            updated = False
+            min_ratio = 0.0
+            for group_name, group in grid.groups.items():
+                for cell in group.cells:
+                    old_ratio = grid.overlay.cell_to_percentage.get(cell, 0.0)
+                    new_ratio = max(fuzzywuzzy.fuzz.ratio(name.lower(),
+                                                          text.lower()) / 100.0
+                                    for name in cell.matchable_names)
+                    if old_ratio != new_ratio:
+                        grid.overlay.cell_to_percentage[cell] = new_ratio
+                        updated = True
+
+                    min_ratio = max((min_ratio, new_ratio))
+
+            grid.overlay.setVisible(True)
+
+            if updated:
+                grid.overlay.repaint()
+
+    def clear_highlight(self):
+        'Hide the highlighting overlay'
+        for grid in self.main.findChildren(lucid.overview.IndicatorGrid):
+            grid.overlay.setVisible(False)
 
 
 class LucidToolBar(QToolBar):
@@ -200,44 +253,10 @@ class LucidToolBar(QToolBar):
                              QSizePolicy.MinimumExpanding)
         self.addWidget(spacer)
         # Search
-        self.search_edit = SearchLineEdit()
-        self.search_edit.textChanged.connect(self.highlight_matches)
+        self.search_edit = SearchLineEdit(main_window=self._main_window)
         self.addWidget(self.search_edit)
 
     @property
     def _main_window(self):
         return self.parent()
 
-    def highlight_matches(self, text):
-        text = text.strip()
-
-        if not text:
-            self.clear_highlight()
-            return
-
-        main = self._main_window
-
-        for grid in main.findChildren(lucid.overview.IndicatorGrid):
-            updated = False
-            min_ratio = 0.0
-            for group_name, group in grid.groups.items():
-                for cell in group.cells:
-                    old_ratio = grid.overlay.cell_to_percentage.get(cell, 0.0)
-                    new_ratio = max(fuzzywuzzy.fuzz.ratio(name.lower(),
-                                                          text.lower()) / 100.0
-                                    for name in cell.matchable_names)
-                    if old_ratio != new_ratio:
-                        grid.overlay.cell_to_percentage[cell] = new_ratio
-                        updated = True
-
-                    min_ratio = max((min_ratio, new_ratio))
-
-            grid.overlay.setVisible(True)
-
-            if updated:
-                grid.overlay.repaint()
-
-    def clear_highlight(self):
-        main = self._main_window
-        for grid in main.findChildren(lucid.overview.IndicatorGrid):
-            grid.overlay.setVisible(False)
