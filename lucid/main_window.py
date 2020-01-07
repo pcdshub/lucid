@@ -9,8 +9,8 @@ import fuzzywuzzy.fuzz
 from PyQtAds import QtAds
 from qtpy import QtCore, QtWidgets
 from qtpy.QtCore import Qt, Signal
-from qtpy.QtWidgets import (QMainWindow, QToolBar, QStyle,
-                            QLineEdit, QSizePolicy, QWidget)
+from qtpy.QtWidgets import (QMainWindow, QToolBar, QStyle, QSizePolicy,
+                            QWidget)
 
 logger = logging.getLogger(__name__)
 
@@ -287,7 +287,7 @@ class LucidMainWindow(QMainWindow):
         return wrapper
 
 
-class SearchLineEdit(QLineEdit):
+class SearchLineEdit(QtWidgets.QLineEdit):
     cancel_request = Signal()
 
     def __init__(self, *, main_window, parent=None):
@@ -295,6 +295,7 @@ class SearchLineEdit(QLineEdit):
 
         self.main = main_window
         self.setPlaceholderText("Search...")
+        self.setClearButtonEnabled(True)
         self.textChanged.connect(self.highlight_matches)
 
         def clear_highlight():
