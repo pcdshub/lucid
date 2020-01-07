@@ -1,13 +1,15 @@
 import functools
 import logging
 import pathlib
+import re
 
+import happi
 import lucid
 
 import fuzzywuzzy.fuzz
 
 from PyQtAds import QtAds
-from qtpy import QtCore, QtWidgets
+from qtpy import QtCore, QtWidgets, QtGui
 from qtpy.QtCore import Qt, Signal
 from qtpy.QtWidgets import (QMainWindow, QToolBar, QStyle, QSizePolicy,
                             QWidget)
@@ -287,15 +289,248 @@ class LucidMainWindow(QMainWindow):
         return wrapper
 
 
+class _SearchThread(QtCore.QThread):
+    def __init__(self, func, callback, *, parent, kwargs):
+        super().__init__(parent)
+        self.func = func
+        self.callback = callback
+        self.kwargs = kwargs
+        self.setTerminationEnabled(True)
+        self.start()
+
+    def run(self):
+        try:
+            self.func(self.callback, **self.kwargs)
+        except Exception:
+            logger.exception('Search thread failed! func=%s',
+                             self.func.__name__)
+
+SEARCH_PATTERN = re.compile(
+    r'((?P<category>[a-z_][a-z0-9_]*):\s*)?(?P<text>[^ ]+)',
+    re.VERBOSE | re.IGNORECASE
+)
+
+def split_search_pattern(text):
+    '''
+    Split search pattern into (optional) categories
+    Patterns are space-delimited, with each entry as follows:
+        category_name: text_to_match_in_category
+        text_to_match_generally
+    '''
+
+    matches = list(m.groupdict()
+                   for m in SEARCH_PATTERN.finditer(text.strip())
+                   )
+    by_category = [
+        (m['category'], m['text'])
+        for m in matches if m['category'] is not None
+    ]
+
+    general = [
+        m['text']
+        for m in matches if m['category'] is None
+    ]
+
+    return by_category, general
+
+
+_HAPPI_CACHE = None
+
+
+def _thread_grid_search(callback, *, general_search, category_search,
+                        threshold):
+    ...
+
+
+def _thread_screens_search(callback, *, general_search, category_search,
+                           threshold):
+    ...
+
+
+def _thread_happi_search(callback, *, general_search, category_search,
+                         threshold):
+    '''
+    Search happi
+    '''
+    global _HAPPI_CACHE
+    if _HAPPI_CACHE is None:
+        # TODO: re-read happi after a certain interval?
+        client = happi.Client.from_config()
+        _HAPPI_CACHE = list(client.search(as_dict=True))
+
+    for item in _HAPPI_CACHE:
+        item_results = []
+        for key, text in category_search:
+            value = item.get(key)
+            if value is not None:
+                ratio = fuzzywuzzy.fuzz.ratio(text.lower(), str(value).lower())
+                item_results.append((ratio, f'{key}: {value}'))
+
+        for text in general_search:
+            for key in ['name', 'prefix', 'stand']:
+                value = item.get(key)
+                if value is not None:
+                    ratio = fuzzywuzzy.fuzz.ratio(text.lower(),
+                                                  str(value).lower())
+                    item_results.append((ratio, f'{key}: {value}'))
+
+        if item_results:
+            item_results.sort(reverse=True)
+            ratio, match = item_results[0]
+            if ratio > threshold:
+                callback(dict(source='happi',
+                              rank=ratio,
+                              name=item['name'],
+                              item=item,
+                              match=match,
+                              )
+                         )
+
+
+class SearchModel(QtGui.QStandardItemModel):
+    new_result = Signal(dict)
+
+    def __init__(self, text, *, search_happi=True, search_grid=True,
+                 search_screens=True, threshold=60):
+        super().__init__(0, 1)
+
+        category_search, general_search = split_search_pattern(text)
+
+        self.search_threads = []
+
+        def received_result(info):
+            name = info['name']
+            match = info['match']
+            if len(match) > 40:
+                match = match[:40] + '...'
+            if match:
+                text = f'{name} ({match})'
+            else:
+                text = name
+
+            tooltip = '\n'.join((info['match'],
+                                 '------------',
+                                 str(info.get('item'))
+                                 ))
+
+            item = QtGui.QStandardItem(text)
+            item.setData(info['rank'], Qt.UserRole)
+            item.setData(tooltip, Qt.ToolTipRole)
+            self.appendRow(item)
+
+        self.new_result.connect(received_result)
+
+        self.search_threads = [
+            _SearchThread(func, self.new_result.emit, parent=self,
+                          kwargs=dict(category_search=category_search,
+                                      general_search=general_search,
+                                      threshold=threshold,))
+            for category, func, enabled
+            in [('happi', _thread_happi_search, search_happi),
+                ('grid', _thread_grid_search, search_grid),
+                ('screens', _thread_screens_search, search_screens)]
+            if enabled
+        ]
+
+    def cancel(self):
+        ...
+
+
+class SearchDialog(QtWidgets.QDialog):
+    def __init__(self, *, main_window, parent=None):
+        super().__init__(parent=parent)
+
+        self.main = main_window
+        self.setAttribute(Qt.WA_ShowWithoutActivating, True)
+        self.setWindowFlag(Qt.FramelessWindowHint, True)
+        self.setWindowFlag(Qt.WindowStaysOnTopHint, True)
+        self.setWindowFlag(Qt.Popup, True)
+
+        if hasattr(parent, 'key_pressed'):
+            parent.key_pressed.connect(self._handle_keypress)
+
+        # [match list]
+        # [option frame]
+        layout = QtWidgets.QVBoxLayout()
+        self.match_list = QtWidgets.QListView()
+        self.models = {}
+
+        self.setLayout(layout)
+        layout.addWidget(self.match_list)
+
+        self.proxy_model = QtCore.QSortFilterProxyModel()
+        self.proxy_model.setSortRole(Qt.UserRole)
+        self.proxy_model.setDynamicSortFilter(True)
+        self.proxy_model.sort(0, Qt.DescendingOrder)
+        self.match_list.setModel(self.proxy_model)
+
+        # option frame:
+        # [ grid screens happi ]
+        option_frame = QtWidgets.QFrame()
+        option_frame.setContentsMargins(0, 0, 0, 0)
+        layout.addWidget(option_frame)
+
+        option_layout = QtWidgets.QHBoxLayout()
+        option_frame.setLayout(option_layout)
+
+        self.option_grid = QtWidgets.QCheckBox('&Grid')
+        self.option_screens = QtWidgets.QCheckBox('&Screens')
+        self.option_happi = QtWidgets.QCheckBox('&Happi')
+
+        for w in (self.option_grid, self.option_screens, self.option_happi):
+            option_layout.addWidget(w)
+            w.setChecked(True)
+
+    def search(self, text):
+        key = (text, self.option_happi.isChecked(),
+               self.option_grid.isChecked(), self.option_screens.isChecked())
+        try:
+            model = self.models[key]
+        except KeyError:
+            model = SearchModel(text,
+                                search_happi=self.option_happi.isChecked(),
+                                search_grid=self.option_grid.isChecked(),
+                                search_screens=self.option_screens.isChecked()
+                                )
+            self.models[key] = model
+
+        self.proxy_model.setSourceModel(model)
+
+    def _handle_keypress(self, event):
+        key = event.key()
+        if key == Qt.Key_Down:
+            ...
+        elif key == Qt.Key_Up:
+            ...
+        elif key == Qt.Key_PageDown:
+            ...
+        elif key == Qt.Key_PageUp:
+            ...
+
+    def keyPressEvent(self, event):
+        self._handle_keypress(event)
+        super().keyPressEvent(event)
+
+    def cancel(self):
+        ...
+        # self.model.cancel()
+
+
 class SearchLineEdit(QtWidgets.QLineEdit):
-    cancel_request = Signal()
+    key_pressed = Signal(QtGui.QKeyEvent)
 
     def __init__(self, *, main_window, parent=None):
         super().__init__(parent=parent)
 
         self.main = main_window
+        self.search_frame = None
         self.setPlaceholderText("Search...")
         self.setClearButtonEnabled(True)
+
+        def text_changed(text):
+            self.show_search()
+
+        self.textChanged.connect(text_changed)
         self.textChanged.connect(self.highlight_matches)
 
         def clear_highlight():
@@ -305,14 +540,40 @@ class SearchLineEdit(QtWidgets.QLineEdit):
 
         self.main.escape_pressed.connect(clear_highlight)
 
+    def keyPressEvent(self, ev):
+        'Keypress event callback from Qt'
+        self.key_pressed.emit(ev)
+        super().keyPressEvent(ev)
+
+    def show_search(self):
+        corner_pos = self.mapToGlobal(self.rect().bottomLeft())
+
+        if self.search_frame is None:
+            self.search_frame = SearchDialog(parent=self,
+                                             main_window=self.main)
+
+            width = 20 * self.height()
+            height = 10 * self.height()
+            self.search_frame.setGeometry(
+                corner_pos.x(), corner_pos.y(),
+                width, height)
+        else:
+            self.search_frame.setGeometry(
+                corner_pos.x(), corner_pos.y(),
+                self.search_frame.width(),
+                self.search_frame.height())
+
+        self.search_frame.search(self.text().strip())
+        self.search_frame.setVisible(True)
+        self.search_frame.raise_()
+
     @property
     def overlay_visible(self):
         'Are any overlays visible?'
-        for grid in self.main.findChildren(lucid.overview.IndicatorGrid):
-            if grid.overlay.visible():
-                return True
-
-        return False
+        return any(
+            grid.overlay.visible()
+            for grid in self.main.findChildren(lucid.overview.IndicatorGrid)
+        )
 
     def highlight_matches(self, text):
         'Highlight cell matches given `text`'
@@ -349,6 +610,10 @@ class SearchLineEdit(QtWidgets.QLineEdit):
         'Hide the highlighting overlay'
         for grid in self.main.findChildren(lucid.overview.IndicatorGrid):
             grid.overlay.setVisible(False)
+
+        if self.search_frame is not None:
+            self.search_frame.cancel()
+            self.search_frame.setVisible(False)
 
 
 class LucidToolBar(QToolBar):
