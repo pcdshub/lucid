@@ -82,7 +82,9 @@ def launch(beamline, *, toolbar=None, row_group_key="location_group",
     handler.setLevel(log_level)
 
     app = QApplication([])
-
+    app.setOrganizationName("SLAC National Accelerator Laboratory")
+    app.setOrganizationDomain("slac.stanford.edu")
+    app.setApplicationName("LUCID")
     window = LucidMainWindow()
     typhon.use_stylesheet(dark=False)
     grid = lucid.overview.IndicatorGridWithOverlay()

@@ -7,6 +7,7 @@ import lucid
 import fuzzywuzzy.fuzz
 
 from PyQtAds import QtAds
+from qtpy import QtCore, QtGui, QtWidgets
 from qtpy.QtCore import Qt, Signal
 from qtpy.QtWidgets import (QMainWindow, QToolBar, QStyle,
                             QLineEdit, QSizePolicy, QWidget)
@@ -14,6 +15,83 @@ from qtpy.QtWidgets import (QMainWindow, QToolBar, QStyle,
 logger = logging.getLogger(__name__)
 
 MODULE_PATH = pathlib.Path(__file__).parent
+
+
+class LucidMainWindowMenu(QtWidgets.QMenuBar):
+    settings_changed = Signal(dict)
+    exit_request = Signal()
+    search_overlay_changed = Signal(bool)
+
+    def __init__(self, parent, *, settings=None):
+        super().__init__(parent)
+        self.main = parent
+
+        if settings is None:
+            settings = {}
+
+        self.settings = dict(settings)
+        self.actions = {}
+        self._create_menu()
+
+    def _create_menu(self):
+        # File
+        self.file_menu = self.addMenu('&File')
+        # - Exit
+        self.exit = self.file_menu.addAction('E&xit')
+
+        # Options
+        self.options_menu = self.addMenu('&Options')
+        # - Search overlay
+        self.add_checkable_action('Search &overlay', 'search_overlay')
+
+    def add_checkable_action(self, label, settings_key, *, default=True):
+        '''
+        Add a checkable action
+
+        Parameters
+        ----------
+        label : str
+            The action label
+        settings_key : str
+            The settings dictionary key
+        default : bool, optional
+            The default checked state
+        '''
+        action = QtWidgets.QAction(label)
+        self.actions[settings_key] = action
+
+        action.setCheckable(True)
+        self.settings[settings_key] = default
+        action.setChecked(self.settings[settings_key])
+
+        def set_option(value):
+            logger.debug('Setting %r to %s', settings_key, value)
+            setattr(self, settings_key, value)
+
+        action.toggled.connect(set_option)
+        self.options_menu.addAction(action)
+
+    def _settings_property(key):
+        'Property factory which updates the settings dict + emits changes'
+        def fget(self):
+            return self.settings[key]
+
+        def fset(self, value):
+            action = self.actions[key]
+            if value in (True, False):
+                action.setChecked(value)
+
+            old_value = self.settings.get(key, None)
+            self.settings[key] = value
+            if old_value is None or value != old_value:
+                signal = getattr(self, f'{key}_changed', None)
+                if signal is not None:
+                    signal.emit(value)
+                self.settings_changed.emit(dict(self.settings))
+
+        return property(fget, fset)
+
+    search_overlay = _settings_property('search_overlay')
 
 
 class LucidMainWindow(QMainWindow):
@@ -37,6 +115,7 @@ class LucidMainWindow(QMainWindow):
         self.dock_manager = None
         super().__init__(parent=parent)
         self.setup_ui()
+        self._restore_settings()
         self.__initialized = True
 
     def __new__(cls, *args, **kwargs):
@@ -56,7 +135,41 @@ class LucidMainWindow(QMainWindow):
         self.dock_manager.setStyleSheet(
             open(MODULE_PATH / 'dock_style.css', 'rt').read())
 
+        # Menu
+        self.menu = LucidMainWindowMenu(self)
+        self.setMenuBar(self.menu)
+        self.menu.exit.triggered.connect(self.close)
+
+    @property
+    def settings(self):
+        'Dictionary of application-level settings'
+        return dict(self.menu.settings)
+
+    def closeEvent(self, ev):
+        self._save_settings()
+
+    def _restore_settings(self):
+        app = QtWidgets.QApplication.instance()
+        settings = QtCore.QSettings(app.organizationName(), app.applicationName())
+        geometry = settings.value('geometry', QtCore.QByteArray())
+        if not geometry.isEmpty():
+            self.restoreGeometry(geometry)
+
+        for key in settings.allKeys():
+            value = settings.value(key, None)
+            if key in self.settings and value is not None:
+                setattr(self.menu, key, value)
+
+    def _save_settings(self):
+        app = QtWidgets.QApplication.instance()
+        settings = QtCore.QSettings(app.organizationName(), app.applicationName())
+        settings.setValue('geometry', self.saveGeometry())
+        for key, value in self.settings.items():
+            print('saving', key, value)
+            settings.setValue(key, value)
+
     def keyPressEvent(self, ev):
+        'Keypress event callback from Qt'
         if ev.key() == Qt.Key_Escape:
             self.escape_pressed.emit()
         super().keyPressEvent(ev)
@@ -202,6 +315,9 @@ class SearchLineEdit(QLineEdit):
     def highlight_matches(self, text):
         'Highlight cell matches given `text`'
         text = text.strip()
+        if not self.main.settings['search_overlay']:
+            self.clear_highlight()
+            return
 
         if not text:
             self.clear_highlight()
