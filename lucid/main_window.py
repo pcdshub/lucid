@@ -7,7 +7,7 @@ import lucid
 import fuzzywuzzy.fuzz
 
 from PyQtAds import QtAds
-from qtpy import QtCore, QtGui, QtWidgets
+from qtpy import QtCore, QtWidgets
 from qtpy.QtCore import Qt, Signal
 from qtpy.QtWidgets import (QMainWindow, QToolBar, QStyle,
                             QLineEdit, QSizePolicy, QWidget)
@@ -150,7 +150,8 @@ class LucidMainWindow(QMainWindow):
 
     def _restore_settings(self):
         app = QtWidgets.QApplication.instance()
-        settings = QtCore.QSettings(app.organizationName(), app.applicationName())
+        settings = QtCore.QSettings(app.organizationName(),
+                                    app.applicationName())
         geometry = settings.value('geometry', QtCore.QByteArray())
         if not geometry.isEmpty():
             self.restoreGeometry(geometry)
@@ -162,7 +163,8 @@ class LucidMainWindow(QMainWindow):
 
     def _save_settings(self):
         app = QtWidgets.QApplication.instance()
-        settings = QtCore.QSettings(app.organizationName(), app.applicationName())
+        settings = QtCore.QSettings(app.organizationName(),
+                                    app.applicationName())
         settings.setValue('geometry', self.saveGeometry())
         for key, value in self.settings.items():
             settings.setValue(key, value)
@@ -368,10 +370,5 @@ class LucidToolBar(QToolBar):
                              QSizePolicy.MinimumExpanding)
         self.addWidget(spacer)
         # Search
-        self.search_edit = SearchLineEdit(main_window=self._main_window)
+        self.search_edit = SearchLineEdit(main_window=self.parent())
         self.addWidget(self.search_edit)
-
-    @property
-    def _main_window(self):
-        return self.parent()
-

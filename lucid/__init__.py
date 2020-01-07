@@ -1,4 +1,4 @@
-__all__ = ['LucidMainWindow']
+__all__ = ['LucidMainWindow', 'main_window', 'overview']
 
 from .main_window import LucidMainWindow
 from . import main_window

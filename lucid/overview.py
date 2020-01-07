@@ -281,7 +281,8 @@ class IndicatorOverlay(QWidget):
                     cell_rect = QtCore.QRectF(cx, cy, diameter, diameter)
                     percent = self.cell_to_percentage.get(cell, 0.0)
                     if percent > draw_threshold:
-                        percent = (percent - draw_threshold) / (1 - draw_threshold)
+                        percent = ((percent - draw_threshold) /
+                                   (1 - draw_threshold))
                         yield cell, cell_rect, radius, percent
 
         painter.begin(buffer)

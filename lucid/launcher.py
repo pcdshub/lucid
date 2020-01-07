@@ -128,7 +128,6 @@ def launch(beamline, *, toolbar=None, row_group_key="location_group",
     dock_widget.setFeature(dock_widget.DockWidgetMovable, False)
 
     window.dock_manager.addDockWidget(QtAds.LeftDockWidgetArea, dock_widget)
-    window.setMinimumSize(600, 600)
     window.show()
 
     app.exec_()
