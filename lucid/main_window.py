@@ -121,7 +121,6 @@ class LucidMainWindow(QMainWindow):
         self.dock_manager = None
         super().__init__(parent=parent)
         self.setup_ui()
-        self._restore_settings()
         self.__initialized = True
 
     def __new__(cls, *args, **kwargs):
@@ -136,6 +135,16 @@ class LucidMainWindow(QMainWindow):
         return cls.__instance
 
     def setup_ui(self):
+        # Menu
+        self.menu = LucidMainWindowMenu(self)
+        self.setMenuBar(self.menu)
+        self.menu.exit.triggered.connect(self.close)
+
+        # Restore settings prior to setting up the toolbar/dock
+        # TODO: look into why restoring geometry post-dock_manager
+        # instantiation causes y-offset/shrinking height
+        self._restore_settings()
+
         # Toolbar
         self.toolbar = LucidToolBar(self)
         self.addToolBar(Qt.TopToolBarArea, self.toolbar)
@@ -145,11 +154,6 @@ class LucidMainWindow(QMainWindow):
         self.dock_manager = QtAds.CDockManager(self)
         self.dock_manager.setStyleSheet(
             open(MODULE_PATH / 'dock_style.css', 'rt').read())
-
-        # Menu
-        self.menu = LucidMainWindowMenu(self)
-        self.setMenuBar(self.menu)
-        self.menu.exit.triggered.connect(self.close)
 
     @property
     def settings(self):
