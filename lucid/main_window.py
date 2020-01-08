@@ -6,13 +6,14 @@ import re
 import happi
 import lucid
 
-import fuzzywuzzy.fuzz
-
 from PyQtAds import QtAds
 from qtpy import QtCore, QtWidgets, QtGui
 from qtpy.QtCore import Qt, Signal
 from qtpy.QtWidgets import (QMainWindow, QToolBar, QStyle, QSizePolicy,
                             QWidget)
+
+from .utils import fuzzy_match
+
 
 logger = logging.getLogger(__name__)
 
@@ -363,15 +364,14 @@ def _thread_happi_search(callback, *, general_search, category_search,
         for key, text in category_search:
             value = item.get(key)
             if value is not None:
-                ratio = fuzzywuzzy.fuzz.ratio(text.lower(), str(value).lower())
+                ratio = fuzzy_match(text, str(value), threshold=threshold)
                 item_results.append((ratio, f'{key}: {value}'))
 
         for text in general_search:
             for key in ['name', 'prefix', 'stand']:
                 value = item.get(key)
                 if value is not None:
-                    ratio = fuzzywuzzy.fuzz.ratio(text.lower(),
-                                                  str(value).lower())
+                    ratio = fuzzy_match(text, str(value), threshold=threshold)
                     item_results.append((ratio, f'{key}: {value}'))
 
         if item_results:
@@ -395,30 +395,7 @@ class SearchModel(QtGui.QStandardItemModel):
         super().__init__(0, 1)
 
         category_search, general_search = split_search_pattern(text)
-
-        self.search_threads = []
-
-        def received_result(info):
-            name = info['name']
-            match = info['match']
-            if len(match) > 40:
-                match = match[:40] + '...'
-            if match:
-                text = f'{name} ({match})'
-            else:
-                text = name
-
-            tooltip = '\n'.join((info['match'],
-                                 '------------',
-                                 str(info.get('item'))
-                                 ))
-
-            item = QtGui.QStandardItem(text)
-            item.setData(info['rank'], Qt.UserRole)
-            item.setData(tooltip, Qt.ToolTipRole)
-            self.appendRow(item)
-
-        self.new_result.connect(received_result)
+        self.new_result.connect(self.add_result)
 
         self.search_threads = [
             _SearchThread(func, self.new_result.emit, parent=self,
@@ -431,6 +408,33 @@ class SearchModel(QtGui.QStandardItemModel):
                 ('screens', _thread_screens_search, search_screens)]
             if enabled
         ]
+
+    def add_result(self, info):
+        name = info['name']
+        match = info['match']
+        if len(match) > 40:
+            match = match[:40] + '...'
+        if match:
+            text = f'{name} ({match})'
+        else:
+            text = name
+
+        item = info.get('item')
+        if isinstance(item, dict):
+            pretty_item = '\n'.join(f'- {key}: {value}'
+                                    for key, value in item.items())
+        else:
+            pretty_item = str(item)
+
+        tooltip = '\n'.join((info['match'],
+                             '------------',
+                             pretty_item
+                             ))
+
+        item = QtGui.QStandardItem(text)
+        item.setData(info['rank'], Qt.UserRole)
+        item.setData(tooltip, Qt.ToolTipRole)
+        self.appendRow(item)
 
     def cancel(self):
         ...
@@ -592,8 +596,7 @@ class SearchLineEdit(QtWidgets.QLineEdit):
             for group_name, group in grid.groups.items():
                 for cell in group.cells:
                     old_ratio = grid.overlay.cell_to_percentage.get(cell, 0.0)
-                    new_ratio = max(fuzzywuzzy.fuzz.ratio(name.lower(),
-                                                          text.lower()) / 100.0
+                    new_ratio = max(fuzzy_match(name, text) / 100.0
                                     for name in cell.matchable_names)
                     if old_ratio != new_ratio:
                         grid.overlay.cell_to_percentage[cell] = new_ratio
