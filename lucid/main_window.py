@@ -775,6 +775,15 @@ class SearchLineEdit(QtWidgets.QLineEdit):
         self.main.escape_pressed.connect(clear_highlight)
         self.main.window_moved.connect(self._reposition_search_frame)
 
+    def focusOutEvent(self, event):
+        'Search box lost keyboard focus'
+        if self.search_frame and self.search_frame.isVisible():
+            if not any(widget.hasFocus() for widget in
+                       self.search_frame.findChildren(QtWidgets.QWidget)):
+                self.clear_highlight()
+
+        super().focusOutEvent(event)
+
     def _reposition_search_frame(self, *, width=None, height=None):
         'Reposition search frame to bottom-left corner of this line edit'
         if not self.search_frame:
