@@ -114,6 +114,7 @@ class LucidMainWindow(QMainWindow):
     """
     __instance = None
     escape_pressed = Signal()
+    window_moved = Signal(QtGui.QMoveEvent)
 
     def __init__(self, parent=None):
         if self.__initialized:
@@ -133,6 +134,10 @@ class LucidMainWindow(QMainWindow):
     def get_instance(cls):
         'The LucidMainWindow singleton instance'
         return cls.__instance
+
+    def moveEvent(self, event):
+        self.window_moved.emit(event)
+        super().moveEvent(event)
 
     def setup_ui(self):
         # Menu
@@ -755,6 +760,24 @@ class SearchLineEdit(QtWidgets.QLineEdit):
             self.clear_highlight()
 
         self.main.escape_pressed.connect(clear_highlight)
+        self.main.window_moved.connect(self._reposition_search_frame)
+
+    def _reposition_search_frame(self, *, width=None, height=None):
+        'Reposition search frame to bottom-left corner of this line edit'
+        if not self.search_frame:
+            return
+        corner_pos = self.mapToGlobal(self.rect().bottomLeft())
+        self.search_frame.setGeometry(
+            corner_pos.x(), corner_pos.y(),
+            width or self.search_frame.width(),
+            height or self.search_frame.height()
+        )
+
+    def moveEvent(self, ev):
+        'Widget movement event callback from Qt'
+        if self.search_frame and self.search_frame.isVisible():
+            self._reposition_search_frame()
+        super().moveEvent(ev)
 
     def keyPressEvent(self, ev):
         'Keypress event callback from Qt'
@@ -762,22 +785,14 @@ class SearchLineEdit(QtWidgets.QLineEdit):
         super().keyPressEvent(ev)
 
     def show_search(self):
-        corner_pos = self.mapToGlobal(self.rect().bottomLeft())
-
         if self.search_frame is None:
             self.search_frame = SearchDialog(parent=self,
                                              main_window=self.main)
 
-            width = 20 * self.height()
-            height = 10 * self.height()
-            self.search_frame.setGeometry(
-                corner_pos.x(), corner_pos.y(),
-                width, height)
-        else:
-            self.search_frame.setGeometry(
-                corner_pos.x(), corner_pos.y(),
-                self.search_frame.width(),
-                self.search_frame.height())
+        self._reposition_search_frame(
+            width=max((20 * self.height(), self.width())),
+            height=10 * self.height()
+        )
 
         self.search_frame.search(self.text().strip())
         self.search_frame.setVisible(True)
