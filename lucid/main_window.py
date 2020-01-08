@@ -717,7 +717,11 @@ class SearchDialog(QtWidgets.QDialog):
 
 
 class SearchMatchList(QtWidgets.QListView):
-    def doubleClicked(self, index : QtCore.QModelIndex):
+    def __init__(self, parent):
+        super().__init__(parent)
+        self.doubleClicked.connect(self._run_callback)
+
+    def _run_callback(self, index : QtCore.QModelIndex):
         proxy_model = self.model()
         model = proxy_model.sourceModel()
         item = model.itemFromIndex(proxy_model.mapToSource(index))
@@ -738,7 +742,7 @@ class SearchMatchList(QtWidgets.QListView):
             except Exception:
                 ...
             else:
-                self.doubleClicked(index)
+                self._run_callback(index)
                 return
 
         super().keyPressEvent(event)
