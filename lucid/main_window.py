@@ -381,11 +381,11 @@ def _thread_grid_search(callback, *, general_search, category_search,
                                            threshold=threshold)
                 if ratio > threshold:
                     callback(
-                        source='cell',
+                        source='grid',
                         rank=ratio,
                         name=cell.title,
                         item=cell,
-                        reason='cell ' + match,
+                        reason=match,
                         callback=cell.click,
                     )
 
@@ -498,6 +498,44 @@ def _stringify_dict(d, skip_keys, prefix=' -', delim='\n'):
                      if key not in skip_keys)
 
 
+_ICONS = {}
+
+
+def _generate_icon(key):
+    'Generate a simple icon based on the first letter of the `source` key'
+    size = 128
+    main = LucidMainWindow.get_instance()
+    dpr = main.devicePixelRatioF()
+
+    pixmap = QtGui.QPixmap(size * dpr, size * dpr)
+    pixmap.setDevicePixelRatio(dpr)
+    pixmap.fill(Qt.transparent)
+
+    painter = QtGui.QPainter()
+    painter.begin(pixmap)
+    painter.setRenderHint(painter.Antialiasing)
+
+    rect = QtCore.QRect(0, 0, size - 1, size - 1)
+
+    font = QtGui.QFontDatabase.systemFont(QtGui.QFontDatabase.TitleFont)
+    font.setPixelSize(size)
+    font.setBold(True)
+    painter.setFont(font)
+
+    painter.drawEllipse(rect)
+    painter.setPen(Qt.darkBlue)
+    painter.drawText(rect, Qt.AlignCenter, key[0].upper())
+    painter.end()
+    return QtGui.QIcon(pixmap)
+
+
+def get_search_icon_by_source(source):
+    'Search result source -> QIcon'
+    if source not in _ICONS:
+        _ICONS[source] = _generate_icon(source)
+    return _ICONS[source]
+
+
 class SearchModelItem(QtGui.QStandardItem):
     def __init__(self, *, name, rank, item, reason, **info):
         '''
@@ -539,6 +577,7 @@ class SearchModelItem(QtGui.QStandardItem):
         )
 
         self.rank = rank
+        self.setIcon(get_search_icon_by_source(info['source']))
         self.setData(self.rank, Qt.UserRole)
         self.setData(tooltip, Qt.ToolTipRole)
         self.setEditable(False)
