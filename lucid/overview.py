@@ -154,11 +154,12 @@ class IndicatorCell(BaseDeviceButton):
 class IndicatorGroup(BaseDeviceButton):
     """QPushButton to select an entire row or column of devices"""
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, orientation, **kwargs):
         super().__init__(*args, **kwargs)
         self.setText(str(self.title))
         self.cells = []
         self.installEventFilter(self)
+        self.orientation = orientation
 
     def add_cell(self, cell):
         self.cells.append(cell)
@@ -231,7 +232,8 @@ QWidget[selected="true"] {background-color: rgba(20, 140, 210, 150);}
 
     def _add_group(self, group, as_row):
         # Add to layout
-        group = IndicatorGroup(title=group)
+        group = IndicatorGroup(title=group,
+                               orientation='row' if as_row else 'column')
         self._groups[group.title] = group
         # Find the correct position
         if as_row:

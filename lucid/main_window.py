@@ -381,6 +381,9 @@ def _thread_grid_search(callback, *, general_search, category_search,
         updated = False
         min_ratio = 0.0
         for group_name, group in grid.groups.items():
+            if group.orientation == 'row':
+                # Only iterate over vertical-column groups
+                continue
             for cell in group.cells:
                 ratio, match = _cell_match(cell, general_search,
                                            threshold=threshold)
@@ -829,6 +832,9 @@ class SearchLineEdit(QtWidgets.QLineEdit):
             updated = False
             min_ratio = 0.0
             for group_name, group in grid.groups.items():
+                if group.orientation == 'row':
+                    # Only iterate over vertical-column groups
+                    continue
                 for cell in group.cells:
                     old_ratio = grid.overlay.cell_to_percentage.get(cell, 0.0)
                     new_ratio, matched = _cell_match(cell, general_search)
