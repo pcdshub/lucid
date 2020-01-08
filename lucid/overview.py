@@ -46,8 +46,7 @@ class BaseDeviceButton(QPushButton):
     def show_all(self):
         """Create a widget for contained devices"""
         if not self._suite:
-            self._suite = suite_for_devices(self.devices)
-            self._suite.setParent(self)
+            self._suite = suite_for_devices(self.devices, parent=self)
         else:
             # Check that any devices that have been added since our last show
             # request have been added to the TyphonSuite

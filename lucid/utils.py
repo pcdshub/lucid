@@ -1,5 +1,6 @@
 import logging
 
+import happi
 import fuzzywuzzy.fuzz
 
 from pydm.widgets import PyDMDrawingCircle
@@ -89,9 +90,9 @@ def display_for_device(device, display_type=None):
     return display
 
 
-def suite_for_devices(devices):
+def suite_for_devices(devices, *, parent=None):
     """Create a TyphonSuite to display multiple devices"""
-    suite = TyphonSuite()
+    suite = TyphonSuite(parent=parent)
     for device in devices:
         suite.add_device(device)
     return suite
@@ -127,3 +128,16 @@ def fuzzy_match(a, b, *, case_insensitive=True, threshold=50):
                 if s1 in s2:
                     return threshold
     return ratio
+
+
+_HAPPI_CLIENT = None
+
+
+def get_happi_client():
+    '''
+    Create and cache a happi client from configuration
+    '''
+    global _HAPPI_CLIENT
+    if _HAPPI_CLIENT is None:
+        _HAPPI_CLIENT = happi.Client.from_config()
+    return _HAPPI_CLIENT

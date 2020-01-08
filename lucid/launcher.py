@@ -89,7 +89,7 @@ def launch(beamline, *, toolbar=None, row_group_key="location_group",
 
     if beamline != 'DEMO':
         # Fill with Data from Happi
-        cli = happi.Client.from_config()
+        cli = lucid.utils.get_happi_client()
         devices = cli.search(beamline=beamline)
 
         for dev in devices:

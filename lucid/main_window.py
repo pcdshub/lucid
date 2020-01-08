@@ -13,7 +13,7 @@ from qtpy.QtCore import Qt, Signal
 from qtpy.QtWidgets import (QMainWindow, QToolBar, QStyle, QSizePolicy,
                             QWidget)
 
-from .utils import fuzzy_match
+from .utils import fuzzy_match, display_for_device, get_happi_client
 
 
 logger = logging.getLogger(__name__)
@@ -417,7 +417,7 @@ def _thread_happi_search(callback, *, general_search, category_search,
     global _HAPPI_CACHE
     if _HAPPI_CACHE is None:
         # TODO: re-read happi after a certain interval?
-        client = happi.Client.from_config()
+        client = get_happi_client()
         _HAPPI_CACHE = list(client.search(as_dict=True))
 
     for item in _HAPPI_CACHE:
