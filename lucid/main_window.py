@@ -5,6 +5,7 @@ import re
 
 import happi
 import lucid
+import typhon
 
 from PyQtAds import QtAds
 from qtpy import QtCore, QtWidgets, QtGui
@@ -105,6 +106,8 @@ class LucidMainWindow(QMainWindow):
     toolbar, a variety of central views for devices and scripts required for
     operation, and also the docking system for launching detailed windows.
 
+    LucidMainWindow is a singleton - i.e., there can be only one.
+
     Parameters
     ----------
     parent: optional
@@ -125,6 +128,11 @@ class LucidMainWindow(QMainWindow):
         if cls.__instance is None:
             cls.__instance = QMainWindow.__new__(LucidMainWindow)
             cls.__instance.__initialized = False
+        return cls.__instance
+
+    @classmethod
+    def get_instance(cls):
+        'The LucidMainWindow singleton instance'
         return cls.__instance
 
     def setup_ui(self):
@@ -332,20 +340,69 @@ def split_search_pattern(text):
         for m in matches if m['category'] is None
     ]
 
+    if general:
+        general.append(' '.join(general))
+
     return by_category, general
 
 
 _HAPPI_CACHE = None
 
 
+def _cell_match(cell, text_list, threshold=50):
+    ratio = [(fuzzy_match(name, text, threshold=threshold), name)
+             for name in cell.matchable_names
+             for text in text_list
+             ]
+    if ratio:
+        ratio.sort()
+        return ratio[-1]
+
+    return 0.0, ''
+
+
 def _thread_grid_search(callback, *, general_search, category_search,
                         threshold):
-    ...
+    if not general_search:
+        return
+
+    main = LucidMainWindow.get_instance()
+    for grid in main.findChildren(lucid.overview.IndicatorGrid):
+        updated = False
+        min_ratio = 0.0
+        for group_name, group in grid.groups.items():
+            for cell in group.cells:
+                ratio, match = _cell_match(cell, general_search,
+                                           threshold=threshold)
+                if ratio > threshold:
+                    callback(dict(source='cell',
+                                  rank=ratio,
+                                  name=cell.title,
+                                  item=cell,
+                                  match=match,
+                                  callback=None,
+                                  )
+                             )
 
 
 def _thread_screens_search(callback, *, general_search, category_search,
                            threshold):
-    ...
+    if not general_search:
+        return
+
+    main = LucidMainWindow.get_instance()
+    for display in main.findChildren(typhon.TyphonDeviceDisplay):
+        ratio = max(fuzzy_match(display.device_name, text, threshold=threshold)
+                    for text in general_search)
+        if ratio > threshold:
+            callback(dict(source='screens',
+                          rank=ratio,
+                          name=display.device_name,
+                          item=display,
+                          match='',
+                          callback=display.raise_,
+                          )
+                     )
 
 
 def _thread_happi_search(callback, *, general_search, category_search,
@@ -383,6 +440,7 @@ def _thread_happi_search(callback, *, general_search, category_search,
                               name=item['name'],
                               item=item,
                               match=match,
+                              callback=None,  # TODO: find or create display
                               )
                          )
 
@@ -426,9 +484,15 @@ class SearchModel(QtGui.QStandardItemModel):
         else:
             pretty_item = str(item)
 
+        pretty_info = '\n'.join(f'- {key}: {value}'
+                                for key, value in info.items()
+                                if key != 'item')
+
         tooltip = '\n'.join((info['match'],
                              '------------',
-                             pretty_item
+                             pretty_item,
+                             '',
+                             pretty_info
                              ))
 
         item = QtGui.QStandardItem(text)
@@ -457,7 +521,7 @@ class SearchDialog(QtWidgets.QDialog):
         # [option frame]
         layout = QtWidgets.QVBoxLayout()
         self.match_list = QtWidgets.QListView()
-        self.models = {}
+        self.models = {}  # TODO: FIFO bounded dict
 
         self.setLayout(layout)
         layout.addWidget(self.match_list)
@@ -590,14 +654,16 @@ class SearchLineEdit(QtWidgets.QLineEdit):
             self.clear_highlight()
             return
 
+        _, general_search = split_search_pattern(text)
+
         for grid in self.main.findChildren(lucid.overview.IndicatorGrid):
             updated = False
             min_ratio = 0.0
             for group_name, group in grid.groups.items():
                 for cell in group.cells:
                     old_ratio = grid.overlay.cell_to_percentage.get(cell, 0.0)
-                    new_ratio = max(fuzzy_match(name, text) / 100.0
-                                    for name in cell.matchable_names)
+                    new_ratio, matched = _cell_match(cell, general_search)
+                    new_ratio /= 100.
                     if old_ratio != new_ratio:
                         grid.overlay.cell_to_percentage[cell] = new_ratio
                         updated = True
