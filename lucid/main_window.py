@@ -13,7 +13,7 @@ from qtpy.QtCore import Qt, Signal
 from qtpy.QtWidgets import (QMainWindow, QToolBar, QStyle, QSizePolicy,
                             QWidget)
 
-from .utils import fuzzy_match, display_for_device, get_happi_client
+from . import utils
 
 
 logger = logging.getLogger(__name__)
@@ -354,7 +354,7 @@ _HAPPI_CACHE = None
 
 
 def _cell_match(cell, text_list, threshold=50):
-    ratio = [(fuzzy_match(name, text, threshold=threshold), name)
+    ratio = [(utils.fuzzy_match(name, text, threshold=threshold), name)
              for name in cell.matchable_names
              for text in text_list
              ]
@@ -367,6 +367,7 @@ def _cell_match(cell, text_list, threshold=50):
 
 def _thread_grid_search(callback, *, general_search, category_search,
                         threshold):
+    'Search the main grid for the given text, running callback on each result'
     if not general_search:
         return
 
@@ -379,45 +380,83 @@ def _thread_grid_search(callback, *, general_search, category_search,
                 ratio, match = _cell_match(cell, general_search,
                                            threshold=threshold)
                 if ratio > threshold:
-                    callback(dict(source='cell',
-                                  rank=ratio,
-                                  name=cell.title,
-                                  item=cell,
-                                  match_reason=match,
-                                  callback=cell.click,
-                                  )
-                             )
+                    callback(
+                        source='cell',
+                        rank=ratio,
+                        name=cell.title,
+                        item=cell,
+                        reason='cell ' + match,
+                        callback=cell.click,
+                    )
+
+
+def _raise_display(display):
+    logger.debug('Bringing %s to the front', display)
+    display.raise_()
+    display.activateWindow()
 
 
 def _thread_screens_search(callback, *, general_search, category_search,
                            threshold):
+    'Search open screens for the given text, running callback on each result'
     if not general_search:
         return
 
     main = LucidMainWindow.get_instance()
     for display in main.findChildren(typhon.TyphonDeviceDisplay):
-        ratio = max(fuzzy_match(display.device_name, text, threshold=threshold)
+        ratio = max(utils.fuzzy_match(display.device_name, text,
+                                      threshold=threshold)
                     for text in general_search)
         if ratio > threshold:
-            callback(dict(source='screens',
-                          rank=ratio,
-                          name=display.device_name,
-                          item=display,
-                          match_reason='',
-                          callback=display.raise_,
-                          )
-                     )
+            callback(
+                source='screens',
+                rank=ratio,
+                name=display.device_name,
+                item=display,
+                reason='device',
+                callback=lambda disp=display: _raise_display(disp),
+            )
+
+    for suite in main.findChildren(typhon.TyphonSuite):
+        suite_parent = suite.parent()
+        if not hasattr(suite_parent, 'title'):
+            continue
+
+        ratio = max(utils.fuzzy_match(suite_parent.title, text,
+                                      threshold=threshold)
+                    for text in general_search)
+        if ratio > threshold:
+            callback(
+                source='screens',
+                rank=ratio,
+                name=suite_parent.title,
+                item=suite,
+                reason='suite',
+                callback=lambda disp=suite: _raise_display(disp),
+            )
+
+
+def _happi_dict_to_display(d):
+    name = d['name']
+
+    @LucidMainWindow.in_dock(title=f'[happi] {name}')
+    def wrapped():
+        client = utils.get_happi_client()
+        # dictionary -> device container -> device -> display
+        happi_device = client.find_device(**d)
+        device = happi.loader.from_container(happi_device)
+        return utils.display_for_device(device)
+
+    wrapped()
 
 
 def _thread_happi_search(callback, *, general_search, category_search,
                          threshold):
-    '''
-    Search happi
-    '''
+    'Search happi for the given text, running callback on each result'
     global _HAPPI_CACHE
     if _HAPPI_CACHE is None:
         # TODO: re-read happi after a certain interval?
-        client = get_happi_client()
+        client = utils.get_happi_client()
         _HAPPI_CACHE = list(client.search(as_dict=True))
 
     for item in _HAPPI_CACHE:
@@ -425,28 +464,32 @@ def _thread_happi_search(callback, *, general_search, category_search,
         for key, text in category_search:
             value = item.get(key)
             if value is not None:
-                ratio = fuzzy_match(text, str(value), threshold=threshold)
+                ratio = utils.fuzzy_match(text, str(value),
+                                          threshold=threshold)
                 item_results.append((ratio, f'{key}: {value}'))
 
         for text in general_search:
             for key in ['name', 'prefix', 'stand']:
                 value = item.get(key)
                 if value is not None:
-                    ratio = fuzzy_match(text, str(value), threshold=threshold)
+                    ratio = utils.fuzzy_match(text, str(value),
+                                              threshold=threshold)
                     item_results.append((ratio, f'{key}: {value}'))
 
-        if item_results:
-            item_results.sort(reverse=True)
-            ratio, match = item_results[0]
-            if ratio > threshold:
-                callback(dict(source='happi',
-                              rank=ratio,
-                              name=item['name'],
-                              item=item,
-                              match_reason=match,
-                              callback=None,  # TODO: find or create display
-                              )
-                         )
+        if not item_results:
+            continue
+
+        item_results.sort(reverse=True)
+        ratio, match = item_results[0]
+        if ratio > threshold:
+            callback(
+                source='happi',
+                rank=ratio,
+                name=item['name'],
+                item=item,
+                reason=match,
+                callback=lambda ct=item: _happi_dict_to_display(ct),
+            )
 
 
 def _stringify_dict(d, skip_keys, prefix=' -', delim='\n'):
@@ -456,7 +499,7 @@ def _stringify_dict(d, skip_keys, prefix=' -', delim='\n'):
 
 
 class SearchModelItem(QtGui.QStandardItem):
-    def __init__(self, *, name, rank, item, match_reason, **info):
+    def __init__(self, *, name, rank, item, reason, **info):
         '''
         A single item shown in the search results.
 
@@ -468,7 +511,7 @@ class SearchModelItem(QtGui.QStandardItem):
             Sort rank, 0-100 where 100 is the best match
         item : object
             The object related to the item
-        match_reason : str
+        reason : str
             The reason for the match
         **info : dict
             Additional information. Recognized keys include::
@@ -477,21 +520,23 @@ class SearchModelItem(QtGui.QStandardItem):
         self.info = info
         self.item = item
         self.name = name
-        self.match_reason = match_reason
+        self.reason = reason
 
-        if len(match_reason) > 40:
-            match_reason = match_reason[:40] + '...'
-        text = f'{name} ({match_reason})' if match_reason else name
+        if len(reason) > 40:
+            reason = reason[:40] + '...'
+        text = f'{name} ({reason})' if reason else name
 
         super().__init__(text)
 
-        tooltip = '\n'.join((match_reason,
-                             '------------',
-                             str(_stringify_dict(item, skip_keys=())
-                                 if isinstance(item, dict) else item),
-                             '',
-                             _stringify_dict(info, skip_keys=('item', )),
-                             ))
+        tooltip = '\n'.join(
+            (reason,
+             '------------',
+             str(_stringify_dict(item, skip_keys=())
+                 if isinstance(item, dict) else item),
+             '',
+             _stringify_dict(info, skip_keys=('item', 'callback')),
+             )
+        )
 
         self.rank = rank
         self.setData(self.rank, Qt.UserRole)
@@ -504,11 +549,7 @@ class SearchModelItem(QtGui.QStandardItem):
             logger.debug('No callback for %s', self)
             return
 
-        try:
-            callback()
-        except Exception:
-            logger.exception('Error while running callback for %s (%r)',
-                             self, self.data())
+        callback()
 
 
 class SearchModel(QtGui.QStandardItemModel):
@@ -521,8 +562,11 @@ class SearchModel(QtGui.QStandardItemModel):
         category_search, general_search = split_search_pattern(text)
         self.new_result.connect(self.add_result)
 
+        def new_result(**kw):
+            self.new_result.emit(kw)
+
         self.search_threads = [
-            _SearchThread(func, self.new_result.emit, parent=self,
+            _SearchThread(func, new_result, parent=self,
                           kwargs=dict(category_search=category_search,
                                       general_search=general_search,
                                       threshold=threshold,))
@@ -556,7 +600,7 @@ class SearchDialog(QtWidgets.QDialog):
         # [match list]
         # [option frame]
         layout = QtWidgets.QVBoxLayout()
-        self.match_list = SearchMatchList()
+        self.match_list = SearchMatchList(self)
         self.models = {}  # TODO: FIFO bounded dict
 
         self.setLayout(layout)
@@ -624,7 +668,15 @@ class SearchMatchList(QtWidgets.QListView):
         proxy_model = self.model()
         model = proxy_model.sourceModel()
         item = model.itemFromIndex(proxy_model.mapToSource(index))
-        item.run_callback()
+        try:
+            item.run_callback()
+        except Exception:
+            logger.exception('Error while running callback for %s (%r)',
+                             item, item.data())
+        else:
+            line_edit = utils.find_ancestor_widget(self, SearchLineEdit)
+            if line_edit:
+                line_edit.clear_highlight()
 
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_Return:
@@ -651,7 +703,9 @@ class SearchLineEdit(QtWidgets.QLineEdit):
         self.setClearButtonEnabled(True)
 
         def text_changed(text):
-            self.show_search()
+            # TODO: rate limit and/or show only after a short delay
+            if len(text.strip()) > 1:
+                self.show_search()
 
         self.textChanged.connect(text_changed)
         self.textChanged.connect(self.highlight_matches)

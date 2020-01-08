@@ -141,3 +141,11 @@ def get_happi_client():
     if _HAPPI_CLIENT is None:
         _HAPPI_CLIENT = happi.Client.from_config()
     return _HAPPI_CLIENT
+
+
+def find_ancestor_widget(widget, cls):
+    'Find an ancestor of `widget` given its class `cls`'
+    while widget is not None:
+        if isinstance(widget, cls):
+            return widget
+        widget = widget.parent()
