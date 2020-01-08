@@ -609,6 +609,7 @@ class SearchModel(QtGui.QStandardItemModel):
         def new_result(**kw):
             self.new_result.emit(kw)
 
+        self._callback_results = set()
         self.search_threads = [
             _SearchThread(func, new_result, parent=self,
                           kwargs=dict(category_search=category_search,
@@ -622,6 +623,11 @@ class SearchModel(QtGui.QStandardItemModel):
         ]
 
     def add_result(self, info):
+        key = (info['name'], info['source'], info['reason'])
+        if key in self._callback_results:
+            return
+        self._callback_results.add(key)
+
         self.appendRow(SearchModelItem(**info))
 
     def cancel(self):
