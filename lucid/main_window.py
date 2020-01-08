@@ -383,8 +383,8 @@ def _thread_grid_search(callback, *, general_search, category_search,
                                   rank=ratio,
                                   name=cell.title,
                                   item=cell,
-                                  match=match,
-                                  callback=None,
+                                  match_reason=match,
+                                  callback=cell.click,
                                   )
                              )
 
@@ -403,7 +403,7 @@ def _thread_screens_search(callback, *, general_search, category_search,
                           rank=ratio,
                           name=display.device_name,
                           item=display,
-                          match='',
+                          match_reason='',
                           callback=display.raise_,
                           )
                      )
@@ -443,10 +443,72 @@ def _thread_happi_search(callback, *, general_search, category_search,
                               rank=ratio,
                               name=item['name'],
                               item=item,
-                              match=match,
+                              match_reason=match,
                               callback=None,  # TODO: find or create display
                               )
                          )
+
+
+def _stringify_dict(d, skip_keys, prefix=' -', delim='\n'):
+    return '\n'.join(f'{prefix}{key}: {value}'
+                     for key, value in d.items()
+                     if key not in skip_keys)
+
+
+class SearchModelItem(QtGui.QStandardItem):
+    def __init__(self, *, name, rank, item, match_reason, **info):
+        '''
+        A single item shown in the search results.
+
+        Parameters
+        ----------
+        name : str
+            The cell/device/etc. name
+        rank : int
+            Sort rank, 0-100 where 100 is the best match
+        item : object
+            The object related to the item
+        match_reason : str
+            The reason for the match
+        **info : dict
+            Additional information. Recognized keys include::
+                {'callback', }
+        '''
+        self.info = info
+        self.item = item
+        self.name = name
+        self.match_reason = match_reason
+
+        if len(match_reason) > 40:
+            match_reason = match_reason[:40] + '...'
+        text = f'{name} ({match_reason})' if match_reason else name
+
+        super().__init__(text)
+
+        tooltip = '\n'.join((match_reason,
+                             '------------',
+                             str(_stringify_dict(item, skip_keys=())
+                                 if isinstance(item, dict) else item),
+                             '',
+                             _stringify_dict(info, skip_keys=('item', )),
+                             ))
+
+        self.rank = rank
+        self.setData(self.rank, Qt.UserRole)
+        self.setData(tooltip, Qt.ToolTipRole)
+        self.setEditable(False)
+
+    def run_callback(self):
+        callback = self.info.get('callback')
+        if callback is None:
+            logger.debug('No callback for %s', self)
+            return
+
+        try:
+            callback()
+        except Exception:
+            logger.exception('Error while running callback for %s (%r)',
+                             self, self.data())
 
 
 class SearchModel(QtGui.QStandardItemModel):
@@ -472,37 +534,7 @@ class SearchModel(QtGui.QStandardItemModel):
         ]
 
     def add_result(self, info):
-        name = info['name']
-        match = info['match']
-        if len(match) > 40:
-            match = match[:40] + '...'
-        if match:
-            text = f'{name} ({match})'
-        else:
-            text = name
-
-        item = info.get('item')
-        if isinstance(item, dict):
-            pretty_item = '\n'.join(f'- {key}: {value}'
-                                    for key, value in item.items())
-        else:
-            pretty_item = str(item)
-
-        pretty_info = '\n'.join(f'- {key}: {value}'
-                                for key, value in info.items()
-                                if key != 'item')
-
-        tooltip = '\n'.join((info['match'],
-                             '------------',
-                             pretty_item,
-                             '',
-                             pretty_info
-                             ))
-
-        item = QtGui.QStandardItem(text)
-        item.setData(info['rank'], Qt.UserRole)
-        item.setData(tooltip, Qt.ToolTipRole)
-        self.appendRow(item)
+        self.appendRow(SearchModelItem(**info))
 
     def cancel(self):
         ...
@@ -519,12 +551,12 @@ class SearchDialog(QtWidgets.QDialog):
         self.setWindowFlag(Qt.Popup, True)
 
         if hasattr(parent, 'key_pressed'):
-            parent.key_pressed.connect(self._handle_keypress)
+            parent.key_pressed.connect(self._handle_search_keypress)
 
         # [match list]
         # [option frame]
         layout = QtWidgets.QVBoxLayout()
-        self.match_list = QtWidgets.QListView()
+        self.match_list = SearchMatchList()
         self.models = {}  # TODO: FIFO bounded dict
 
         self.setLayout(layout)
@@ -552,6 +584,14 @@ class SearchDialog(QtWidgets.QDialog):
         for w in (self.option_grid, self.option_screens, self.option_happi):
             option_layout.addWidget(w)
             w.setChecked(True)
+            w.stateChanged.connect(lambda state: self._search_settings_changed())
+
+    @property
+    def text(self):
+        return self.parent().text()
+
+    def _search_settings_changed(self):
+        self.search(self.text)
 
     def search(self, text):
         key = (text, self.option_happi.isChecked(),
@@ -568,24 +608,35 @@ class SearchDialog(QtWidgets.QDialog):
 
         self.proxy_model.setSourceModel(model)
 
-    def _handle_keypress(self, event):
+    def _handle_search_keypress(self, event):
         key = event.key()
-        if key == Qt.Key_Down:
-            ...
-        elif key == Qt.Key_Up:
-            ...
-        elif key == Qt.Key_PageDown:
-            ...
-        elif key == Qt.Key_PageUp:
-            ...
-
-    def keyPressEvent(self, event):
-        self._handle_keypress(event)
-        super().keyPressEvent(event)
+        if key in (Qt.Key_Down, Qt.Key_Up, Qt.Key_PageDown, Qt.Key_PageUp,
+                   Qt.Key_Return):
+            app = QtWidgets.QApplication.instance()
+            app.sendEvent(self.match_list, event)
 
     def cancel(self):
         ...
-        # self.model.cancel()
+
+
+class SearchMatchList(QtWidgets.QListView):
+    def doubleClicked(self, index : QtCore.QModelIndex):
+        proxy_model = self.model()
+        model = proxy_model.sourceModel()
+        item = model.itemFromIndex(proxy_model.mapToSource(index))
+        item.run_callback()
+
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key_Return:
+            try:
+                index, = self.selectedIndexes()
+            except Exception:
+                ...
+            else:
+                self.doubleClicked(index)
+                return
+
+        super().keyPressEvent(event)
 
 
 class SearchLineEdit(QtWidgets.QLineEdit):
