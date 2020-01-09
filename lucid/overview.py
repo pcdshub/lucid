@@ -1,14 +1,16 @@
 """Overview of the Experimental Area"""
+import weakref
 from functools import partial
 
+from qtpy import QtWidgets, QtGui, QtCore
 from qtpy.QtCore import QEvent, Qt, Property, QSize
 from qtpy.QtGui import QContextMenuEvent, QHoverEvent
 from qtpy.QtWidgets import (QPushButton, QMenu, QGridLayout, QWidget)
 from typhon.utils import reload_widget_stylesheet
 
-from lucid import LucidMainWindow
-from lucid.utils import (SnakeLayout, indicator_for_device, display_for_device,
-                         suite_for_devices)
+import lucid
+from .utils import (SnakeLayout, indicator_for_device, display_for_device,
+                    suite_for_devices)
 
 
 class BaseDeviceButton(QPushButton):
@@ -21,7 +23,7 @@ class BaseDeviceButton(QPushButton):
         self._device_displays = {}
         self._suite = None
         # Click button action
-        self.clicked.connect(LucidMainWindow.in_dock(
+        self.clicked.connect(lucid.LucidMainWindow.in_dock(
             self.show_all,
             title=self.title,
             active_slot=self._devices_shown))
@@ -44,8 +46,7 @@ class BaseDeviceButton(QPushButton):
     def show_all(self):
         """Create a widget for contained devices"""
         if not self._suite:
-            self._suite = suite_for_devices(self.devices)
-            self._suite.setParent(self)
+            self._suite = suite_for_devices(self.devices, parent=self)
         else:
             # Check that any devices that have been added since our last show
             # request have been added to the TyphonSuite
@@ -66,7 +67,7 @@ class BaseDeviceButton(QPushButton):
         for device in self.devices:
             if device.name not in menu_devices:
                 # Add to device menu
-                show_device = LucidMainWindow.in_dock(
+                show_device = lucid.LucidMainWindow.in_dock(
                     partial(self.show_device, device),
                     title=device.name)
                 self.device_menu.addAction(device.name, show_device)
@@ -89,10 +90,15 @@ class IndicatorCell(BaseDeviceButton):
         self._selecting_widgets = list()
         self.devices = list()
 
+    @property
+    def matchable_names(self):
+        """All names used for text searching"""
+        return [self.title] + [device.name for device in self.devices]
+
     @Property(bool)
     def selected(self):
         """Whether the devices in this cell have been selected"""
-        return self._selecting_widgets != []
+        return len(self._selecting_widgets)
 
     def add_indicator(self, widget):
         """Add an indicator to the Panel"""
@@ -148,11 +154,12 @@ class IndicatorCell(BaseDeviceButton):
 class IndicatorGroup(BaseDeviceButton):
     """QPushButton to select an entire row or column of devices"""
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, orientation, **kwargs):
         super().__init__(*args, **kwargs)
         self.setText(str(self.title))
         self.cells = []
         self.installEventFilter(self)
+        self.orientation = orientation
 
     def add_cell(self, cell):
         self.cells.append(cell)
@@ -161,6 +168,14 @@ class IndicatorGroup(BaseDeviceButton):
     def devices(self):
         """All devices contained in the ``IndicatorGroup``"""
         return [device for cell in self.cells for device in cell.devices]
+
+    @property
+    def device_to_indicator(self):
+        """Dictionary of Device to IndicatorCell"""
+        return {device: cell
+                for cell in self.cells
+                for device in cell.devices
+                }
 
     def eventFilter(self, obj, event):
         """Share QHoverEvents with all cells in the group"""
@@ -186,8 +201,14 @@ class IndicatorGrid(QWidget):
         self.layout().setSizeConstraint(QGridLayout.SetFixedSize)
         self._groups = dict()
         self.setStyleSheet(
-            'QWidget[selected="true"] '
-            '{background-color: rgba(20, 140, 210, 150)}')
+            '''\
+QWidget[selected="true"] {background-color: rgba(20, 140, 210, 150);}
+            ''')
+
+    @property
+    def groups(self):
+        'A dictionary of name to IndicatorGroup'
+        return dict(self._groups)
 
     def add_devices(self, devices, system=None, stand=None):
         # Create cell
@@ -211,7 +232,8 @@ class IndicatorGrid(QWidget):
 
     def _add_group(self, group, as_row):
         # Add to layout
-        group = IndicatorGroup(title=group)
+        group = IndicatorGroup(title=group,
+                               orientation='row' if as_row else 'column')
         self._groups[group.title] = group
         # Find the correct position
         if as_row:
@@ -219,3 +241,105 @@ class IndicatorGrid(QWidget):
         else:
             (row, column) = (self.layout().rowCount(), 0)
         self.layout().addWidget(group, row, column, Qt.AlignVCenter)
+
+
+class IndicatorOverlay(QWidget):
+    def __init__(self, parent, grid):
+        super().__init__(parent)
+
+        self.grid = grid
+        self.setAttribute(Qt.WA_NoSystemBackground, True)
+        self.setAttribute(Qt.WA_TransparentForMouseEvents, True)
+        self.setAttribute(Qt.WA_TranslucentBackground, True)
+        self.setWindowFlags(self.windowFlags() | Qt.WindowStaysOnTopHint)
+
+        self.cell_to_percentage = weakref.WeakKeyDictionary()
+
+    def paintEvent(self, ev):
+        self.resize(self.grid.size())
+
+        dpr = self.grid.devicePixelRatioF()
+        buffer = QtGui.QPixmap(self.grid.width() * dpr,
+                               self.grid.height() * dpr)
+        buffer.setDevicePixelRatio(dpr)
+
+        buffer.fill(Qt.transparent)
+
+        painter = QtGui.QPainter()
+
+        def cell_to_radius():
+            for name, group in self.grid._groups.items():
+                for cell in group.cells:
+                    diameter = max((cell.width(), cell.height()))
+                    radius = diameter / 2
+
+                    cell_rect = cell.rect()
+                    cell_rect.moveTopLeft(cell.pos())
+                    center_pos = cell_rect.center()
+
+                    cx = center_pos.x() - radius
+                    cy = center_pos.y() - radius
+                    cell_rect = QtCore.QRectF(cx, cy, diameter, diameter)
+                    percent = self.cell_to_percentage.get(cell, 0.0)
+                    if percent > draw_threshold:
+                        percent = ((percent - draw_threshold) /
+                                   (1 - draw_threshold))
+                        yield cell, cell_rect, radius, percent
+
+        painter.begin(buffer)
+        painter.setRenderHint(painter.Antialiasing)
+
+        painter.setBackgroundMode(Qt.TransparentMode)
+        painter.fillRect(buffer.rect(), QtGui.QColor(0, 0, 0, 127))
+
+        pen_size = 40
+        try:
+            max_percent = max(self.cell_to_percentage.values())
+        except ValueError:
+            max_percent = 0.0
+
+        draw_threshold = max_percent * 0.8
+
+        for cell, cell_rect, radius, percent in cell_to_radius():
+            gradient = QtGui.QRadialGradient(cell_rect.center(), radius)
+            if percent >= 0.95:
+                color = (0, 1, 0, 1.0)
+            else:
+                color = (1, 1, 1, percent)
+
+            gradient.setColorAt(0.7, QtGui.QColor.fromRgbF(*color))
+            gradient.setColorAt(1, QtGui.QColor.fromRgbF(0, 0, 0, 0))
+
+            brush = QtGui.QBrush(gradient)
+            pen = QtGui.QPen(brush, pen_size)
+            painter.setPen(pen)
+            painter.drawEllipse(cell_rect)
+
+        painter.setCompositionMode(painter.CompositionMode_Clear)
+        painter.setPen(Qt.NoPen)
+        painter.setBrush(Qt.transparent)
+
+        for cell, cell_rect, radius, percent in cell_to_radius():
+            margin = max(((1.0 - percent) * (pen_size / 2),
+                          5))
+            inner_ellipse = cell_rect.marginsRemoved(
+                QtCore.QMarginsF(margin, margin, margin, margin))
+            painter.drawEllipse(inner_ellipse)
+
+        painter.end()
+
+        painter.begin(self)
+        painter.setCompositionMode(painter.CompositionMode_SourceOver)
+        painter.drawPixmap(self.rect(), buffer, buffer.rect())
+        painter.end()
+
+
+class IndicatorGridWithOverlay(IndicatorGrid):
+    def __init__(self, parent=None):
+        super().__init__(parent=None)
+        self.frame = QtWidgets.QFrame(parent)
+        self.setParent(self.frame)
+
+        self.overlay = IndicatorOverlay(self.frame, self)
+        self.overlay.setVisible(False)
+        self.stackUnder(self.overlay)

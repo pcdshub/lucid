@@ -1,11 +1,16 @@
 import logging
 
+import happi
+import fuzzywuzzy.fuzz
+
 from pydm.widgets import PyDMDrawingCircle
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QGridLayout
 from typhon import TyphonDeviceDisplay, TyphonSuite
 
 logger = logging.getLogger(__name__)
+
+HAPPI_GENERAL_SEARCH_KEYS = ('name', 'prefix', 'stand')
 
 
 class SnakeLayout(QGridLayout):
@@ -87,9 +92,62 @@ def display_for_device(device, display_type=None):
     return display
 
 
-def suite_for_devices(devices):
+def suite_for_devices(devices, *, parent=None):
     """Create a TyphonSuite to display multiple devices"""
-    suite = TyphonSuite()
+    suite = TyphonSuite(parent=parent)
     for device in devices:
         suite.add_device(device)
     return suite
+
+
+def fuzzy_match(a, b, *, case_insensitive=True, threshold=50):
+    'Fuzzy matching of strings `a` and `b`, with some LUCID-specific tweaks'
+    if case_insensitive:
+        a = a.lower()
+        b = b.lower()
+
+    ratio = fuzzywuzzy.fuzz.ratio(a, b)
+    if ratio >= threshold:
+        return ratio
+
+    # Special case a few scenarios, returning a value just at the threshold
+    # of interest:
+    # * 'VGC1' should match 'vgc_1' - ignore underscores and check if the
+    #   string is in
+    # * 'abc' should match 'xyz abc123' - despite the low fuzzing similarity
+    # * 'abc' should match 'xyz 123 abc' - despite the low fuzzing similarity,
+    #   and with a score better than the previous
+    # TODO: there are very likely better ways of doing this
+    for ignore_char in [None, '_']:
+        for s1, s2 in [(a, b), (b, a)]:
+            if ignore_char:
+                s1 = s1.replace(ignore_char, '')
+                s2 = s2.replace(ignore_char, '')
+
+            if len(s1) > len(s2) > 2:
+                if s1.endswith(s2) or s1.startswith(s2):
+                    return threshold + 1
+                if s1 in s2:
+                    return threshold
+    return ratio
+
+
+_HAPPI_CLIENT = None
+
+
+def get_happi_client():
+    '''
+    Create and cache a happi client from configuration
+    '''
+    global _HAPPI_CLIENT
+    if _HAPPI_CLIENT is None:
+        _HAPPI_CLIENT = happi.Client.from_config()
+    return _HAPPI_CLIENT
+
+
+def find_ancestor_widget(widget, cls):
+    'Find an ancestor of `widget` given its class `cls`'
+    while widget is not None:
+        if isinstance(widget, cls):
+            return widget
+        widget = widget.parent()

@@ -1,5 +1,9 @@
+import logging
 import pathlib
 
+import lucid
+
+from qtpy import QtWidgets
 from PyQtAds import QtAds
 
 MODULE_PATH = pathlib.Path(__file__).parent
@@ -63,12 +67,8 @@ def parse_arguments(*args, **kwargs):
 
 def launch(beamline, *, toolbar=None, row_group_key="location_group",
            col_group_key="functional_group", log_level="INFO"):
-    import logging
-    from qtpy.QtWidgets import QApplication
     import happi
     import typhon
-    from .main_window import LucidMainWindow
-    from .overview import IndicatorGrid
 
     logger = logging.getLogger('')
     handler = logging.StreamHandler()
@@ -79,15 +79,17 @@ def launch(beamline, *, toolbar=None, row_group_key="location_group",
     logger.setLevel(log_level)
     handler.setLevel(log_level)
 
-    app = QApplication([])
-
-    window = LucidMainWindow()
+    app = QtWidgets.QApplication([])
+    app.setOrganizationName("SLAC National Accelerator Laboratory")
+    app.setOrganizationDomain("slac.stanford.edu")
+    app.setApplicationName("LUCID")
+    window = lucid.main_window.LucidMainWindow()
     typhon.use_stylesheet(dark=False)
-    grid = IndicatorGrid()
+    grid = lucid.overview.IndicatorGridWithOverlay()
 
     if beamline != 'DEMO':
         # Fill with Data from Happi
-        cli = happi.Client.from_config()
+        cli = lucid.utils.get_happi_client()
         devices = cli.search(beamline=beamline)
 
         for dev in devices:
@@ -117,7 +119,7 @@ def launch(beamline, *, toolbar=None, row_group_key="location_group",
                 grid.add_devices(devices, stand=stand, system=system)
 
     dock_widget = QtAds.CDockWidget('Grid')
-    dock_widget.setWidget(grid)
+    dock_widget.setWidget(grid.frame)
 
     dock_widget.setToggleViewActionMode(QtAds.CDockWidget.ActionModeShow)
 

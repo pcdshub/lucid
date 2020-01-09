@@ -4,3 +4,4 @@ ophyd
 qtpy
 qtpy
 git+https://github.com/pcdshub/typhon
+fuzzywuzzy
