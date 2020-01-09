@@ -477,7 +477,7 @@ def _thread_happi_search(callback, *, general_search, category_search,
                 item_results.append((ratio, f'{key}: {value}'))
 
         for text in general_search:
-            for key in ['name', 'prefix', 'stand']:
+            for key in utils.HAPPI_GENERAL_SEARCH_KEYS:
                 value = item.get(key)
                 if value is not None:
                     ratio = utils.fuzzy_match(text, str(value),

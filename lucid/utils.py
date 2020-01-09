@@ -10,6 +10,8 @@ from typhon import TyphonDeviceDisplay, TyphonSuite
 
 logger = logging.getLogger(__name__)
 
+HAPPI_GENERAL_SEARCH_KEYS = ('name', 'prefix', 'stand')
+
 
 class SnakeLayout(QGridLayout):
     """
