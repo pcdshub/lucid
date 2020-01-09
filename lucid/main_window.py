@@ -18,7 +18,6 @@ from . import utils
 logger = logging.getLogger(__name__)
 
 MODULE_PATH = pathlib.Path(__file__).parent
-_HAPPI_CACHE = None
 _ICONS = {}
 
 
@@ -422,13 +421,7 @@ def _happi_dict_to_display(d):
 def _thread_happi_search(callback, *, general_search, category_search,
                          threshold):
     'Search happi for the given text, running callback on each result'
-    global _HAPPI_CACHE
-    if _HAPPI_CACHE is None:
-        # TODO: re-read happi after a certain interval?
-        client = utils.get_happi_client()
-        _HAPPI_CACHE = list(client.search(as_dict=True))
-
-    for item in _HAPPI_CACHE:
+    for item in utils.get_happi_device_cache():
         item_results = []
         for key, text in category_search:
             value = item.get(key)
