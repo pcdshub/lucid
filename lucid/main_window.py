@@ -1,7 +1,6 @@
 import functools
 import logging
 import pathlib
-import re
 
 import happi
 import lucid
@@ -323,37 +322,6 @@ class _SearchThread(QtCore.QThread):
             logger.exception('Search thread failed! func=%s',
                              self.func.__name__)
 
-SEARCH_PATTERN = re.compile(
-    r'((?P<category>[a-z_][a-z0-9_]*):\s*)?(?P<text>[^ ]+)',
-    re.VERBOSE | re.IGNORECASE
-)
-
-def split_search_pattern(text):
-    '''
-    Split search pattern into (optional) categories
-    Patterns are space-delimited, with each entry as follows:
-        category_name: text_to_match_in_category
-        text_to_match_generally
-    '''
-
-    matches = list(m.groupdict()
-                   for m in SEARCH_PATTERN.finditer(text.strip())
-                   )
-    by_category = [
-        (m['category'], m['text'])
-        for m in matches if m['category'] is not None
-    ]
-
-    general = [
-        m['text']
-        for m in matches if m['category'] is None
-    ]
-
-    if general:
-        general.append(' '.join(general))
-
-    return by_category, general
-
 
 _HAPPI_CACHE = None
 
@@ -378,8 +346,6 @@ def _thread_grid_search(callback, *, general_search, category_search,
 
     main = LucidMainWindow.get_instance()
     for grid in main.findChildren(lucid.overview.IndicatorGrid):
-        updated = False
-        min_ratio = 0.0
         for group_name, group in grid.groups.items():
             if group.orientation == 'row':
                 # Only iterate over vertical-column groups
@@ -606,7 +572,7 @@ class SearchModel(QtGui.QStandardItemModel):
                  search_screens=True, threshold=60):
         super().__init__(0, 1)
 
-        category_search, general_search = split_search_pattern(text)
+        category_search, general_search = utils.split_search_pattern(text)
         self.new_result.connect(self.add_result)
 
         def new_result(**kw):
@@ -681,7 +647,9 @@ class SearchDialog(QtWidgets.QDialog):
         for w in (self.option_grid, self.option_screens, self.option_happi):
             option_layout.addWidget(w)
             w.setChecked(True)
-            w.stateChanged.connect(lambda state: self._search_settings_changed())
+            w.stateChanged.connect(
+                lambda state: self._search_settings_changed()
+            )
 
     @property
     def text(self):
@@ -721,7 +689,7 @@ class SearchMatchList(QtWidgets.QListView):
         super().__init__(parent)
         self.doubleClicked.connect(self._run_callback)
 
-    def _run_callback(self, index : QtCore.QModelIndex):
+    def _run_callback(self, index: QtCore.QModelIndex):
         proxy_model = self.model()
         model = proxy_model.sourceModel()
         item = model.itemFromIndex(proxy_model.mapToSource(index))
@@ -839,7 +807,7 @@ class SearchLineEdit(QtWidgets.QLineEdit):
             self.clear_highlight()
             return
 
-        _, general_search = split_search_pattern(text)
+        _, general_search = utils.split_search_pattern(text)
 
         for grid in self.main.findChildren(lucid.overview.IndicatorGrid):
             updated = False

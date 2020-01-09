@@ -1,4 +1,5 @@
 import logging
+import re
 
 import happi
 import fuzzywuzzy.fuzz
@@ -151,3 +152,36 @@ def find_ancestor_widget(widget, cls):
         if isinstance(widget, cls):
             return widget
         widget = widget.parent()
+
+
+SEARCH_PATTERN = re.compile(
+    r'((?P<category>[a-z_][a-z0-9_]*):\s*)?(?P<text>[^ ]+)',
+    re.VERBOSE | re.IGNORECASE
+)
+
+
+def split_search_pattern(text):
+    '''
+    Split search pattern into (optional) categories
+    Patterns are space-delimited, with each entry as follows:
+        category_name: text_to_match_in_category
+        text_to_match_generally
+    '''
+
+    matches = list(m.groupdict()
+                   for m in SEARCH_PATTERN.finditer(text.strip())
+                   )
+    by_category = [
+        (m['category'], m['text'])
+        for m in matches if m['category'] is not None
+    ]
+
+    general = [
+        m['text']
+        for m in matches if m['category'] is None
+    ]
+
+    if general:
+        general.append(' '.join(general))
+
+    return by_category, general
