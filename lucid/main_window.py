@@ -18,6 +18,8 @@ from . import utils
 logger = logging.getLogger(__name__)
 
 MODULE_PATH = pathlib.Path(__file__).parent
+_HAPPI_CACHE = None
+_ICONS = {}
 
 
 class LucidMainWindowMenu(QtWidgets.QMenuBar):
@@ -28,11 +30,7 @@ class LucidMainWindowMenu(QtWidgets.QMenuBar):
     def __init__(self, parent, *, settings=None):
         super().__init__(parent)
         self.main = parent
-
-        if settings is None:
-            settings = {}
-
-        self.settings = dict(settings)
+        self.settings = dict(settings or {})
         self.actions = {}
         self._create_menu()
 
@@ -323,9 +321,6 @@ class _SearchThread(QtCore.QThread):
                              self.func.__name__)
 
 
-_HAPPI_CACHE = None
-
-
 def _cell_match(cell, text_list, threshold=50):
     ratio = [(utils.fuzzy_match(name, text, threshold=threshold), name)
              for name in cell.matchable_names
@@ -470,9 +465,6 @@ def _stringify_dict(d, skip_keys, prefix=' -', delim='\n'):
     return '\n'.join(f'{prefix}{key}: {value}'
                      for key, value in d.items()
                      if key not in skip_keys)
-
-
-_ICONS = {}
 
 
 def _generate_icon(key):
