@@ -474,7 +474,7 @@ def _thread_happi_search(callback, *, general_search, category_search,
             if value is not None:
                 ratio = utils.fuzzy_match(text, str(value),
                                           threshold=threshold)
-                item_results.append((ratio, f'{key}: {value}'))
+                item_results.append((ratio, key, value))
 
         for text in general_search:
             for key in utils.HAPPI_GENERAL_SEARCH_KEYS:
@@ -482,20 +482,20 @@ def _thread_happi_search(callback, *, general_search, category_search,
                 if value is not None:
                     ratio = utils.fuzzy_match(text, str(value),
                                               threshold=threshold)
-                    item_results.append((ratio, f'{key}: {value}'))
+                    item_results.append((ratio, key, value))
 
         if not item_results:
             continue
 
         item_results.sort(reverse=True)
-        ratio, match = item_results[0]
+        ratio, key, value = item_results[0]
         if ratio > threshold:
             callback(
                 source='happi',
                 rank=ratio,
                 name=item['name'],
                 item=item,
-                reason=match,
+                reason=f'{key}: {value}',
                 callback=lambda ct=item: _happi_dict_to_display(ct),
             )
 
