@@ -22,7 +22,8 @@ requirements:
     - pyqtads
     - ophyd
     - qtpy
-    - typhon >=0.4
+    - typhos >=0.4
+    - fuzzywuzzy
 
 test:
   imports:
