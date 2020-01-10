@@ -2,6 +2,5 @@ pydm
 git+https://github.com/githubuser0xFFFF/Qt-Advanced-Docking-System
 ophyd
 qtpy
-qtpy
-git+https://github.com/pcdshub/typhon
+typhos
 fuzzywuzzy
