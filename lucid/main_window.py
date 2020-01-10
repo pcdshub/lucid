@@ -627,6 +627,7 @@ class SearchDialog(QtWidgets.QDialog):
         self.option_grid = QtWidgets.QCheckBox('&Grid')
         self.option_screens = QtWidgets.QCheckBox('&Screens')
         self.option_happi = QtWidgets.QCheckBox('&Happi')
+        self.refresh_button = QtWidgets.QPushButton('&Refresh')
 
         for w in (self.option_grid, self.option_screens, self.option_happi):
             option_layout.addWidget(w)
@@ -634,6 +635,13 @@ class SearchDialog(QtWidgets.QDialog):
             w.stateChanged.connect(
                 lambda state: self._search_settings_changed()
             )
+
+        option_layout.addWidget(self.refresh_button)
+
+        def refresh_clicked():
+            self.search(self.text, force_update=True)
+
+        self.refresh_button.clicked.connect(refresh_clicked)
 
     @property
     def text(self):
@@ -649,7 +657,7 @@ class SearchDialog(QtWidgets.QDialog):
         key = (text, self.option_happi.isChecked(),
                self.option_grid.isChecked(), self.option_screens.isChecked())
 
-        if key not in models or force_update:
+        if key not in self.models or force_update:
             model = SearchModel(text,
                                 search_happi=self.option_happi.isChecked(),
                                 search_grid=self.option_grid.isChecked(),
@@ -745,7 +753,7 @@ class SearchLineEdit(QtWidgets.QLineEdit):
             return
         corner_pos = self.mapToGlobal(self.rect().bottomLeft())
         self.search_frame.setGeometry(
-            corner_pos.x(), corner_pos.y(),
+            corner_pos.x(), corner_pos.y() + 1,
             width or self.search_frame.width(),
             height or self.search_frame.height()
         )
