@@ -82,7 +82,8 @@ class TestSquare(_TestBase):
         3: {'e': 4},
         4: {}
     }
-    sizes = [(3, 3),(3, 3),(3, 3),(3, 3), (3, 3)]
+    sizes = [(3, 3), (3, 3), (3, 3), (3, 3), (3, 3)]
+
 
 class TestKen(_TestBase):
     connections = {
@@ -93,7 +94,8 @@ class TestKen(_TestBase):
         4: {'n': 5},
         5: {}
     }
-    sizes = [(3, 3),(3, 3),(3, 3),(3, 3), (3, 3), (3, 3)]
+    sizes = [(3, 3), (3, 3), (3, 3), (3, 3), (3, 3), (3, 3)]
+
 
 class TestKen2(_TestBase):
     connections = {
@@ -104,7 +106,8 @@ class TestKen2(_TestBase):
         4: {'e': 5},
         5: {}
     }
-    sizes = [(3, 3),(3, 3),(3, 3),(3, 3), (3, 3), (3, 3)]
+    sizes = [(3, 3), (3, 3), (3, 3), (3, 3), (3, 3), (3, 3)]
+
 
 class TestLoopConnection(_TestBase):
     connections = {
@@ -114,7 +117,7 @@ class TestLoopConnection(_TestBase):
         3: {'w': 4},
         4: {'s': 1}
     }
-    sizes = [(3, 3),(3, 3),(3, 3),(3, 3), (3, 3)]
+    sizes = [(3, 3), (3, 3), (3, 3), (3, 3), (3, 3)]
 
 
 class TestIntercardinal(_TestBase):
@@ -125,12 +128,13 @@ class TestIntercardinal(_TestBase):
         3: {'nw': 4},
         4: {},
     }
-    sizes = [(3, 3),(3, 3),(3, 3),(3, 3),(3, 3)]
+    sizes = [(3, 3), (3, 3), (3, 3), (3, 3), (3, 3)]
 
 
 def save_image(scene, view, fn, bg=QtCore.Qt.black):
     area = scene.itemsBoundingRect()
-    image = QtGui.QImage(area.width(), area.height(), QtGui.QImage.Format_ARGB32_Premultiplied)
+    image = QtGui.QImage(area.width(), area.height(),
+                         QtGui.QImage.Format_ARGB32_Premultiplied)
     image.fill(bg)
     painter = QtGui.QPainter(image)
     scene.render(painter, QtCore.QRectF(image.rect()), area)
