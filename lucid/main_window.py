@@ -638,17 +638,19 @@ class SearchDialog(QtWidgets.QDialog):
 
     @property
     def text(self):
+        'The search text from the parent (SearchLineEdit)'
         return self.parent().text()
 
     def _search_settings_changed(self):
+        'Grid/screens/happi/etc parameters changed -> search again'
         self.search(self.text)
 
-    def search(self, text):
+    def search(self, text, *, force_update=False):
+        'Spawn a search for the given text, optionally clearing cached results'
         key = (text, self.option_happi.isChecked(),
                self.option_grid.isChecked(), self.option_screens.isChecked())
-        try:
-            model = self.models[key]
-        except KeyError:
+
+        if key not in models or force_update:
             model = SearchModel(text,
                                 search_happi=self.option_happi.isChecked(),
                                 search_grid=self.option_grid.isChecked(),
@@ -656,9 +658,10 @@ class SearchDialog(QtWidgets.QDialog):
                                 )
             self.models[key] = model
 
-        self.proxy_model.setSourceModel(model)
+        self.proxy_model.setSourceModel(self.models[key])
 
     def _handle_search_keypress(self, event):
+        'Forward SearchLineEdit keypresses to the match list'
         key = event.key()
         if key in (Qt.Key_Down, Qt.Key_Up, Qt.Key_PageDown, Qt.Key_PageUp,
                    Qt.Key_Return):
