@@ -9,8 +9,7 @@ import typhon
 from PyQtAds import QtAds
 from qtpy import QtCore, QtWidgets, QtGui
 from qtpy.QtCore import Qt, Signal
-from qtpy.QtWidgets import (QMainWindow, QToolBar, QStyle, QSizePolicy,
-                            QWidget)
+from qtpy.QtWidgets import QMainWindow, QStyle, QSizePolicy
 
 from . import utils
 
@@ -829,7 +828,7 @@ class SearchLineEdit(QtWidgets.QLineEdit):
             self.search_frame.setVisible(False)
 
 
-class LucidToolBar(QToolBar):
+class LucidToolBar(QtWidgets.QToolBar):
     """LucidToolBar for LucidMainWindow"""
 
     def __init__(self, parent=None):
@@ -844,7 +843,7 @@ class LucidToolBar(QToolBar):
                        'Forward')
         self.addSeparator()
         # Spacer
-        spacer = QWidget()
+        spacer = QtWidgets.QWidget()
         spacer.setSizePolicy(QSizePolicy.MinimumExpanding,
                              QSizePolicy.MinimumExpanding)
         self.addWidget(spacer)
