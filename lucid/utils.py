@@ -1,4 +1,6 @@
 import logging
+import re
+import time
 
 import happi
 import fuzzywuzzy.fuzz
@@ -11,6 +13,8 @@ from typhon import TyphonDeviceDisplay, TyphonSuite
 logger = logging.getLogger(__name__)
 
 HAPPI_GENERAL_SEARCH_KEYS = ('name', 'prefix', 'stand')
+_HAPPI_CACHE = None
+HAPPI_CACHE_UPDATE_PERIOD = 60 * 30
 
 
 class SnakeLayout(QGridLayout):
@@ -151,3 +155,51 @@ def find_ancestor_widget(widget, cls):
         if isinstance(widget, cls):
             return widget
         widget = widget.parent()
+
+
+SEARCH_PATTERN = re.compile(
+    r'((?P<category>[a-z_][a-z0-9_]*):\s*)?(?P<text>[^ ]+)',
+    re.VERBOSE | re.IGNORECASE
+)
+
+
+def split_search_pattern(text):
+    '''
+    Split search pattern into (optional) categories
+    Patterns are space-delimited, with each entry as follows:
+        category_name: text_to_match_in_category
+        text_to_match_generally
+    '''
+
+    matches = list(m.groupdict()
+                   for m in SEARCH_PATTERN.finditer(text.strip())
+                   )
+    by_category = [
+        (m['category'], m['text'])
+        for m in matches if m['category'] is not None
+    ]
+
+    general = [
+        m['text']
+        for m in matches if m['category'] is None
+    ]
+
+    if general:
+        general.append(' '.join(general))
+
+    return by_category, general
+
+
+def get_happi_device_cache():
+    'Cache all happi device containers as dictionaries'
+    global _HAPPI_CACHE
+
+    def check_stale_cache():
+        return (time.monotonic() - _HAPPI_CACHE[0]) > HAPPI_CACHE_UPDATE_PERIOD
+
+    if _HAPPI_CACHE is None or check_stale_cache():
+        logger.debug('Updating happi cache')
+        client = get_happi_client()
+        _HAPPI_CACHE = (time.monotonic(), list(client.search(as_dict=True)))
+
+    return _HAPPI_CACHE[1]
