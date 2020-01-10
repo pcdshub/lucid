@@ -9,8 +9,7 @@ import typhon
 from PyQtAds import QtAds
 from qtpy import QtCore, QtWidgets, QtGui
 from qtpy.QtCore import Qt, Signal
-from qtpy.QtWidgets import (QMainWindow, QToolBar, QStyle, QSizePolicy,
-                            QWidget)
+from qtpy.QtWidgets import QMainWindow, QStyle, QSizePolicy
 
 from . import utils
 
@@ -628,6 +627,7 @@ class SearchDialog(QtWidgets.QDialog):
         self.option_grid = QtWidgets.QCheckBox('&Grid')
         self.option_screens = QtWidgets.QCheckBox('&Screens')
         self.option_happi = QtWidgets.QCheckBox('&Happi')
+        self.refresh_button = QtWidgets.QPushButton('&Refresh')
 
         for w in (self.option_grid, self.option_screens, self.option_happi):
             option_layout.addWidget(w)
@@ -636,19 +636,28 @@ class SearchDialog(QtWidgets.QDialog):
                 lambda state: self._search_settings_changed()
             )
 
+        option_layout.addWidget(self.refresh_button)
+
+        def refresh_clicked():
+            self.search(self.text, force_update=True)
+
+        self.refresh_button.clicked.connect(refresh_clicked)
+
     @property
     def text(self):
+        'The search text from the parent (SearchLineEdit)'
         return self.parent().text()
 
     def _search_settings_changed(self):
+        'Grid/screens/happi/etc parameters changed -> search again'
         self.search(self.text)
 
-    def search(self, text):
+    def search(self, text, *, force_update=False):
+        'Spawn a search for the given text, optionally clearing cached results'
         key = (text, self.option_happi.isChecked(),
                self.option_grid.isChecked(), self.option_screens.isChecked())
-        try:
-            model = self.models[key]
-        except KeyError:
+
+        if key not in self.models or force_update:
             model = SearchModel(text,
                                 search_happi=self.option_happi.isChecked(),
                                 search_grid=self.option_grid.isChecked(),
@@ -656,9 +665,10 @@ class SearchDialog(QtWidgets.QDialog):
                                 )
             self.models[key] = model
 
-        self.proxy_model.setSourceModel(model)
+        self.proxy_model.setSourceModel(self.models[key])
 
     def _handle_search_keypress(self, event):
+        'Forward SearchLineEdit keypresses to the match list'
         key = event.key()
         if key in (Qt.Key_Down, Qt.Key_Up, Qt.Key_PageDown, Qt.Key_PageUp,
                    Qt.Key_Return):
@@ -743,7 +753,7 @@ class SearchLineEdit(QtWidgets.QLineEdit):
             return
         corner_pos = self.mapToGlobal(self.rect().bottomLeft())
         self.search_frame.setGeometry(
-            corner_pos.x(), corner_pos.y(),
+            corner_pos.x(), corner_pos.y() + 1,
             width or self.search_frame.width(),
             height or self.search_frame.height()
         )
@@ -826,7 +836,7 @@ class SearchLineEdit(QtWidgets.QLineEdit):
             self.search_frame.setVisible(False)
 
 
-class LucidToolBar(QToolBar):
+class LucidToolBar(QtWidgets.QToolBar):
     """LucidToolBar for LucidMainWindow"""
 
     def __init__(self, parent=None):
@@ -841,7 +851,7 @@ class LucidToolBar(QToolBar):
                        'Forward')
         self.addSeparator()
         # Spacer
-        spacer = QWidget()
+        spacer = QtWidgets.QWidget()
         spacer.setSizePolicy(QSizePolicy.MinimumExpanding,
                              QSizePolicy.MinimumExpanding)
         self.addWidget(spacer)
