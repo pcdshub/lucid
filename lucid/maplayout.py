@@ -261,3 +261,22 @@ def validate(scene, shapes):
                 logger.debug('Item: %s bumped with: %s', idx, c)
             return False
     return True
+
+
+def layout_instantiated_map(scene, mapd):
+    components = mapd['components']
+    trees = {}
+    for name, componentd in components:
+        type_ = componentd['type']
+        if type_ == 'group':
+            group_layout = componentd['layout']
+            widget_dict = componentd['components']
+
+            root = build_tree(widget_dict, group_layout)
+            layout(scene, root, root)
+            trees[name] = root
+        else:
+            ...
+
+    main_tree = build_tree(shapes, connections)
+    layout(scene, main_tree, main_tree)

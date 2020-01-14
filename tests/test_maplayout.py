@@ -1,4 +1,5 @@
 import inspect
+import logging
 import pytest
 
 from qtpy import QtCore, QtGui, QtWidgets
@@ -214,7 +215,9 @@ def test_loader(map_filename):
 
 
 def test_loader_instantiation(qtbot, map_filename):
+    logging.getLogger('lucid.maploader').setLevel('DEBUG')
     with open(map_filename, 'rt') as f:
         mapd = lucid.maplayout.load_map(f)
     import pcdswidgets.vacuum
-    lucid.maplayout.instantiate_map(**mapd)
+    print(lucid.maplayout.instantiate_map(**mapd))
+    raise

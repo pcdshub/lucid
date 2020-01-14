@@ -249,7 +249,20 @@ def _load_class_by_name(classname):
     return getattr(module, classname)
 
 
-def _instantiate_group(groups, group_name, component_macros):
+def _prefixed_layout(layout, prefix):
+    'Add a prefix to all device names in a layout'
+    def add_prefix(k):
+        return f'{prefix}.{k}' if prefix else k
+
+    return {
+        add_prefix(dev): {
+            direction: add_prefix(dev2) for direction, dev2 in values.items()
+        }
+        for dev, values in layout.items()
+    }
+
+
+def _instantiate_group(name, groups, group_name, component_macros):
     'Instantiate a component group given macros'
     groupd = groups[group_name]
     macros = _combine_macros(groupd['macros'], component_macros)
@@ -263,16 +276,19 @@ def _instantiate_group(groups, group_name, component_macros):
         logger.debug('Instantiating component %s of group %s', component_name,
                      group_name)
         result[component_name] = instantiate(component_name, groups,
-                                             components, macros=macros)
+                                             components, macros=macros,
+                                             prefix=name)
 
-    return dict(type='group', components=result)
+    return dict(type='group', components=result,
+                layout=_prefixed_layout(groupd['layout'], name)
+                )
 
 
-def _instantiate_component(classname, properties, macros):
+def _instantiate_component(name, classname, properties, macros):
     classname = _replace_macros_in_value(classname, macros)
     cls = _load_class_by_name(classname)
     instance = cls()
-    # TODO: instance.setObjectName()
+    instance.setObjectName(name.replace('*', '_'))
 
     properties = {_replace_macros_in_value(prop_name, macros):
                   _replace_macros_in_value(value, macros)
@@ -295,18 +311,21 @@ def _instantiate_component(classname, properties, macros):
     return dict(type='component', instance=instance, properties=properties)
 
 
-def instantiate(name, groups, components, *, macros=None):
+def instantiate(name, groups, components, *, macros=None, prefix=''):
     'Instantiate a group or component, given a name'
     componentd = components[name]
     try:
+        full_name = f'{prefix}.{name}' if prefix else name
         macros = _combine_macros(macros or {}, componentd['macros'])
+        logger.debug('Instantiate %s (%s) (macros=%s)', full_name, name,
+                     macros)
         if 'group' in componentd:
-            return _instantiate_group(groups, componentd['group'],
+            return _instantiate_group(full_name, groups, componentd['group'],
                                       component_macros=macros)
         if 'class' in componentd:
-            return _instantiate_component(componentd['class'],
+            return _instantiate_component(full_name, componentd['class'],
                                           properties=componentd['properties'],
-                                          macros=componentd['macros'])
+                                          macros=macros)
     except Exception as ex:
         raise RuntimeError(
             f'Error while instantiating component {name!r}: {ex}'
@@ -314,16 +333,36 @@ def instantiate(name, groups, components, *, macros=None):
     raise ValueError(f'Unknown group/component name: {name!r}')
 
 
-def instantiate_map(groups, components, valid_names, layout,
-                    macros=None):
+def merge_layout(layout, other):
+    'In-place merge `other` into `layout`'
+    collisions = set(layout).intersection(other)
+
+    # new items
+    layout.update({key: other[key] for key in set(other) - collisions})
+
+    for name in collisions:
+        for key in other:
+            assert key not in layout[name]
+        layout[name].update(other[name])
+
+
+def instantiate_map(groups, components, valid_names, layout, *, macros=None,
+                    prefix=''):
     results = {}
     macros = macros or {}
+    merged_layout = {}
     for component in components:
         logger.debug('Instantiating top-level map component: %s ', component)
-        res = instantiate(component, groups, components, macros=macros)
+        res = instantiate(component, groups, components, macros=macros,
+                          prefix=prefix)
         results[component] = res
+        if 'layout' in res:
+            merge_layout(merged_layout, res['layout'])
 
-    return results
+    merge_layout(merged_layout, layout)
+    return dict(merged_layout=merged_layout,
+                layout=_prefixed_layout(layout, prefix),
+                components=components)
 
 
 def load_map(file):
