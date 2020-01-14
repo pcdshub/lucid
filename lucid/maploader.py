@@ -297,6 +297,8 @@ def _instantiate_component(name, classname, properties, macros):
     instance = cls()
     instance.setObjectName(name.replace('*', '_'))
 
+    instance.setAttribute(qtpy.QtCore.Qt.WA_TranslucentBackground)
+
     properties = {_replace_macros_in_value(prop_name, macros):
                   _replace_macros_in_value(value, macros)
                   for prop_name, value in properties.items()}
