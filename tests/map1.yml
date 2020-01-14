@@ -27,13 +27,13 @@ groups:
         channelsPrefix: ca://${RGPI}
 
     macros:
-      GCC:  $(prefix)GCC:$(id)
-      GPI:  $(prefix)GPI:$(id)
-      VRC:  $(prefix)VRC:$(id)
-      PTM:  $(prefix)PTM:$(id)
-      VVC:  $(prefix)VVC:$(id)
-      RGPI: $(prefix)GPI:$(idplus1)
-      PMF:  $(prefix)PMF:$(id)
+      GCC:  ${prefix}GCC:${id}
+      GPI:  ${prefix}GPI:${id}
+      VRC:  ${prefix}VRC:${id}
+      PTM:  ${prefix}PTM:${id}
+      VVC:  ${prefix}VVC:${id}
+      RGPI: ${prefix}GPI:${idplus1}
+      PMF:  ${prefix}PMF:${id}
 
     layout:
       - vertical:
@@ -72,4 +72,4 @@ components:
 layout:
   - horizontal:
     - diff_pump2
-    - anchor*
+    - test*
