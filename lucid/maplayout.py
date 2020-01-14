@@ -71,7 +71,7 @@ def build_tree(shapes, connections):
              }
 
     for node in nodes.values():
-        for direction, idx in connections[node.idx].items():
+        for direction, idx in connections.get(node.idx, {}).items():
             node.connections[direction].append(nodes[idx])
             nodes[idx].parent = node
 
@@ -79,7 +79,7 @@ def build_tree(shapes, connections):
             if node.parent is None]
 
     if len(root) != 1:
-        raise ValueError('Not only one root?')
+        raise ValueError(f'Not only one root? Found: {root}')
 
     return root[0]
 
@@ -263,20 +263,13 @@ def validate(scene, shapes):
     return True
 
 
-def layout_instantiated_map(scene, mapd):
-    components = mapd['components']
-    trees = {}
-    for name, componentd in components:
-        type_ = componentd['type']
-        if type_ == 'group':
-            group_layout = componentd['layout']
-            widget_dict = componentd['components']
+def layout_instantiated_map(scene, instantiated):
+    layout = instantiated['merged_layout']
+    name_to_widget = instantiated['name_to_widget']
 
-            root = build_tree(widget_dict, group_layout)
-            layout(scene, root, root)
-            trees[name] = root
-        else:
-            ...
-
-    main_tree = build_tree(shapes, connections)
-    layout(scene, main_tree, main_tree)
+    name_to_proxy = {name: scene.addWidget(widget)
+                     for name, widget in name_to_widget.items()}
+    print(name_to_proxy)
+    root = build_tree(name_to_proxy, layout)
+    layout(scene, root, root)
+    connect_widgets(scene, root)

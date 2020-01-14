@@ -1,5 +1,7 @@
 import inspect
 import logging
+import pprint
+
 import pytest
 
 from qtpy import QtCore, QtGui, QtWidgets
@@ -219,5 +221,15 @@ def test_loader_instantiation(qtbot, map_filename):
     with open(map_filename, 'rt') as f:
         mapd = lucid.maplayout.load_map(f)
     import pcdswidgets.vacuum
-    print(lucid.maplayout.instantiate_map(**mapd))
-    raise
+    instantiated = lucid.maplayout.instantiate_map(**mapd)
+
+    print('merged layout:')
+    pprint.pprint(instantiated['merged_layout'])
+    print('groups:')
+    pprint.pprint(instantiated['groups'])
+    print()
+    scene = QtWidgets.QGraphicsScene()
+    view = QtWidgets.QGraphicsView(scene)
+    lucid.maplayout.layout_instantiated_map(scene, instantiated)
+    save_image(scene, view,
+               fn=f"tests/test_loader_instantiation_{map_filename}.png")

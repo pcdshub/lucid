@@ -283,11 +283,14 @@ def _instantiate_group(name, groups, group_name, component_macros):
                                             macros=macros, prefix=name)
 
     return dict(type='group', components=result,
-                layout=_prefixed_layout(groupd['layout'], name)
+                layout=_prefixed_layout(groupd['layout'], name),
+                anchors={direction: _add_prefix(name, anchor)
+                         for direction, anchor in groupd['anchors'].items()}
                 )
 
 
 def _instantiate_component(name, classname, properties, macros):
+    'Instantiate one component - a widget (and not a group)'
     classname = _replace_macros_in_value(classname, macros)
     cls = _load_class_by_name(classname)
     instance = cls()
@@ -360,6 +363,20 @@ def _get_component_to_widget_dict(components):
     return res
 
 
+def _get_group_info(components):
+    res = {}
+    for name, componentd in components.items():
+        if componentd['type'] == 'group':
+            res[name] = dict(
+                widgets=_get_component_to_widget_dict(
+                            componentd['components']),
+                anchors=componentd['anchors']
+            )
+            res.update(_get_group_info(componentd['components']))
+
+    return res
+
+
 def instantiate_map(groups, components, valid_names, layout, *, macros=None,
                     prefix=''):
     results = {}
@@ -378,6 +395,7 @@ def instantiate_map(groups, components, valid_names, layout, *, macros=None,
                 layout=_prefixed_layout(layout, prefix),
                 components=components,
                 name_to_widget=_get_component_to_widget_dict(results),
+                groups=_get_group_info(results),
                 )
 
 
