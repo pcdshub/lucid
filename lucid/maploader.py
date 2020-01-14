@@ -1,5 +1,12 @@
+import importlib
 import logging
+import string
+import sys
+
+import qtpy
 import yaml
+
+
 
 logger = logging.getLogger(__name__)
 
@@ -14,6 +21,33 @@ _INVERT_DIRECTION = {
     'sw': 'ne',
     'se': 'nw',
 }
+
+
+def _replace_macros_in_value(initial_value, macros):
+    'Recursively evaluate macros in `initial_value`'
+    current = string.Template(str(initial_value))
+    previous = string.Template("")
+
+    for i in range(100):
+        value = current.safe_substitute(macros)
+        if current.template == previous.template:
+            break
+
+        previous = current
+        current = string.Template(value)
+    else:
+        logger.warning('Excessive macro recursion found in string: %s',
+                       initial_value)
+
+    return value
+
+
+def _combine_macros(*mdicts):
+    'Combine macro dictionaries, ordered by least-to-most specific'
+    result = {}
+    for d in mdicts:
+        result.update(d)
+    return result
 
 
 def _load_and_combine_layouts(layouts, valid_names):
@@ -135,7 +169,7 @@ def _make_components_from_connectors(connectors):
     'Make component dictionaries given an iterable of "connector*" names'
     return {
         connector: _load_map_component(
-            connector, {'class': 'connector'}, None
+            connector, {'class': 'lucid.maplayout.MapConnector'}, None
         )
         for connector in connectors
     }
@@ -175,7 +209,7 @@ def _load_map_group(name, groupd):
 
 
 
-def load_map_from_dict(mapd):
+def _load_map_from_dict(mapd):
     'Load a maplayout from a dictionary'
     groups = {
         name: _load_map_group(name, groupd)
@@ -204,8 +238,96 @@ def load_map_from_dict(mapd):
     )
 
 
+def _load_class_by_name(classname):
+    'Get a class object by name'
+    if '.' in classname:
+        module_name, classname = classname.rsplit('.', 1)
+        module = importlib.import_module(module_name)
+    else:
+        module = qtpy.QtWidgets
+
+    return getattr(module, classname)
+
+
+def _instantiate_group(groups, group_name, component_macros):
+    'Instantiate a component group given macros'
+    groupd = groups[group_name]
+    macros = _combine_macros(groupd['macros'], component_macros)
+
+    # TODO: should this really be possible... ?
+    group_name = _replace_macros_in_value(group_name, macros)
+
+    components = groupd['components']
+    result = {}
+    for component_name in components:
+        logger.debug('Instantiating component %s of group %s', component_name,
+                     group_name)
+        result[component_name] = instantiate(component_name, groups,
+                                             components, macros=macros)
+
+    return dict(type='group', components=result)
+
+
+def _instantiate_component(classname, properties, macros):
+    classname = _replace_macros_in_value(classname, macros)
+    cls = _load_class_by_name(classname)
+    instance = cls()
+    # TODO: instance.setObjectName()
+
+    properties = {_replace_macros_in_value(prop_name, macros):
+                  _replace_macros_in_value(value, macros)
+                  for prop_name, value in properties.items()}
+
+    for prop_name, value in properties.items():
+        prop = getattr(cls, prop_name)
+        if callable(prop) and not isinstance(prop, qtpy.QtCore.Property):
+            logger.debug('Calling set method: %s.%s(%s)',
+                         classname, prop_name, value)
+            setter = getattr(cls, prop_name)
+            setter(instance, value)
+        else:
+            logger.debug('Setting property: %s.%s = %s',
+                         classname, prop_name, value)
+            setattr(instance, prop_name, value)
+
+    logger.debug('Instantiated class %s -> %s (properties=%s)',
+                 classname, instance, properties)
+    return dict(type='component', instance=instance, properties=properties)
+
+
+def instantiate(name, groups, components, *, macros=None):
+    'Instantiate a group or component, given a name'
+    componentd = components[name]
+    try:
+        macros = _combine_macros(macros or {}, componentd['macros'])
+        if 'group' in componentd:
+            return _instantiate_group(groups, componentd['group'],
+                                      component_macros=macros)
+        if 'class' in componentd:
+            return _instantiate_component(componentd['class'],
+                                          properties=componentd['properties'],
+                                          macros=componentd['macros'])
+    except Exception as ex:
+        raise RuntimeError(
+            f'Error while instantiating component {name!r}: {ex}'
+        ) from ex
+    raise ValueError(f'Unknown group/component name: {name!r}')
+
+
+def instantiate_map(groups, components, valid_names, layout,
+                    macros=None):
+    results = {}
+    macros = macros or {}
+    for component in components:
+        logger.debug('Instantiating top-level map component: %s ', component)
+        res = instantiate(component, groups, components, macros=macros)
+        results[component] = res
+
+    return results
+
+
 def load_map(file):
     'Load a maplayout from a provided yaml file or file-like object'
-    return load_map_from_dict(
+    return _load_map_from_dict(
         yaml.safe_load(file)
     )

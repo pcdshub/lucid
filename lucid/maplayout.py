@@ -4,10 +4,16 @@ import yaml
 
 from qtpy import QtWidgets, QtGui, QtCore
 
-from .maploader import load_map, _INVERT_DIRECTION
+from .maploader import load_map, instantiate_map, _INVERT_DIRECTION
 
 
 logger = logging.getLogger(__name__)
+
+
+class MapConnector(QtWidgets.QLabel):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.setText('.')
 
 
 class DiagramNode:

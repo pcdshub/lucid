@@ -182,12 +182,39 @@ def test_layouts(qtbot, cls):
     save_image(scene, view, fn=f"tests/test_maplayout_{cls.__name__}.png")
 
 
-@pytest.mark.parametrize(
-    'fn',
-    [pytest.param(fn, id='/'.join(fn.parts[-2:]))
-     for fn in conftest.MODULE_PATH.glob('*.yml')]
-)
-def test_loader(fn):
-    with open(fn, 'rt') as f:
-        ret = lucid.maplayout.load_map(f)
-    print(ret)
+@pytest.fixture(params=[pytest.param(fn, id='/'.join(fn.parts[-2:]))
+                        for fn in conftest.MODULE_PATH.glob('*.yml')])
+def map_filename(request):
+    return request.param
+
+
+def test_macro_combine():
+    m1 = {'a': 3, 'b': 4}
+    m2 = {'b': 2, 'c': 5}
+    m3 = {'a': 3, 'b': 2, 'c': 5}
+    assert lucid.maploader._combine_macros(m1, m2) == m3
+
+
+def test_macro_evaluate():
+    m1 = {'a': '3', 'b': '4', 'a4': 'xyz'}
+    assert lucid.maploader._replace_macros_in_value('${a}', m1) == '3'
+    assert lucid.maploader._replace_macros_in_value('${a${b}}', m1) == 'xyz'
+
+    m1 = {'a': '${b}', 'b': '${c}', 'c': 'xyz'}
+    assert lucid.maploader._replace_macros_in_value('${a}', m1) == 'xyz'
+
+    m1 = {'a': '${a}'}
+    assert lucid.maploader._replace_macros_in_value('${a}', m1) == '${a}'
+
+
+def test_loader(map_filename):
+    with open(map_filename, 'rt') as f:
+        mapd = lucid.maplayout.load_map(f)
+    print(mapd)
+
+
+def test_loader_instantiation(qtbot, map_filename):
+    with open(map_filename, 'rt') as f:
+        mapd = lucid.maplayout.load_map(f)
+    import pcdswidgets.vacuum
+    lucid.maplayout.instantiate_map(**mapd)
