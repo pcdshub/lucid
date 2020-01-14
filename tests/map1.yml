@@ -1,0 +1,75 @@
+# vi: sw=2 sts=2 ts=2
+
+groups:
+  DiffPumpDev:
+    components:
+      PTM:
+        class: pcdswidgets.vacuum.TurboPump
+        channelsPrefix: ca://${PTM}
+        controlButtonHorizontal: false
+      PRO:
+        class: pcdswidgets.vacuum.ScrollPump
+        channelsPrefix: ca://${PMF}
+      VRC:
+        class: pcdswidgets.vacuum.PneumaticValve
+        channelsPrefix: ca://${VRC}
+        rotateIcon: true
+        controlButtonHorizontal: false
+      GCC:
+        class: pcdswidgets.vacuum.ColdCathodeGauge
+        channelsPrefix: ca://${GCC}
+        controlButtonHorizontal: false
+      GPI:
+        class: pcdswidgets.vacuum.RoughGauge
+        channelsPrefix: ca://${GPI}
+      RG:
+        class: pcdswidgets.vacuum.RoughGauge
+        channelsPrefix: ca://${RGPI}
+
+    macros:
+      GCC:  $(prefix)GCC:$(id)
+      GPI:  $(prefix)GPI:$(id)
+      VRC:  $(prefix)VRC:$(id)
+      PTM:  $(prefix)PTM:$(id)
+      VVC:  $(prefix)VVC:$(id)
+      RGPI: $(prefix)GPI:$(idplus1)
+      PMF:  $(prefix)PMF:$(id)
+
+    layout:
+      - vertical:
+        - 1*
+        - anchor*
+        - VRC
+        - PTM
+        - 2*
+        - PRO
+
+      - horizontal:
+        - GCC
+        - 1*
+        - GPI
+
+      - horizontal:
+        - 2*
+        - RG
+
+    anchors:
+      w: anchor*
+      s: anchor*
+      e: anchor*
+      n: anchor*
+
+
+components:
+  diff_pump2:
+    group: DiffPumpDev
+    macros:
+      prefix: "EM1L0:GEM:"
+      id: 30
+      idplus1: 31
+
+
+layout:
+  - horizontal:
+    - diff_pump2
+    - anchor*

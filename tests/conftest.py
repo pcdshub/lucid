@@ -1,6 +1,10 @@
+import pathlib
 import pytest
 
 from lucid import LucidMainWindow
+
+
+MODULE_PATH = pathlib.Path(__file__).parent
 
 
 @pytest.fixture(scope='function')

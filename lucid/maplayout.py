@@ -1,20 +1,13 @@
 import collections
 import logging
+import yaml
 
 from qtpy import QtWidgets, QtGui, QtCore
 
-logger = logging.getLogger(__name__)
+from .maploader import load_map, _INVERT_DIRECTION
 
-_INVERT_DIRECTION = {
-    'n': 's',
-    'e': 'w',
-    'w': 'e',
-    's': 'n',
-    'nw': 'se',
-    'ne': 'sw',
-    'sw': 'ne',
-    'se': 'nw',
-}
+
+logger = logging.getLogger(__name__)
 
 
 class DiagramNode:

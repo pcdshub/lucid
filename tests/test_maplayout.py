@@ -5,6 +5,8 @@ from qtpy import QtCore, QtGui, QtWidgets
 
 import lucid
 
+from . import conftest
+
 
 class _TestBase:
     ...
@@ -178,3 +180,14 @@ def test_layouts(qtbot, cls):
     lucid.maplayout.connect_widgets(scene, root)
 
     save_image(scene, view, fn=f"tests/test_maplayout_{cls.__name__}.png")
+
+
+@pytest.mark.parametrize(
+    'fn',
+    [pytest.param(fn, id='/'.join(fn.parts[-2:]))
+     for fn in conftest.MODULE_PATH.glob('*.yml')]
+)
+def test_loader(fn):
+    with open(fn, 'rt') as f:
+        ret = lucid.maplayout.load_map(f)
+    print(ret)

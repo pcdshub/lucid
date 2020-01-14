@@ -4,3 +4,4 @@ ophyd
 qtpy
 typhos
 fuzzywuzzy
+pyyaml
