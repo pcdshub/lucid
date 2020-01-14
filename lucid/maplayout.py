@@ -1,10 +1,12 @@
 import collections
+import copy
 import logging
 import yaml
 
 from qtpy import QtWidgets, QtGui, QtCore
 
-from .maploader import load_map, instantiate_map, _INVERT_DIRECTION
+from . import maploader
+from .maploader import load_map, instantiate_map
 
 
 logger = logging.getLogger(__name__)
@@ -103,7 +105,7 @@ def calculate_position(parent, node, direction, min_spacing, parent_to_node=True
         # node and not the opposite.
         # That is because we need less moving pieces by traversing the tree
         # in a depth first method.
-        inv_dir = _INVERT_DIRECTION[direction]
+        inv_dir = maploader._INVERT_DIRECTION[direction]
 
         x = n_x
         y = n_y
@@ -264,12 +266,14 @@ def validate(scene, shapes):
 
 
 def layout_instantiated_map(scene, instantiated):
-    layout = instantiated['merged_layout']
+    # TODO: shorthand for anchor in all directions
+    merged_layout = copy.deepcopy(instantiated['merged_layout'])
+    maploader._dereference_anchors(instantiated['groups'], merged_layout)
     name_to_widget = instantiated['name_to_widget']
 
     name_to_proxy = {name: scene.addWidget(widget)
                      for name, widget in name_to_widget.items()}
     print(name_to_proxy)
-    root = build_tree(name_to_proxy, layout)
+    root = build_tree(name_to_proxy, merged_layout)
     layout(scene, root, root)
     connect_widgets(scene, root)

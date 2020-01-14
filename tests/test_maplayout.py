@@ -144,8 +144,10 @@ def save_image(scene, view, fn, bg=QtCore.Qt.black):
     painter = QtGui.QPainter(image)
     scene.render(painter, QtCore.QRectF(image.rect()), area)
     painter.end()
-    image.save(fn)
-    print(f'saved image to {fn}')
+
+    path = str(conftest.MODULE_PATH / fn)
+    image.save(path)
+    print(f'saved image to {path}')
 
 
 @pytest.mark.parametrize(
@@ -182,7 +184,7 @@ def test_layouts(qtbot, cls):
     assert lucid.maplayout.validate(scene, shapes)
     lucid.maplayout.connect_widgets(scene, root)
 
-    save_image(scene, view, fn=f"tests/test_maplayout_{cls.__name__}.png")
+    save_image(scene, view, fn=f"test_maplayout_{cls.__name__}.png")
 
 
 @pytest.fixture(params=[pytest.param(fn, id='/'.join(fn.parts[-2:]))
@@ -231,5 +233,7 @@ def test_loader_instantiation(qtbot, map_filename):
     scene = QtWidgets.QGraphicsScene()
     view = QtWidgets.QGraphicsView(scene)
     lucid.maplayout.layout_instantiated_map(scene, instantiated)
-    save_image(scene, view,
-               fn=f"tests/test_loader_instantiation_{map_filename}.png")
+    save_image(
+        scene, view,
+        fn=f"test_loader_instantiation_{map_filename.parts[-1]}.png"
+    )

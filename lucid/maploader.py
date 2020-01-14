@@ -1,3 +1,4 @@
+import copy
 import importlib
 import logging
 import string
@@ -397,6 +398,56 @@ def instantiate_map(groups, components, valid_names, layout, *, macros=None,
                 name_to_widget=_get_component_to_widget_dict(results),
                 groups=_get_group_info(results),
                 )
+
+
+def _dereference_anchors(groups, overall_layout):
+    'Dereference layout group names into predefined anchors, in-place'
+    def connect(a, direction, b):
+        '{a} -> {b}'
+        if a not in overall_layout:
+            overall_layout[a] = {}
+
+        if overall_layout[a].get(direction):
+            raise ValueError(
+                f'Existing connection from {a} in direction {direction}')
+
+        inv_dir = _INVERT_DIRECTION[direction]
+        if b in overall_layout and overall_layout[b].get(inv_dir):
+            raise ValueError(
+                f'Existing connection from {b} in direction {inv_dir}')
+
+        overall_layout[a][direction] = b
+
+    def dereference(group, direction):
+        'Get the group anchor in the given direction'
+        if group not in groups:
+            # Ignore if it's not a group
+            return group
+
+        try:
+            return groups[group]['anchors'][direction]
+        except KeyError:
+            raise ValueError(f'Group {group} has no anchor defined for '
+                             f'direction {direction}')
+
+    for name, layout in list(overall_layout.items()):
+        if name in groups:
+            # Remove the keyed dictionary - all anchors have to be rechecked
+            overall_layout.pop(name)
+
+            # {'group': {'n': ...}
+            for direction, other in layout.items():
+                connect(dereference(name, direction),
+                        direction,
+                        dereference(other, _INVERT_DIRECTION[direction])
+                        )
+        else:
+            for direction, other in list(layout.items()):
+                if other in groups:
+                    # {'component': {'n': 'group', ...}
+                    layout.pop(direction)
+                    connect(name, direction,
+                            dereference(other, _INVERT_DIRECTION[direction]))
 
 
 def load_map(file):
