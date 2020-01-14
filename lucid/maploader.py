@@ -249,14 +249,17 @@ def _load_class_by_name(classname):
     return getattr(module, classname)
 
 
+def _add_prefix(prefix, s):
+    return f'{prefix}.{s}' if prefix else s
+
+
 def _prefixed_layout(layout, prefix):
     'Add a prefix to all device names in a layout'
-    def add_prefix(k):
-        return f'{prefix}.{k}' if prefix else k
 
     return {
-        add_prefix(dev): {
-            direction: add_prefix(dev2) for direction, dev2 in values.items()
+        _add_prefix(prefix, dev): {
+            direction: _add_prefix(prefix, dev2)
+            for direction, dev2 in values.items()
         }
         for dev, values in layout.items()
     }
@@ -275,9 +278,9 @@ def _instantiate_group(name, groups, group_name, component_macros):
     for component_name in components:
         logger.debug('Instantiating component %s of group %s', component_name,
                      group_name)
-        result[component_name] = instantiate(component_name, groups,
-                                             components, macros=macros,
-                                             prefix=name)
+        prefixed_name = _add_prefix(name, component_name)
+        result[prefixed_name] = instantiate(component_name, groups, components,
+                                            macros=macros, prefix=name)
 
     return dict(type='group', components=result,
                 layout=_prefixed_layout(groupd['layout'], name)
@@ -346,6 +349,17 @@ def merge_layout(layout, other):
         layout[name].update(other[name])
 
 
+def _get_component_to_widget_dict(components):
+    res = {}
+    for name, componentd in components.items():
+        if componentd['type'] == 'group':
+            res.update(_get_component_to_widget_dict(componentd['components']))
+        else:
+            res[name] = componentd['instance']
+
+    return res
+
+
 def instantiate_map(groups, components, valid_names, layout, *, macros=None,
                     prefix=''):
     results = {}
@@ -355,14 +369,16 @@ def instantiate_map(groups, components, valid_names, layout, *, macros=None,
         logger.debug('Instantiating top-level map component: %s ', component)
         res = instantiate(component, groups, components, macros=macros,
                           prefix=prefix)
-        results[component] = res
+        results[_add_prefix(prefix, component)] = res
         if 'layout' in res:
             merge_layout(merged_layout, res['layout'])
 
     merge_layout(merged_layout, layout)
     return dict(merged_layout=merged_layout,
                 layout=_prefixed_layout(layout, prefix),
-                components=components)
+                components=components,
+                name_to_widget=_get_component_to_widget_dict(results),
+                )
 
 
 def load_map(file):
