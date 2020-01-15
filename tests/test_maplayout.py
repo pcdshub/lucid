@@ -241,4 +241,3 @@ def test_loader_instantiation(qtbot, map_filename):
         scene, view,
         fn=f"test_loader_instantiation_{map_filename.parts[-1]}.png"
     )
-    raise
