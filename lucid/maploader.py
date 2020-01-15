@@ -176,13 +176,16 @@ def _make_components_from_connectors(connectors):
     }
 
 
+_MAP_GROUP_KEYS = {'components', 'layout', 'macros', 'anchors', 'anchor',
+                   'defaults'}
+
+
 def _load_map_group(name, groupd):
     'Load a group given its name and dictionary'
     if not isinstance(groupd, dict):
         raise ValueError(f'Group should be a dictionary: {name}')
 
-    keys = {'components', 'layout', 'macros', 'anchors', 'anchor'}
-    other_keys = set(groupd) - keys
+    other_keys = set(groupd) - _MAP_GROUP_KEYS
     if other_keys:
         raise ValueError(f'Found unexpected keys in group {name} {other_keys}')
 
@@ -351,7 +354,7 @@ def instantiate(name, groups, components, *, macros=None, prefix=''):
     raise ValueError(f'Unknown group/component name: {name!r}')
 
 
-def merge_layout(layout, other):
+def _merge_layout(layout, other):
     'In-place merge `other` into `layout`'
     collisions = set(layout).intersection(other)
 
@@ -400,9 +403,9 @@ def instantiate_map(groups, components, valid_names, layout, *, macros=None,
                           prefix=prefix)
         results[_add_prefix(prefix, component)] = res
         if 'layout' in res:
-            merge_layout(merged_layout, res['layout'])
+            _merge_layout(merged_layout, res['layout'])
 
-    merge_layout(merged_layout, layout)
+    _merge_layout(merged_layout, layout)
     return dict(merged_layout=merged_layout,
                 layout=_prefixed_layout(layout, prefix),
                 components=components,
