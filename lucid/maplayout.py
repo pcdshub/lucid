@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 class MapConnector(QtWidgets.QLabel):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.setText('.')
+        self.setFixedSize(0, 0)
 
 
 class DiagramNode:
