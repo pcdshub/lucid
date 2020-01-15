@@ -422,7 +422,8 @@ def _get_group_info(components):
             res[name] = dict(
                 widgets=_get_component_to_widget_dict(
                             componentd['components']),
-                anchors=componentd['anchors']
+                anchors=componentd['anchors'],
+                layout=componentd['layout'],
             )
             res.update(_get_group_info(componentd['components']))
 

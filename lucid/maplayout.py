@@ -26,7 +26,10 @@ class DiagramNode:
         self.connections = collections.defaultdict(list)
         self.parent = parent
         self.widget = shape.widget()
-        self.group = QtWidgets.QGraphicsItemGroup()
+        if isinstance(shape, _GroupWrapper):
+            self.group = shape
+        else:
+            self.group = QtWidgets.QGraphicsItemGroup()
 
     def get_direction_to_child(self, node):
         for direction, nodes in self.connections.items():
@@ -279,16 +282,107 @@ def validate(scene, shapes):
     return True
 
 
+class _GroupWrapper(QtWidgets.QGraphicsRectItem):
+    def __init__(self, name, scene, bounding_rect, groupd, name_to_proxy):
+        super().__init__(bounding_rect)
+
+        self.name = name
+
+        if name == 'diff_pump2':
+            # print('diff pump 2')
+            self.setPen(QtCore.Qt.gray)
+        elif name == 'diff_pump3':
+            # print('diff pump 3')
+            self.setPen(QtCore.Qt.green)
+
+        scene.addItem(self)
+
+        self._proxies = {
+            widget_name: name_to_proxy[widget_name]
+            for widget_name, widget in groupd['widgets'].items()
+        }
+
+        for widget_name, proxy in self._proxies.items():
+            x, y = proxy.x(), proxy.y()
+            proxy.setParentItem(self)
+            proxy.setPos(x, y)
+            # print(self.name, widget_name, x, y)
+
+        class _FakeWidget:
+            def width(_):  # noqa
+                bounding_rect = self.sceneBoundingRect()
+                return bounding_rect.width()
+
+            def height(_):  # noqa
+                bounding_rect = self.sceneBoundingRect()
+                return bounding_rect.height()
+
+        self._widget = _FakeWidget()
+        # print(self, 'x', self.x(), 'y', self.y())
+        # print(self, 'width', self._widget.width(), 'height', self._widget.height())
+
+    def __repr__(self):
+        return f'<GroupWrapper {self.name}>'
+
+    def widget(self):
+        return self._widget
+
+    def addToGroup(self, group):
+        # No.
+        ...
+
+
 def layout_instantiated_map(scene, instantiated):
-    # TODO: shorthand for anchor in all directions
     merged_layout = copy.deepcopy(instantiated['merged_layout'])
     maploader._dereference_anchors(instantiated['groups'], merged_layout)
     name_to_widget = instantiated['name_to_widget']
 
     name_to_proxy = {name: scene.addWidget(widget)
                      for name, widget in name_to_widget.items()}
-    print(name_to_proxy)
-    root = build_tree(name_to_proxy, merged_layout)
-    layout(scene, root, root)
-    connect_widgets(scene, root)
 
+    group_trees = {}
+    for group_name, group in instantiated['groups'].items():
+        logger.debug('Building a tree for group: %s', group_name)
+        widgets = group['widgets']
+        anchors = group['anchors']
+
+        # print('w', widgets)
+        # print('a', anchors)
+        # print('l', group['layout'])
+
+        tree_name_to_proxy = {
+            widget_name: name_to_proxy[widget_name]
+            for widget_name, widget in widgets.items()
+        }
+
+        root = build_tree(tree_name_to_proxy, group['layout'])
+        group_trees[group_name] = root
+        layout(scene, root, root)
+
+    def graphics_item_from_group(group_name, group):
+        groupd = instantiated['groups'][group_name]
+        return _GroupWrapper(group_name,
+                             scene,
+                             group.group.sceneBoundingRect(),
+                             groupd,
+                             name_to_proxy)
+
+    top_level_items = {
+        group_name: graphics_item_from_group(group_name, group)
+        for group_name, group in group_trees.items()
+    }
+    for name, component in instantiated['components'].items():
+        if name not in top_level_items:
+            top_level_items[name] = name_to_proxy[name]
+
+    logger.debug('Working on the top level tree: %s', top_level_items)
+    top_level_tree = build_tree(top_level_items, instantiated['layout'])
+
+    logger.debug('Top level tree: %s', top_level_tree)
+    layout(scene, top_level_tree, top_level_tree)
+    logger.debug('Done with all groups + outer layout')
+
+    connect_widgets(scene, top_level_tree)
+
+    for name, root in group_trees.items():
+        connect_widgets(scene, root)

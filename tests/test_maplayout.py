@@ -223,6 +223,7 @@ def test_loader(map_filename):
 
 def test_loader_instantiation(qtbot, map_filename):
     logging.getLogger('lucid.maploader').setLevel('DEBUG')
+    logging.getLogger('lucid.maplayout').setLevel('DEBUG')
     with open(map_filename, 'rt') as f:
         mapd = lucid.maploader.load_map(f)
     import pcdswidgets.vacuum
@@ -241,3 +242,4 @@ def test_loader_instantiation(qtbot, map_filename):
         scene, view,
         fn=f"test_loader_instantiation_{map_filename.parts[-1]}.png"
     )
+    raise

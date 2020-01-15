@@ -73,14 +73,15 @@ components:
       id: 30
       idplus1: 31
 
-  test2:
-    class: pcdswidgets.vacuum.TurboPump
-  test3:
-    class: pcdswidgets.vacuum.TurboPump
+  diff_pump3:
+    group: DiffPumpDev
+    macros:
+      prefix: "EM1L1:GEM:"
+      id: 40
+      idplus1: 41
 
 
 layout:
   - horizontal:
     - diff_pump2
-    - test2
-    - test3
+    - diff_pump3
