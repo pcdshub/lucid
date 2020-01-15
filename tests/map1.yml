@@ -53,11 +53,13 @@ groups:
         - 2*
         - RG
 
-    anchors:
-      w: anchor*
-      s: anchor*
-      e: anchor*
-      n: anchor*
+    anchor: anchor*
+
+    # anchors:
+    #   w: anchor*
+    #   s: anchor*
+    #   e: anchor*
+    #   n: anchor*
 
 
 components:

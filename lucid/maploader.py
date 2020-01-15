@@ -181,7 +181,7 @@ def _load_map_group(name, groupd):
     if not isinstance(groupd, dict):
         raise ValueError(f'Group should be a dictionary: {name}')
 
-    keys = {'components', 'layout', 'macros', 'anchors'}
+    keys = {'components', 'layout', 'macros', 'anchors', 'anchor'}
     other_keys = set(groupd) - keys
     if other_keys:
         raise ValueError(f'Found unexpected keys in group {name} {other_keys}')
@@ -196,10 +196,17 @@ def _load_map_group(name, groupd):
 
     components.update(_make_components_from_connectors(connectors))
 
-    anchors = groupd.get('anchors', {})
-    for anchor in anchors.values():
+    anchor = groupd.get('anchor')
+    if anchor:
         if anchor not in components:
             raise ValueError(f'Unexpected anchor name: {anchor}')
+        anchors = {direction: anchor
+                   for direction in _INVERT_DIRECTION}
+    else:
+        anchors = groupd.get('anchors', {})
+        for anchor in anchors.values():
+            if anchor not in components:
+                raise ValueError(f'Unexpected anchor name: {anchor}')
 
     return dict(
         components=components,
