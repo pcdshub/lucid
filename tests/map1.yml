@@ -72,6 +72,3 @@ components:
 
 
 layout:
-  - horizontal:
-    - diff_pump2
-    - test*
