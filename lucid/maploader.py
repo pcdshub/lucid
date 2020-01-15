@@ -43,6 +43,17 @@ def _replace_macros_in_value(initial_value, macros):
     return value
 
 
+def _combine_defaults(*ddicts):
+    'Combine `defaults` dictionaries, ordered by least-to-most specific'
+    ddicts = ddicts[::-1]
+    all_keys = set(sum((list(d) for d in ddicts), []))
+    result = {key: {} for key in all_keys}
+    for key in all_keys:
+        # Pick the most-specific value from all the dictionaries:
+        result[key] = [d[key] for d in ddicts if key in d][0]
+    return result
+
+
 def _combine_macros(*mdicts):
     'Combine macro dictionaries, ordered by least-to-most specific'
     result = {}
@@ -163,6 +174,7 @@ def _load_map_component(name, componentd, groupd):
         main_key: properties.pop(main_key),  # group or class
         'macros': properties.pop('macros', {}),
         'properties': properties,
+        'defaults': properties.pop('defaults', {}),
     }
 
 
@@ -216,8 +228,8 @@ def _load_map_group(name, groupd):
         macros=groupd.get('macros', {}),
         layout=layout,
         anchors=anchors,
+        defaults=groupd.get('defaults', {}),
     )
-
 
 
 def _load_map_from_dict(mapd):
@@ -237,17 +249,20 @@ def _load_map_from_dict(mapd):
     layout, connectors = _load_and_combine_layouts(map_layout or [],
                                                    valid_names)
     components.update(_make_components_from_connectors(connectors))
+    defaults = mapd.get('defaults', {})
 
     logger.debug('groups: %s', groups)
     logger.debug('valid names: %s', valid_names)
     logger.debug('components: %s', components)
     logger.debug('layout: %s', layout)
+    logger.debug('defaults: %s', defaults)
 
     return dict(
         groups=groups,
         components=components,
         valid_names=valid_names,
-        layout=layout
+        layout=layout,
+        defaults=defaults,
     )
 
 
@@ -278,10 +293,12 @@ def _prefixed_layout(layout, prefix):
     }
 
 
-def _instantiate_group(name, groups, group_name, component_macros):
+def _instantiate_group(name, groups, group_name, component_macros, defaults):
     'Instantiate a component group given macros'
     groupd = groups[group_name]
     macros = _combine_macros(groupd['macros'], component_macros)
+    print('group', name, defaults, groupd['defaults'])
+    defaults = _combine_defaults(defaults, groupd['defaults'])
 
     # TODO: should this really be possible... ?
     group_name = _replace_macros_in_value(group_name, macros)
@@ -293,7 +310,8 @@ def _instantiate_group(name, groups, group_name, component_macros):
                      group_name)
         prefixed_name = _add_prefix(name, component_name)
         result[prefixed_name] = instantiate(component_name, groups, components,
-                                            macros=macros, prefix=name)
+                                            macros=macros, prefix=name,
+                                            defaults=defaults)
 
     return dict(type='group', components=result,
                 layout=_prefixed_layout(groupd['layout'], name),
@@ -302,7 +320,7 @@ def _instantiate_group(name, groups, group_name, component_macros):
                 )
 
 
-def _instantiate_component(name, classname, properties, macros):
+def _instantiate_component(name, classname, properties, macros, defaults):
     'Instantiate one component - a widget (and not a group)'
     classname = _replace_macros_in_value(classname, macros)
     cls = _load_class_by_name(classname)
@@ -311,9 +329,22 @@ def _instantiate_component(name, classname, properties, macros):
 
     instance.setAttribute(qtpy.QtCore.Qt.WA_TranslucentBackground)
 
-    properties = {_replace_macros_in_value(prop_name, macros):
-                  _replace_macros_in_value(value, macros)
-                  for prop_name, value in properties.items()}
+    # Use default properties first
+    properties = {
+        _replace_macros_in_value(prop_name, macros):
+        _replace_macros_in_value(value, macros)
+        for prop_name, value in defaults.get(classname, {}).items()
+    }
+
+    if properties:
+        logger.debug('Default properties for %s=%s', classname, properties)
+
+    # And override with component-specific properties:
+    properties.update(
+        {_replace_macros_in_value(prop_name, macros):
+         _replace_macros_in_value(value, macros)
+         for prop_name, value in properties.items()}
+    )
 
     for prop_name, value in properties.items():
         prop = getattr(cls, prop_name)
@@ -332,24 +363,30 @@ def _instantiate_component(name, classname, properties, macros):
     return dict(type='component', instance=instance, properties=properties)
 
 
-def instantiate(name, groups, components, *, macros=None, prefix=''):
+def instantiate(name, groups, components, *, defaults=None, macros=None,
+                prefix=''):
     'Instantiate a group or component, given a name'
     componentd = components[name]
+    defaults = defaults or {}
     try:
         full_name = f'{prefix}.{name}' if prefix else name
         macros = _combine_macros(macros or {}, componentd['macros'])
+        defaults = _combine_defaults(defaults or {},
+                                     componentd.get('defaults', {}))
         logger.debug('Instantiate %s (%s) (macros=%s)', full_name, name,
                      macros)
         if 'group' in componentd:
             return _instantiate_group(full_name, groups, componentd['group'],
-                                      component_macros=macros)
+                                      component_macros=macros,
+                                      defaults=defaults)
         if 'class' in componentd:
             return _instantiate_component(full_name, componentd['class'],
                                           properties=componentd['properties'],
-                                          macros=macros)
+                                          macros=macros, defaults=defaults)
     except Exception as ex:
         raise RuntimeError(
-            f'Error while instantiating component {name!r}: {ex}'
+            f'Error while instantiating component {name!r}.  '
+            f'{ex.__class__.__name__}: {ex}'
         ) from ex
     raise ValueError(f'Unknown group/component name: {name!r}')
 
@@ -393,14 +430,15 @@ def _get_group_info(components):
 
 
 def instantiate_map(groups, components, valid_names, layout, *, macros=None,
-                    prefix=''):
+                    prefix='', defaults=None):
     results = {}
     macros = macros or {}
     merged_layout = {}
+    defaults = defaults or {}
     for component in components:
         logger.debug('Instantiating top-level map component: %s ', component)
         res = instantiate(component, groups, components, macros=macros,
-                          prefix=prefix)
+                          prefix=prefix, defaults=defaults)
         results[_add_prefix(prefix, component)] = res
         if 'layout' in res:
             _merge_layout(merged_layout, res['layout'])

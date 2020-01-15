@@ -13,8 +13,6 @@ groups:
       VRC:
         class: pcdswidgets.vacuum.PneumaticValve
         channelsPrefix: ca://${VRC}
-        rotateIcon: true
-        controlButtonHorizontal: false
       GCC:
         class: pcdswidgets.vacuum.ColdCathodeGauge
         channelsPrefix: ca://${GCC}
@@ -61,6 +59,11 @@ groups:
     #   e: anchor*
     #   n: anchor*
 
+
+defaults:
+  pcdswidgets.vacuum.PneumaticValve:
+    rotateIcon: true
+    controlButtonHorizontal: false
 
 components:
   diff_pump2:
