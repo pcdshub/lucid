@@ -211,6 +211,10 @@ def test_macro_evaluate():
     m1 = {'a': '${a}'}
     assert lucid.maploader._replace_macros_in_value('${a}', m1) == '${a}'
 
+    # Trigger the excessive recursion case:
+    m1 = {'a': '${b}', 'b': '${a}'}
+    assert lucid.maploader._replace_macros_in_value('${a}', m1) == '${a}'
+
 
 def test_loader(map_filename):
     with open(map_filename, 'rt') as f:
