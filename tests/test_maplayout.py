@@ -183,7 +183,6 @@ def test_layouts(qtbot, cls):
     lucid.maplayout.remove_groups(scene, root)
     assert lucid.maplayout.validate(scene, shapes)
     lucid.maplayout.connect_widgets(scene, root)
-
     save_image(scene, view, fn=f"test_maplayout_{cls.__name__}.png")
 
 
@@ -218,16 +217,16 @@ def test_macro_evaluate():
 
 def test_loader(map_filename):
     with open(map_filename, 'rt') as f:
-        mapd = lucid.maplayout.load_map(f)
+        mapd = lucid.maploader.load_map(f)
     print(mapd)
 
 
 def test_loader_instantiation(qtbot, map_filename):
     logging.getLogger('lucid.maploader').setLevel('DEBUG')
     with open(map_filename, 'rt') as f:
-        mapd = lucid.maplayout.load_map(f)
+        mapd = lucid.maploader.load_map(f)
     import pcdswidgets.vacuum
-    instantiated = lucid.maplayout.instantiate_map(**mapd)
+    instantiated = lucid.maploader.instantiate_map(**mapd)
 
     print('merged layout:')
     pprint.pprint(instantiated['merged_layout'])
@@ -236,6 +235,7 @@ def test_loader_instantiation(qtbot, map_filename):
     print()
     scene = QtWidgets.QGraphicsScene()
     view = QtWidgets.QGraphicsView(scene)
+
     lucid.maplayout.layout_instantiated_map(scene, instantiated)
     save_image(
         scene, view,

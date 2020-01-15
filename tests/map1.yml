@@ -73,5 +73,14 @@ components:
       id: 30
       idplus1: 31
 
+  test2:
+    class: pcdswidgets.vacuum.TurboPump
+  test3:
+    class: pcdswidgets.vacuum.TurboPump
+
 
 layout:
+  - horizontal:
+    - diff_pump2
+    - test2
+    - test3

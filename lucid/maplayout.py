@@ -27,7 +27,6 @@ class DiagramNode:
         self.parent = parent
         self.widget = shape.widget()
         self.group = QtWidgets.QGraphicsItemGroup()
-        self.group.addToGroup(self.shape)
 
     def get_direction_to_child(self, node):
         for direction, nodes in self.connections.items():
@@ -43,11 +42,11 @@ class DiagramNode:
         return nodes_list
 
     def get_bounding_rect(self):
-        x = self.shape.pos().x()
-        y = self.shape.pos().y()
+        x = self.shape.scenePos().x()
+        y = self.shape.scenePos().y()
         w = self.widget.width()
         h = self.widget.height()
-        rect = self.group.boundingRect()
+        rect = self.group.sceneBoundingRect()
         return x, y, w, h, rect.x(), rect.y(), rect.width(), rect.height()
 
     def walk_depth_first(self, visited=None):
@@ -90,8 +89,13 @@ def calculate_position(parent, node, direction, min_spacing, parent_to_node=True
     p_x, p_y, p_w, p_h, p_g_x, p_g_y, p_g_w, p_g_h = parent.get_bounding_rect()
     n_x, n_y, n_w, n_h, n_g_x, n_g_y, n_g_w, n_g_h = node.get_bounding_rect()
 
-    logger.debug('Connecting Parent %s to DiagramNode %s via %s.',
-                 parent, node, direction)
+    if parent_to_node:
+        logger.debug('Connecting Parent %s to DiagramNode %s via %s.',
+                     parent, node, maploader._INVERT_DIRECTION[direction])
+    else:
+        logger.debug('Connecting DiagramNode %s to Parent %s via %s.',
+                     node, parent, direction)
+
     logger.debug('PX: %s\tPY: %s\tPW: %s\tPH: %s\tPGW: %s\tPGH: %s',
                  p_x, p_y, p_w, p_h, p_g_w, p_g_h)
     logger.debug('NX: %s\tNY: %s\tNW: %s\tNH: %s\tNGW: %s\tNGH: %s',
@@ -180,19 +184,28 @@ def layout(scene, root, parent, min_spacing=30, visited=[]):
         if parent.positioned:
             x, y = calculate_position(parent, node, dir, min_spacing,
                                       parent_to_node=False)
-            node.shape.setPos(x, y)
+            if node.group not in scene.items():
+                scene.addItem(node.group)
+                node.group.addToGroup(node.shape)
+            node.group.setPos(x, y)
+            scene.update()
         else:
             x, y = calculate_position(parent, node, dir, min_spacing,
                                       parent_to_node=True)
-            parent.shape.setPos(x, y)
+            if parent.group not in scene.items():
+                scene.addItem(parent.group)
+                parent.group.addToGroup(parent.shape)
+            parent.group.setPos(x, y)
+            scene.update()
             parent.positioned = True
 
         for item in node.get_nodes():
             parent.group.addToGroup(item.shape)
 
+        for item in node.get_nodes():
+            parent.group.addToGroup(item.shape)
         parent.group.addToGroup(node.shape)
-        if parent.group not in scene.items():
-            scene.addItem(parent.group)
+        scene.update()
 
 
 def connect_widgets(scene, parent, visited=[]):
@@ -201,7 +214,7 @@ def connect_widgets(scene, parent, visited=[]):
     visited.append(parent)
 
     pen = QtGui.QPen(QtGui.QColor("deepskyblue"), 3)
-    pen.setCapStyle(QtCore.Qt.SquareCap)
+    pen.setCapStyle(QtCore.Qt.RoundCap)
     pen.setJoinStyle(QtCore.Qt.RoundJoin)
 
     connections = dict()
@@ -236,10 +249,10 @@ def connect_widgets(scene, parent, visited=[]):
         offset = offsets[direction]
         scene.addLine(
             QtCore.QLineF(
-                parent.shape.pos().x() + offset[0],
-                parent.shape.pos().y() + offset[1],
-                node.shape.pos().x() + offset[2],
-                node.shape.pos().y() + offset[3],
+                parent.shape.scenePos().x() + offset[0],
+                parent.shape.scenePos().y() + offset[1],
+                node.shape.scenePos().x() + offset[2],
+                node.shape.scenePos().y() + offset[3],
             ),
             pen
         )
@@ -257,7 +270,8 @@ def remove_groups(scene, parent, visited=[]):
 
 def validate(scene, shapes):
     for idx, shape in shapes.items():
-        collisions = scene.collidingItems(shape)
+        collisions = [x for x in scene.collidingItems(shape)
+                      if not isinstance(x, QtWidgets.QGraphicsLineItem)]
         if len(collisions) > 0:
             for c in collisions:
                 logger.debug('Item: %s bumped with: %s', idx, c)
@@ -277,3 +291,4 @@ def layout_instantiated_map(scene, instantiated):
     root = build_tree(name_to_proxy, merged_layout)
     layout(scene, root, root)
     connect_widgets(scene, root)
+
