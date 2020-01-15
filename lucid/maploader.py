@@ -230,7 +230,8 @@ def _load_map_from_dict(mapd):
     }
 
     valid_names = set(components).union(set(groups))
-    layout, connectors = _load_and_combine_layouts(mapd['layout'] or [],
+    map_layout = mapd.get('layout', None)
+    layout, connectors = _load_and_combine_layouts(map_layout or [],
                                                    valid_names)
     components.update(_make_components_from_connectors(connectors))
 
