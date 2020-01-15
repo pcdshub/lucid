@@ -12,10 +12,10 @@ from .maploader import load_map, instantiate_map
 logger = logging.getLogger(__name__)
 
 
-class MapConnector(QtWidgets.QLabel):
+class MapConnector(QtWidgets.QWidget):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.setFixedSize(0, 0)
+        self.setFixedSize(1, 1)
 
 
 class DiagramNode:
@@ -201,7 +201,7 @@ def connect_widgets(scene, parent, visited=[]):
     visited.append(parent)
 
     pen = QtGui.QPen(QtGui.QColor("deepskyblue"), 3)
-    pen.setCapStyle(QtCore.Qt.FlatCap)
+    pen.setCapStyle(QtCore.Qt.SquareCap)
     pen.setJoinStyle(QtCore.Qt.RoundJoin)
 
     connections = dict()
