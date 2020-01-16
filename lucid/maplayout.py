@@ -283,17 +283,13 @@ def validate(scene, shapes):
 
 
 class _GroupWrapper(QtWidgets.QGraphicsRectItem):
-    def __init__(self, name, scene, bounding_rect, groupd, name_to_proxy):
-        super().__init__(bounding_rect)
+    def __init__(self, name, scene, group, groupd, name_to_proxy):
+        # rect = group.childrenBoundingRect() | group.boundingRect()
+        super().__init__()
 
         self.name = name
 
-        if name == 'diff_pump2':
-            # print('diff pump 2')
-            self.setPen(QtCore.Qt.gray)
-        elif name == 'diff_pump3':
-            # print('diff pump 3')
-            self.setPen(QtCore.Qt.green)
+        self.setPen(QtCore.Qt.white)
 
         scene.addItem(self)
 
@@ -307,6 +303,12 @@ class _GroupWrapper(QtWidgets.QGraphicsRectItem):
             proxy.setParentItem(self)
             proxy.setPos(pos.x(), pos.y())
 
+        self.setRect(self.childrenBoundingRect())
+
+        self.label = QtWidgets.QGraphicsSimpleTextItem(name, self)
+        self.label.setPen(QtCore.Qt.white)
+        self.label.setPos(self.boundingRect().topLeft())
+
         class _FakeWidget:
             def width(_):  # noqa
                 bounding_rect = self.sceneBoundingRect()
@@ -317,8 +319,6 @@ class _GroupWrapper(QtWidgets.QGraphicsRectItem):
                 return bounding_rect.height()
 
         self._widget = _FakeWidget()
-        # print(self, 'x', self.x(), 'y', self.y())
-        # print(self, 'width', self._widget.width(), 'height', self._widget.height())
 
     def __repr__(self):
         return f'<GroupWrapper {self.name}>'
@@ -345,10 +345,6 @@ def layout_instantiated_map(scene, instantiated):
         widgets = group['widgets']
         anchors = group['anchors']
 
-        # print('w', widgets)
-        # print('a', anchors)
-        # print('l', group['layout'])
-
         tree_name_to_proxy = {
             widget_name: name_to_proxy[widget_name]
             for widget_name, widget in widgets.items()
@@ -362,7 +358,7 @@ def layout_instantiated_map(scene, instantiated):
         groupd = instantiated['groups'][group_name]
         return _GroupWrapper(group_name,
                              scene,
-                             group.group.sceneBoundingRect(),
+                             group.group,
                              groupd,
                              name_to_proxy)
 
