@@ -303,10 +303,9 @@ class _GroupWrapper(QtWidgets.QGraphicsRectItem):
         }
 
         for widget_name, proxy in self._proxies.items():
-            x, y = proxy.x(), proxy.y()
+            pos = proxy.scenePos()
             proxy.setParentItem(self)
-            proxy.setPos(x, y)
-            # print(self.name, widget_name, x, y)
+            proxy.setPos(pos.x(), pos.y())
 
         class _FakeWidget:
             def width(_):  # noqa
