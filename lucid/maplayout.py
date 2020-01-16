@@ -283,6 +283,8 @@ def validate(scene, shapes):
 
 
 class _GroupWrapper(QtWidgets.QGraphicsRectItem):
+    _default_margins = QtCore.QMarginsF(5, 5, 5, 5)
+
     def __init__(self, name, scene, group, groupd, name_to_proxy):
         # rect = group.childrenBoundingRect() | group.boundingRect()
         super().__init__()
@@ -303,7 +305,11 @@ class _GroupWrapper(QtWidgets.QGraphicsRectItem):
             proxy.setParentItem(self)
             proxy.setPos(pos.x(), pos.y())
 
-        self.setRect(self.childrenBoundingRect())
+        margins = self._default_margins
+
+        self.setRect(
+            self.childrenBoundingRect().marginsAdded(margins)
+        )
 
         self.label = QtWidgets.QGraphicsSimpleTextItem(name, self)
         self.label.setPen(QtCore.Qt.white)
