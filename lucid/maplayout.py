@@ -282,16 +282,14 @@ def validate(scene, shapes):
     return True
 
 
-class _GroupWrapper(QtWidgets.QGraphicsRectItem):
+class _GroupWrapper(QtWidgets.QGraphicsItemGroup):
     _default_margins = QtCore.QMarginsF(5, 5, 5, 5)
 
     def __init__(self, name, scene, group, groupd, name_to_proxy):
         # rect = group.childrenBoundingRect() | group.boundingRect()
+
         super().__init__()
-
         self.name = name
-
-        self.setPen(QtCore.Qt.white)
 
         scene.addItem(self)
 
@@ -300,20 +298,25 @@ class _GroupWrapper(QtWidgets.QGraphicsRectItem):
             for widget_name, widget in groupd['widgets'].items()
         }
 
+        self.container = QtWidgets.QGraphicsRectItem()
+
         for widget_name, proxy in self._proxies.items():
             pos = proxy.scenePos()
-            proxy.setParentItem(self)
+            proxy.setParentItem(self.container)
             proxy.setPos(pos.x(), pos.y())
 
         margins = self._default_margins
 
-        self.setRect(
-            self.childrenBoundingRect().marginsAdded(margins)
+        self.container.setPen(QtCore.Qt.white)
+        self.container.setRect(
+            self.container.childrenBoundingRect().marginsAdded(margins)
         )
 
-        self.label = QtWidgets.QGraphicsSimpleTextItem(name, self)
+        self.label = QtWidgets.QGraphicsSimpleTextItem(name, self.container)
         self.label.setPen(QtCore.Qt.white)
-        self.label.setPos(self.boundingRect().topLeft())
+        self.label.setPos(self.container.boundingRect().topLeft())
+
+        self.addToGroup(self.container)
 
         class _FakeWidget:
             def width(_):  # noqa
@@ -331,10 +334,6 @@ class _GroupWrapper(QtWidgets.QGraphicsRectItem):
 
     def widget(self):
         return self._widget
-
-    def addToGroup(self, group):
-        # No.
-        ...
 
 
 def layout_instantiated_map(scene, instantiated):
@@ -362,10 +361,7 @@ def layout_instantiated_map(scene, instantiated):
 
     def graphics_item_from_group(group_name, group):
         groupd = instantiated['groups'][group_name]
-        return _GroupWrapper(group_name,
-                             scene,
-                             group.group,
-                             groupd,
+        return _GroupWrapper(group_name, scene, group.group, groupd,
                              name_to_proxy)
 
     top_level_items = {
