@@ -72,16 +72,15 @@ components:
       prefix: "EM1L0:GEM:"
       id: 30
       idplus1: 31
-
   diff_pump3:
     group: DiffPumpDev
     macros:
-      prefix: "EM1L1:GEM:"
-      id: 40
-      idplus1: 41
-
+      prefix: "EM1L0:GEMA:"
+      id: 30
+      idplus1: 31
 
 layout:
   - horizontal:
     - diff_pump2
+    - test2*
     - diff_pump3

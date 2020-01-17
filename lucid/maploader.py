@@ -29,6 +29,9 @@ def _replace_macros_in_value(initial_value, macros):
     current = string.Template(str(initial_value))
     previous = string.Template("")
 
+    if not isinstance(initial_value, str):
+        return initial_value
+
     for i in range(100):
         value = current.safe_substitute(macros)
         if current.template == previous.template:
@@ -327,26 +330,26 @@ def _instantiate_component(name, classname, properties, macros, defaults):
     instance = cls()
     instance.setObjectName(name.replace('*', '_'))
 
-    instance.setAttribute(qtpy.QtCore.Qt.WA_TranslucentBackground)
+    # instance.setAttribute(qtpy.QtCore.Qt.WA_TranslucentBackground)
 
     # Use default properties first
-    properties = {
+    all_properties = {
         _replace_macros_in_value(prop_name, macros):
         _replace_macros_in_value(value, macros)
         for prop_name, value in defaults.get(classname, {}).items()
     }
 
-    if properties:
-        logger.debug('Default properties for %s=%s', classname, properties)
+    if all_properties:
+        logger.debug('Default properties for %s=%s', classname, all_properties)
 
     # And override with component-specific properties:
-    properties.update(
+    all_properties.update(
         {_replace_macros_in_value(prop_name, macros):
          _replace_macros_in_value(value, macros)
          for prop_name, value in properties.items()}
     )
 
-    for prop_name, value in properties.items():
+    for prop_name, value in all_properties.items():
         prop = getattr(cls, prop_name)
         if callable(prop) and not isinstance(prop, qtpy.QtCore.Property):
             logger.debug('Calling set method: %s.%s(%s)',
@@ -359,8 +362,8 @@ def _instantiate_component(name, classname, properties, macros, defaults):
             setattr(instance, prop_name, value)
 
     logger.debug('Instantiated class %s -> %s (properties=%s)',
-                 classname, instance, properties)
-    return dict(type='component', instance=instance, properties=properties)
+                 classname, instance, all_properties)
+    return dict(type='component', instance=instance, properties=all_properties)
 
 
 def instantiate(name, groups, components, *, defaults=None, macros=None,

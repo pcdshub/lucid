@@ -1,0 +1,68 @@
+# vi: sw=2 sts=2 ts=2
+
+groups:
+  DiffPumpDev:
+    components:
+      PTM:
+        class: qtpy.QtWidgets.QLabel
+        setFixedHeight: 30
+        setFixedWidth: 30
+        setStyleSheet: 'background-color: blue;'
+      ancora:
+        class: qtpy.QtWidgets.QLabel
+        setFixedHeight: 30
+        setFixedWidth: 30
+        setStyleSheet: 'background-color: yellow;'
+
+    macros:
+      PTM:  ${prefix}PTM:${id}
+
+    layout:
+      - vertical:
+        - PTM
+        - ancora
+
+    anchor: ancora
+
+
+defaults:
+  pcdswidgets.vacuum.PneumaticValve:
+    rotateIcon: true
+    controlButtonHorizontal: false
+
+components:
+  gp1:
+    group: DiffPumpDev
+    macros:
+      prefix: "EM1L1:GEM:"
+      id: 40
+      idplus1: 41
+
+  gp2:
+    group: DiffPumpDev
+    macros:
+      prefix: "EM1L1:GEM:"
+      id: 40
+      idplus1: 41
+
+  mv1:
+    class: qtpy.QtWidgets.QLabel
+    setFixedHeight: 30
+    setFixedWidth: 30
+    setStyleSheet: 'background-color: red;'
+  mv2:
+    class: qtpy.QtWidgets.QLabel
+    setFixedHeight: 30
+    setFixedWidth: 30
+    setStyleSheet: 'background-color: gray;'
+
+
+layout:
+  - horizontal:
+    - gp1
+    - mv1
+    - gp2
+
+  - vertical:
+    - mv1
+    - mv2

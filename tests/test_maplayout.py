@@ -242,4 +242,10 @@ def test_loader_instantiation(qtbot, map_filename):
         scene, view,
         fn=f"test_loader_instantiation_{map_filename.parts[-1]}.png"
     )
-    raise
+
+    # scene.addRect(-60, -60, 30, 30, QtGui.QPen(QtGui.QColor("green")))
+    # scene.addRect(-60, 60, 30, 30, QtGui.QPen(QtGui.QColor("gray")))
+    #
+    # view.show()
+    # qtbot.stopForInteraction()
+    # raise

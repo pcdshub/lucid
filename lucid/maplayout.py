@@ -1,12 +1,10 @@
 import collections
 import copy
 import logging
-import yaml
 
 from qtpy import QtWidgets, QtGui, QtCore
 
 from . import maploader
-from .maploader import load_map, instantiate_map
 
 
 logger = logging.getLogger(__name__)
@@ -25,10 +23,12 @@ class DiagramNode:
         self.shape = shape
         self.connections = collections.defaultdict(list)
         self.parent = parent
-        self.widget = shape.widget()
+        self.widget = shape.widget
         if isinstance(shape, _GroupWrapper):
+            logger.error(f'DiagramNode: {self} group is GroupWrapper')
             self.group = shape
         else:
+            logger.error(f'DiagramNode: {self} group is NOT GroupWrapper')
             self.group = QtWidgets.QGraphicsItemGroup()
 
     def get_direction_to_child(self, node):
@@ -47,8 +47,8 @@ class DiagramNode:
     def get_bounding_rect(self):
         x = self.shape.scenePos().x()
         y = self.shape.scenePos().y()
-        w = self.widget.width()
-        h = self.widget.height()
+        w = self.widget().width()
+        h = self.widget().height()
         rect = self.group.sceneBoundingRect()
         return x, y, w, h, rect.x(), rect.y(), rect.width(), rect.height()
 
@@ -93,16 +93,14 @@ def calculate_position(parent, node, direction, min_spacing, parent_to_node=True
     n_x, n_y, n_w, n_h, n_g_x, n_g_y, n_g_w, n_g_h = node.get_bounding_rect()
 
     if parent_to_node:
-        logger.debug('Connecting Parent %s to DiagramNode %s via %s.',
+        logger.debug('Connecting Parent %s to Node %s via %s.',
                      parent, node, maploader._INVERT_DIRECTION[direction])
     else:
-        logger.debug('Connecting DiagramNode %s to Parent %s via %s.',
+        logger.debug('Connecting Node %s to Parent %s via %s.',
                      node, parent, direction)
 
-    logger.debug('PX: %s\tPY: %s\tPW: %s\tPH: %s\tPGW: %s\tPGH: %s',
-                 p_x, p_y, p_w, p_h, p_g_w, p_g_h)
-    logger.debug('NX: %s\tNY: %s\tNW: %s\tNH: %s\tNGW: %s\tNGH: %s',
-                 n_x, n_y, n_w, n_h, n_g_w, n_g_h)
+    logger.debug(f'Parent\tx: {p_x}\ty: {p_y}\tw: {p_w}\th: {p_h}\t\tgx: {p_g_x}\tgy: {p_g_y}\tgw: {p_g_w}\tgh: {p_g_h}')
+    logger.debug(f'Node\t\tx: {n_x}\ty: {n_y}\tw: {n_w}\th: {n_h}\t\tgx: {n_g_x}\tgy: {n_g_y}\tgw: {n_g_w}\tgh: {n_g_h}')
 
     spacing_x = 0
     spacing_y = 0
@@ -167,7 +165,17 @@ def calculate_position(parent, node, direction, min_spacing, parent_to_node=True
     return x, y
 
 
+def _wrap_get_bounding_rect(group, shape):
+    x = shape.scenePos().x()
+    y = shape.scenePos().y()
+    w = shape.widget().width()
+    h = shape.widget().height()
+    rect = group.group.sceneBoundingRect()
+    return x, y, w, h, rect.x(), rect.y(), rect.width(), rect.height()
+
+
 def layout(scene, root, parent, min_spacing=30, visited=[]):
+    import functools
     connections = dict()
     if parent in visited:
         return
@@ -181,32 +189,114 @@ def layout(scene, root, parent, min_spacing=30, visited=[]):
         if len(child) > 1:
             layout(scene, root, node, min_spacing, visited=visited)
         connections[dir] = node
-        # print('Parent: {} connected to Node: {} via {} anchor'.format(parent, node, dir))
 
     for dir, node in connections.items():
         if parent.positioned:
-            x, y = calculate_position(parent, node, dir, min_spacing,
-                                      parent_to_node=False)
             if node.group not in scene.items():
+                logger.warning(f'Layout - Node {node} group not in scene')
                 scene.addItem(node.group)
                 node.group.addToGroup(node.shape)
+                scene.update()
+
+            x = 0
+            y = 0
+            pg_rel_x = 0
+            pg_rel_y = 0
+            ng_rel_x = 0
+            ng_rel_y = 0
+            _parent = parent
+            _node = node
+
+            group_parent = False
+            if isinstance(parent.group, _GroupWrapper):
+                group_parent = True
+                p_x, p_y, *_ = parent.get_bounding_rect()
+                parent = parent.group.anchors[dir]
+                parent.get_bounding_rect = functools.partial(
+                    _wrap_get_bounding_rect, _parent, parent)
+                pa_x, pa_y, *_ = parent.get_bounding_rect()
+                pg_rel_x = 0
+                pg_rel_y = 0
+
+            if isinstance(node.group, _GroupWrapper):
+                nx, ny, *_ = node.get_bounding_rect()
+                node = node.group.anchors[dir]
+                node.get_bounding_rect = functools.partial(
+                    _wrap_get_bounding_rect, _node, node)
+                na_x, na_y, *_ = node.get_bounding_rect()
+                ng_rel_x = nx - na_x
+                ng_rel_y = ny - na_y
+
+            c_x, c_y = calculate_position(parent, node, dir, min_spacing, parent_to_node=False)
+            logger.critical(f'Layout - Calculated Position: ({c_x}, {c_y}) - Parent Factors: ({pg_rel_x}, {pg_rel_y}) - Node Factors: ({ng_rel_x}, {ng_rel_y}) ')
+
+            x = c_x + pg_rel_x + ng_rel_x
+            y = c_y + pg_rel_y + ng_rel_y
+
+            parent = _parent
+            node = _node
+
+            logger.debug(f'Layout - Position Node: {node} to Parent: {parent} via {dir} at x: {x} , y: {y}')
             node.group.setPos(x, y)
             scene.update()
+            logger.info(f'Layout - Real Position Node: {node} is: x {node.shape.scenePos().x()}  , y: {node.shape.scenePos().y()} ')
+            logger.info(f'Layout - Real Position Node: {node} is: x {node.group.scenePos().x()}  , y: {node.group.scenePos().y()} ')
+
+
         else:
-            x, y = calculate_position(parent, node, dir, min_spacing,
-                                      parent_to_node=True)
             if parent.group not in scene.items():
+                logger.warning(f'Layout - Parent {parent} group not in scene')
                 scene.addItem(parent.group)
                 parent.group.addToGroup(parent.shape)
+                scene.update()
+
+            x = 0
+            y = 0
+            pg_rel_x = 0
+            pg_rel_y = 0
+            ng_rel_x = 0
+            ng_rel_y = 0
+            _parent = parent
+            _node = node
+
+            group_parent = False
+            if isinstance(parent.group, _GroupWrapper):
+                group_parent = True
+                p_x, p_y, *_ = parent.get_bounding_rect()
+                parent = parent.group.anchors[dir]
+                parent.get_bounding_rect = functools.partial(_wrap_get_bounding_rect, _parent, parent)
+                pa_x, pa_y, *_ = parent.get_bounding_rect()
+                pg_rel_x = p_x-pa_x
+                pg_rel_y = p_y-pa_y
+
+            if isinstance(node.group, _GroupWrapper):
+                nx, ny, *_ = node.get_bounding_rect()
+                node = node.group.anchors[dir]
+                node.get_bounding_rect = functools.partial(_wrap_get_bounding_rect, _node, node)
+                ng_rel_x = 0
+                ng_rel_y = 0
+
+            c_x, c_y = calculate_position(parent, node, dir, min_spacing, parent_to_node=True)
+
+            logger.critical(f'Layout - Calculated Position: ({c_x}, {c_y}) - Parent Factors: ({pg_rel_x}, {pg_rel_y}) - Node Factors: ({ng_rel_x}, {ng_rel_y}) ')
+
+            x = c_x + pg_rel_x + ng_rel_x
+            y = c_y + pg_rel_y + ng_rel_y
+            parent = _parent
+            node = _node
+            logger.debug(f'Layout - Position Parent: {parent} to Node: {node} via {dir} at x: {x} , y: {y}')
             parent.group.setPos(x, y)
             scene.update()
+            logger.info(f'Layout - Real Position Parent: {parent} is: x {parent.shape.scenePos().x()}  , y: {parent.shape.scenePos().y()} ')
+            logger.info(f'Layout - Real Position Parent: {parent} is: x {parent.group.scenePos().x()}  , y: {parent.group.scenePos().y()} ')
+
             parent.positioned = True
 
         for item in node.get_nodes():
+            logger.warning(f'Layout - Adding to Parent ({parent}) Group: {item}')
             parent.group.addToGroup(item.shape)
 
-        for item in node.get_nodes():
-            parent.group.addToGroup(item.shape)
+        logger.warning(f'Layout - Adding to Parent ({parent}) Group: {node}')
         parent.group.addToGroup(node.shape)
         scene.update()
 
@@ -232,11 +322,24 @@ def connect_widgets(scene, parent, visited=[]):
         connections[dir] = node
 
     for direction, node in connections.items():
-        p_w = parent.widget.width()
-        p_h = parent.widget.height()
+        logger.info(f'Connecting parent ({parent}) to node ({node})')
+        logger.info(f'Parent Group: {parent.group} / node group: {node.group}')
+        _parent = parent
+        _node = node
+        parent_shape = parent.shape
+        node_shape = node.shape
+        if isinstance(parent.group, _GroupWrapper):
+            parent = parent.group.anchors[direction]
+            parent_shape = parent
+        if isinstance(node.group, _GroupWrapper):
+            node = node.group.anchors[direction]
+            node_shape = node
 
-        n_w = node.widget.width()
-        n_h = node.widget.height()
+        p_w = parent.widget().width()
+        p_h = parent.widget().height()
+
+        n_w = node.widget().width()
+        n_h = node.widget().height()
 
         offsets = {
             'n': (p_w/2.0, 0.0, n_w/2.0, n_h),
@@ -252,13 +355,15 @@ def connect_widgets(scene, parent, visited=[]):
         offset = offsets[direction]
         scene.addLine(
             QtCore.QLineF(
-                parent.shape.scenePos().x() + offset[0],
-                parent.shape.scenePos().y() + offset[1],
-                node.shape.scenePos().x() + offset[2],
-                node.shape.scenePos().y() + offset[3],
+                parent_shape.scenePos().x() + offset[0],
+                parent_shape.scenePos().y() + offset[1],
+                node_shape.scenePos().x() + offset[2],
+                node_shape.scenePos().y() + offset[3],
             ),
             pen
         )
+        parent = _parent
+        node = _node
 
 
 def remove_groups(scene, parent, visited=[]):
@@ -283,13 +388,16 @@ def validate(scene, shapes):
 
 
 class _GroupWrapper(QtWidgets.QGraphicsItemGroup):
-    _default_margins = QtCore.QMarginsF(5, 5, 5, 5)
+    _default_margins = QtCore.QMarginsF(0, 0, 0, 0)
 
     def __init__(self, name, scene, group, groupd, name_to_proxy):
         # rect = group.childrenBoundingRect() | group.boundingRect()
 
         super().__init__()
-        self.name = name
+        self.name = name + "()"
+        self.groupd = groupd
+        self.anchors = {dir: name_to_proxy[name] for dir, name in groupd['anchors'].items()}
+        logger.critical(f"Creating GroupWrapper {name} with anchors: {self.anchors} and extra: {groupd}")
 
         scene.addItem(self)
 
@@ -298,25 +406,25 @@ class _GroupWrapper(QtWidgets.QGraphicsItemGroup):
             for widget_name, widget in groupd['widgets'].items()
         }
 
-        self.container = QtWidgets.QGraphicsRectItem()
+        # self.container = QtWidgets.QGraphicsRectItem()
 
         for widget_name, proxy in self._proxies.items():
-            pos = proxy.scenePos()
-            proxy.setParentItem(self.container)
-            proxy.setPos(pos.x(), pos.y())
+            self.addToGroup(proxy)
+            scene.update()
 
-        margins = self._default_margins
+        # margins = self._default_margins
 
-        self.container.setPen(QtCore.Qt.white)
-        self.container.setRect(
-            self.container.childrenBoundingRect().marginsAdded(margins)
-        )
+        # self.container.setPen(QtCore.Qt.red)
+        # self.container.setRect(
+        #     self.container.childrenBoundingRect().marginsAdded(margins)
+        # )
 
-        self.label = QtWidgets.QGraphicsSimpleTextItem(name, self.container)
-        self.label.setPen(QtCore.Qt.white)
-        self.label.setPos(self.container.boundingRect().topLeft())
+        # self.addToGroup(self.container)
+        # scene.update()
+        # self.label = QtWidgets.QGraphicsSimpleTextItem(name, self.container)
+        # self.label.setPen(QtCore.Qt.white)
+        # self.label.setPos(self.sceneBoundingRect().topLeft())
 
-        self.addToGroup(self.container)
 
         class _FakeWidget:
             def width(_):  # noqa
@@ -334,6 +442,16 @@ class _GroupWrapper(QtWidgets.QGraphicsItemGroup):
 
     def widget(self):
         return self._widget
+
+    def setPos(self, *args, **kwargs) -> None:
+        super(_GroupWrapper, self).setPos(*args, **kwargs)
+        sp = self.scenePos()
+        x = sp.x()
+        y = sp.y()
+        # t = self.label.text()
+        # t = t[:t.rfind('(')]
+        # self.label.setText(f'{t} ({x}, {y})')
+
 
 
 def layout_instantiated_map(scene, instantiated):
@@ -357,12 +475,14 @@ def layout_instantiated_map(scene, instantiated):
 
         root = build_tree(tree_name_to_proxy, group['layout'])
         group_trees[group_name] = root
+
         layout(scene, root, root)
 
     def graphics_item_from_group(group_name, group):
         groupd = instantiated['groups'][group_name]
-        return _GroupWrapper(group_name, scene, group.group, groupd,
-                             name_to_proxy)
+        gw = _GroupWrapper(group_name, scene, group.group, groupd,
+                           name_to_proxy)
+        return gw
 
     top_level_items = {
         group_name: graphics_item_from_group(group_name, group)
@@ -373,6 +493,11 @@ def layout_instantiated_map(scene, instantiated):
             top_level_items[name] = name_to_proxy[name]
 
     logger.debug('Working on the top level tree: %s', top_level_items)
+
+    logging.error('Instantiated Components: %s',instantiated['groups'])
+    logging.error('Top Level Items: %s', top_level_items)
+    logging.error('Top Level Layout: %s', instantiated['layout'])
+
     top_level_tree = build_tree(top_level_items, instantiated['layout'])
 
     logger.debug('Top level tree: %s', top_level_tree)
