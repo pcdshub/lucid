@@ -323,11 +323,16 @@ def connect_widgets(scene, parent, visited=[]):
             connect_widgets(scene, node, visited=visited)
         connections[dir] = node
 
+    overlap_pen = QtGui.QPen(pen)
+    overlap_pen.setStyle(QtCore.Qt.DotLine)
+
+    color = overlap_pen.color()
+    color.setAlphaF(0.2)
+    overlap_pen.setColor(color)
+
     for direction, node in connections.items():
         logger.info(f'Connecting parent ({parent}) to node ({node})')
         logger.info(f'Parent Group: {parent.group} / node group: {node.group}')
-        _parent = parent
-        _node = node
         parent_shape = parent.shape
         node_shape = node.shape
         if isinstance(parent.group, _GroupWrapper):
@@ -343,7 +348,7 @@ def connect_widgets(scene, parent, visited=[]):
         n_w = node.widget().width()
         n_h = node.widget().height()
 
-        offsets = {
+        offset = {
             'n': (p_w/2.0, 0.0, n_w/2.0, n_h),
             's': (p_w/2.0, p_h, n_w/2.0, 0.0),
             'e': (p_w, p_h/2.0, 0.0, n_h/2.0),
@@ -352,21 +357,25 @@ def connect_widgets(scene, parent, visited=[]):
             'ne': (p_w, 0, 0, n_h),
             'sw': (0, p_h, n_w, 0),
             'se': (p_w, p_h, 0, 0),
-        }
+        }[direction]
 
-        offset = offsets[direction]
-        line = scene.addLine(
-            QtCore.QLineF(
-                parent_shape.scenePos().x() + offset[0],
-                parent_shape.scenePos().y() + offset[1],
-                node_shape.scenePos().x() + offset[2],
-                node_shape.scenePos().y() + offset[3],
+        overlap, normal = _get_line_segments(
+            start_pos=QtCore.QPointF(parent_shape.scenePos().x() + offset[0],
+                                     parent_shape.scenePos().y() + offset[1],
+                                     ),
+            end_pos=QtCore.QPointF(node_shape.scenePos().x() + offset[2],
+                                   node_shape.scenePos().y() + offset[3],
             ),
-            pen
+            scene=scene
         )
-        line.setZValue(-1)
-        parent = _parent
-        node = _node
+
+        for p1, p2 in normal:
+            line = scene.addLine(QtCore.QLineF(p1, p2), pen)
+            # line.setZValue(-1)
+
+        for p1, p2 in overlap:
+            line = scene.addLine(QtCore.QLineF(p1, p2), overlap_pen)
+            # line.setZValue(-1)
 
 
 def remove_groups(scene, parent, visited=[]):
@@ -388,6 +397,119 @@ def validate(scene, shapes):
                 logger.debug('Item: %s bumped with: %s', idx, c)
             return False
     return True
+
+
+def _get_line_segments(
+        scene: QtWidgets.QGraphicsScene,
+        start_pos: QtCore.QPointF,
+        end_pos: QtCore.QPointF, *,
+        allowed_classes=None,
+        ) -> QtCore.QPointF:
+    '''
+    Break up the linear path between (start_pos, end_pos) in the given scene into
+    two distinct groups of line segments, those that overlap with items and
+    those that do not.
+
+    Returns
+    -------
+        (overlapping, non-overlapping)
+    '''
+
+    allowed_classes = allowed_classes or QtWidgets.QGraphicsProxyWidget
+
+    # Based on https://stackoverflow.com/questions/17512547/
+    check_path = QtGui.QPainterPath()
+    check_path.moveTo(start_pos)
+    check_path.lineTo(end_pos)
+
+    items_in_path = scene.items(check_path, QtCore.Qt.IntersectsItemBoundingRect)
+
+    def get_start_end_point(item):
+        target_shape = QtGui.QPainterPath(item.mapToScene(item.shape()))
+
+        # QLineF has normalVector(), which is useful for extending our path to a
+        # rectangle.  The path needs to be a rectangle, as
+        # QPainterPath.intersected() only accounts for intersections between fill
+        # areas, which check_path doesn't have.
+        path_as_line = QtCore.QLineF(start_pos,
+                                     QtCore.QPointF(check_path.elementAt(1))
+                                     )
+
+        # Extend the first point in the path out by 1 pixel.
+        start_edge = path_as_line.normalVector()
+        start_edge.setLength(1)
+
+        # Swap the points in the line so the normal vector is at the other end of
+        # the line.
+        path_as_line.setPoints(path_as_line.p2(), path_as_line.p1())
+        end_edge = path_as_line.normalVector()
+
+        # The end point is currently pointing the wrong way move it to face the
+        # same direction as start_edge.
+        end_edge.setLength(-1)
+
+        # Now we can create a rectangle from our edges.
+        rect_path = QtGui.QPainterPath(start_edge.p1())
+        rect_path.lineTo(start_edge.p2())
+        rect_path.lineTo(end_edge.p2())
+        rect_path.lineTo(end_edge.p1())
+        rect_path.lineTo(start_edge.p1())
+
+        # Visualize the rectangle that we created.
+        # scene.addPath(rect_path, QtGui.QPen(QtGui.QBrush(QtCore.Qt.blue), 2))
+
+        # Visualize the intersection of the rectangle with the item.
+        intersection = target_shape.intersected(rect_path)
+        # scene.addPath(intersection,
+        #               QtGui.QPen(QtGui.QBrush(QtCore.Qt.cyan), 2))
+
+        if intersection.elementCount() == 0:
+            # Oops...
+            return None
+
+        p1 = QtCore.QPointF(intersection.elementAt(0))
+        p2 = QtCore.QPointF(intersection.elementAt(1))
+
+        # Ensure that the first point returned is always closer to the starting
+        # position than the second:
+        if distance(p1, start_pos) < distance(p2, start_pos):
+            return p1, p2
+        return p2, p1
+
+    def distance(p1, p2):
+        'Distance squared from p1-p2'
+        return (p1 - p2).manhattanLength()
+
+    def distance_sort(point_pair):
+        p1, _ = point_pair
+        return distance(start_pos, p1)
+
+    overlap = [get_start_end_point(item) for item in items_in_path
+               if isinstance(item, allowed_classes)]
+
+    while None in overlap:
+        # We might hit the corner of a widget, which counts as an intersection
+        # but has no points...
+        overlap.remove(None)
+
+    overlap.sort(key=distance_sort)
+
+    if not overlap:
+        non_overlap = [(start_pos, end_pos)]
+    else:
+        cur_pos = start_pos
+        non_overlap = []
+        threshold = 1
+        for ov in overlap:
+            p1, p2 = ov
+            if distance(cur_pos, p1) >= threshold:
+                non_overlap.append((cur_pos, p1))
+            cur_pos = p2
+
+        if distance(cur_pos, end_pos) >= threshold:
+            non_overlap.append((cur_pos, end_pos))
+
+    return overlap, non_overlap
 
 
 class _GroupWrapper(QtWidgets.QGraphicsItemGroup):
