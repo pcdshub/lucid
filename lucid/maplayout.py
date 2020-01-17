@@ -129,10 +129,10 @@ def calculate_position(parent, node, direction, min_spacing, parent_to_node=True
                 x += n_w / 2.0 - p_w / 2.0
 
             if 'n' in inv_dir:
-                spacing_y = n_g_h - n_h if n_y != n_g_y else 0
+                spacing_y = n_g_h - n_h if n_g_y - n_y != 0 else 0
                 y += -min_spacing - spacing_y - p_h
             elif 's' in inv_dir:
-                spacing_y = n_g_h - n_h if n_y == 0 else 0
+                spacing_y = n_g_h - n_h if n_g_y - n_y == 0 else 0
                 y += n_h + min_spacing + spacing_y
         elif 'e' in inv_dir:
             x += n_w + spacing_x + min_spacing
@@ -141,6 +141,7 @@ def calculate_position(parent, node, direction, min_spacing, parent_to_node=True
             x += -min_spacing - spacing_x - p_w
             y += n_h / 2.0 - p_h / 2.0
     else:
+        # Node to Parent
         x = p_x
         y = p_y
         if 'n' in direction or 's' in direction:
@@ -354,7 +355,7 @@ def connect_widgets(scene, parent, visited=[]):
         }
 
         offset = offsets[direction]
-        scene.addLine(
+        line = scene.addLine(
             QtCore.QLineF(
                 parent_shape.scenePos().x() + offset[0],
                 parent_shape.scenePos().y() + offset[1],
@@ -363,6 +364,7 @@ def connect_widgets(scene, parent, visited=[]):
             ),
             pen
         )
+        line.setZValue(-1)
         parent = _parent
         node = _node
 
@@ -389,7 +391,7 @@ def validate(scene, shapes):
 
 
 class _GroupWrapper(QtWidgets.QGraphicsItemGroup):
-    _default_margins = QtCore.QMarginsF(0, 0, 0, 0)
+    _default_margins = QtCore.QMarginsF(5, 5, 5, 5)
 
     def __init__(self, name, scene, group, groupd, name_to_proxy):
         # rect = group.childrenBoundingRect() | group.boundingRect()
@@ -407,24 +409,24 @@ class _GroupWrapper(QtWidgets.QGraphicsItemGroup):
             for widget_name, widget in groupd['widgets'].items()
         }
 
-        # self.container = QtWidgets.QGraphicsRectItem()
+        self.container = QtWidgets.QGraphicsRectItem()
 
         for widget_name, proxy in self._proxies.items():
             self.addToGroup(proxy)
             scene.update()
 
-        # margins = self._default_margins
+        margins = self._default_margins
 
-        # self.container.setPen(QtCore.Qt.red)
-        # self.container.setRect(
-        #     self.container.childrenBoundingRect().marginsAdded(margins)
-        # )
+        self.container.setPen(QtCore.Qt.white)
+        self.container.setRect(
+            self.childrenBoundingRect().marginsAdded(margins)
+        )
 
-        # self.addToGroup(self.container)
-        # scene.update()
-        # self.label = QtWidgets.QGraphicsSimpleTextItem(name, self.container)
-        # self.label.setPen(QtCore.Qt.white)
-        # self.label.setPos(self.sceneBoundingRect().topLeft())
+        self.addToGroup(self.container)
+        scene.update()
+        self.label = QtWidgets.QGraphicsSimpleTextItem(name, self.container)
+        self.label.setPen(QtCore.Qt.white)
+        self.label.setPos(self.sceneBoundingRect().topLeft())
 
 
         class _FakeWidget:
@@ -452,7 +454,6 @@ class _GroupWrapper(QtWidgets.QGraphicsItemGroup):
         # t = self.label.text()
         # t = t[:t.rfind('(')]
         # self.label.setText(f'{t} ({x}, {y})')
-
 
 
 def layout_instantiated_map(scene, instantiated):
