@@ -145,7 +145,10 @@ def save_image(scene, view, fn, bg=QtCore.Qt.black):
     scene.render(painter, QtCore.QRectF(image.rect()), area)
     painter.end()
 
-    path = str(conftest.MODULE_PATH / fn)
+    artifacts_path = conftest.MODULE_PATH / 'artifacts'
+    artifacts_path.mkdir(exist_ok=True)
+
+    path = str(artifacts_path / fn)
     image.save(path)
     print(f'saved image to {path}')
 
@@ -186,8 +189,9 @@ def test_layouts(qtbot, cls):
     save_image(scene, view, fn=f"test_maplayout_{cls.__name__}.png")
 
 
-@pytest.fixture(params=[pytest.param(fn, id='/'.join(fn.parts[-2:]))
-                        for fn in conftest.MODULE_PATH.glob('*.yml')])
+@pytest.fixture(
+    params=[pytest.param(fn, id='/'.join(fn.parts[-2:]))
+            for fn in (conftest.MODULE_PATH / 'maps').glob('*.yml')])
 def map_filename(request):
     return request.param
 
