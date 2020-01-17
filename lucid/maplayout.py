@@ -115,9 +115,10 @@ def calculate_position(parent, node, direction, min_spacing, parent_to_node=True
         x = n_x
         y = n_y
         if 'e' in inv_dir:
-            spacing_x = n_g_w - n_w if n_x == 0 else 0
+            spacing_x = n_g_w - n_w if n_g_x - n_x == 0 else 0
+
         elif 'w' in inv_dir:
-            spacing_x = n_g_w - n_w if n_x != 0 else 0
+            spacing_x = n_g_w - n_w if n_g_x - n_x != 0 else 0
 
         if 'n' in inv_dir or 's' in inv_dir:
             if 'e' in inv_dir:
