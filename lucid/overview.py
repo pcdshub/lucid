@@ -6,7 +6,7 @@ from qtpy import QtWidgets, QtGui, QtCore
 from qtpy.QtCore import QEvent, Qt, Property, QSize
 from qtpy.QtGui import QContextMenuEvent, QHoverEvent
 from qtpy.QtWidgets import (QPushButton, QMenu, QGridLayout, QWidget)
-from typhon.utils import reload_widget_stylesheet
+from typhos.utils import reload_widget_stylesheet
 
 import lucid
 from .utils import (SnakeLayout, indicator_for_device, display_for_device,
@@ -49,7 +49,7 @@ class BaseDeviceButton(QPushButton):
             self._suite = suite_for_devices(self.devices, parent=self)
         else:
             # Check that any devices that have been added since our last show
-            # request have been added to the TyphonSuite
+            # request have been added to the TyphosSuite
             for device in self.devices:
                 if device not in self._suite.devices:
                     self._suite.add_device(device)
@@ -139,7 +139,7 @@ class IndicatorCell(BaseDeviceButton):
                      70)
 
     def _devices_shown(self, shown, selector=None):
-        """Callback when corresponding ``TyphonSuite`` is accessed"""
+        """Callback when corresponding ``TyphosSuite`` is accessed"""
         selector = selector or self
         # On first selection
         if shown and selector not in self._selecting_widgets:

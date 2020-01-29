@@ -4,7 +4,7 @@ import pathlib
 
 import happi
 import lucid
-import typhon
+import typhos
 
 from PyQtAds import QtAds
 from qtpy import QtCore, QtWidgets, QtGui
@@ -370,7 +370,7 @@ def _thread_screens_search(callback, *, general_search, category_search,
         return
 
     main = LucidMainWindow.get_instance()
-    for display in main.findChildren(typhon.TyphonDeviceDisplay):
+    for display in main.findChildren(typhos.TyphosDeviceDisplay):
         ratio = max(utils.fuzzy_match(display.device_name, text,
                                       threshold=threshold)
                     for text in general_search)
@@ -384,7 +384,7 @@ def _thread_screens_search(callback, *, general_search, category_search,
                 callback=lambda disp=display: _raise_display(disp),
             )
 
-    for suite in main.findChildren(typhon.TyphonSuite):
+    for suite in main.findChildren(typhos.TyphosSuite):
         suite_parent = suite.parent()
         if not hasattr(suite_parent, 'title'):
             continue

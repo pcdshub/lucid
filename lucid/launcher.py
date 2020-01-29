@@ -68,7 +68,7 @@ def parse_arguments(*args, **kwargs):
 def launch(beamline, *, toolbar=None, row_group_key="location_group",
            col_group_key="functional_group", log_level="INFO"):
     import happi
-    import typhon
+    import typhos
 
     logger = logging.getLogger('')
     handler = logging.StreamHandler()
@@ -84,7 +84,7 @@ def launch(beamline, *, toolbar=None, row_group_key="location_group",
     app.setOrganizationDomain("slac.stanford.edu")
     app.setApplicationName("LUCID")
     window = lucid.main_window.LucidMainWindow()
-    typhon.use_stylesheet(dark=False)
+    typhos.use_stylesheet(dark=False)
     grid = lucid.overview.IndicatorGridWithOverlay()
 
     if beamline != 'DEMO':
