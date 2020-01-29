@@ -69,6 +69,7 @@ def launch(beamline, *, toolbar=None, row_group_key="location_group",
            col_group_key="functional_group", log_level="INFO"):
     import happi
     import typhos
+    import collections
 
     logger = logging.getLogger('')
     handler = logging.StreamHandler()
@@ -90,17 +91,23 @@ def launch(beamline, *, toolbar=None, row_group_key="location_group",
     if beamline != 'DEMO':
         # Fill with Data from Happi
         cli = lucid.utils.get_happi_client()
-        devices = cli.search(beamline=beamline)
+        devices = cli.search(beamline=beamline) or []
+
+        dev_groups = collections.defaultdict(list)
 
         for dev in devices:
             try:
                 stand = get_happi_entry_value(dev, row_group_key)
                 system = get_happi_entry_value(dev, col_group_key)
-                dev_obj = [happi.loader.from_container(dev)]
-                grid.add_devices(dev_obj, stand=stand, system=system)
+                dev_obj = happi.loader.from_container(dev)
+                dev_groups[f"{stand}|{system}"].append(dev_obj)
             except ValueError as ex:
                 print(ex)
                 continue
+
+        for location, dev_list in dev_groups.items():
+            stand, system = location.split("|")
+            grid.add_devices(dev_list, stand=stand, system=system)
 
     else:
         # Fill with random fake simulated devices
