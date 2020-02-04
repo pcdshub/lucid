@@ -343,3 +343,8 @@ class IndicatorGridWithOverlay(IndicatorGrid):
         self.overlay = IndicatorOverlay(self.frame, self)
         self.overlay.setVisible(False)
         self.stackUnder(self.overlay)
+
+    def add_from_dict(self, items):
+        for location, dev_list in items.items():
+            stand, system = location.split("|")
+            self.add_devices(dev_list, stand=stand, system=system)

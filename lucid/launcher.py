@@ -1,10 +1,17 @@
+import collections
+import functools
 import logging
 import pathlib
 
+import happi
+import typhos
+import typhos.utils
+from PyQtAds import QtAds
+from qtpy import QtWidgets, QtCore
+
 import lucid
 
-from qtpy import QtWidgets
-from PyQtAds import QtAds
+from lucid.demo import DemoDevice
 
 MODULE_PATH = pathlib.Path(__file__).parent
 
@@ -65,11 +72,63 @@ def parse_arguments(*args, **kwargs):
     return parser.parse_args(*args, **kwargs)
 
 
+class HappiLoader(QtCore.QThread):
+    def __init__(self, *args, beamline, group_keys, callbacks, **kwargs):
+        self.beamline = beamline
+        self.group_keys = group_keys
+        self.callbacks = callbacks
+        super(HappiLoader, self).__init__(*args, **kwargs)
+
+    def run(self):
+        row_group_key, col_group_key = self.group_keys
+        dev_groups = collections.defaultdict(list)
+
+        if self.beamline != 'DEMO':
+            # Fill with Data from Happi
+            cli = lucid.utils.get_happi_client()
+            devices = cli.search(beamline=self.beamline) or []
+
+            for dev in devices:
+                try:
+                    stand = get_happi_entry_value(dev, row_group_key)
+                    system = get_happi_entry_value(dev, col_group_key)
+                    dev_obj = happi.loader.from_container(dev, threaded=True)
+                    dev_groups[f"{stand}|{system}"].append(dev_obj)
+                except ValueError as ex:
+                    print(ex)
+                    continue
+
+        else:
+            # Fill with random fake simulated devices
+            from random import randint
+            from ophyd.sim import SynAxis
+
+            # Fill IndicatorGrid
+            # for stand in ('DIA',):#, 'DG1', 'TFS', 'DG2', 'TAB', 'DET', 'DG3'):
+            #     for system in ('Timing',):#, 'Beam Control', 'Diagnostics', 'Motion', 'Vacuum'):
+            for stand in ('DIA', 'DG1', 'TFS', 'DG2', 'TAB', 'DET', 'DG3'):
+                for system in ('Timing', 'Beam Control', 'Diagnostics', 'Motion', 'Vacuum'):
+                    # Create devices
+                    device_count = randint(1, 12)
+                    # device_count = 1
+                    system_name = system.lower().replace(' ', '_')
+                    devices = [DemoDevice(name=f'{stand.lower()}_{system_name}_{i}', prefix='MTEST')
+                               for i in range(device_count)]
+                    dev_groups[f"{stand}|{system}"] = devices
+
+
+
+        # Call the callback using the Receiver Slot Thread
+        for cb, send_devices in self.callbacks:
+            f = cb
+            if send_devices:
+                f = functools.partial(cb, dev_groups)
+
+            QtCore.QTimer.singleShot(0, f)
+
+
 def launch(beamline, *, toolbar=None, row_group_key="location_group",
            col_group_key="functional_group", log_level="INFO"):
-    import happi
-    import typhos
-    import collections
 
     logger = logging.getLogger('')
     handler = logging.StreamHandler()
@@ -84,46 +143,27 @@ def launch(beamline, *, toolbar=None, row_group_key="location_group",
     app.setOrganizationName("SLAC National Accelerator Laboratory")
     app.setOrganizationDomain("slac.stanford.edu")
     app.setApplicationName("LUCID")
-    window = lucid.main_window.LucidMainWindow()
+
     typhos.use_stylesheet(dark=False)
+
+    splash = lucid.splash.Splash()
+    splash.show()
+
+    splash.update_status("Creating Main Window")
+    window = lucid.main_window.LucidMainWindow()
+
     grid = lucid.overview.IndicatorGridWithOverlay()
 
-    if beamline != 'DEMO':
-        # Fill with Data from Happi
-        cli = lucid.utils.get_happi_client()
-        devices = cli.search(beamline=beamline) or []
-
-        dev_groups = collections.defaultdict(list)
-
-        for dev in devices:
-            try:
-                stand = get_happi_entry_value(dev, row_group_key)
-                system = get_happi_entry_value(dev, col_group_key)
-                dev_obj = happi.loader.from_container(dev)
-                dev_groups[f"{stand}|{system}"].append(dev_obj)
-            except ValueError as ex:
-                print(ex)
-                continue
-
-        for location, dev_list in dev_groups.items():
-            stand, system = location.split("|")
-            grid.add_devices(dev_list, stand=stand, system=system)
-
-    else:
-        # Fill with random fake simulated devices
-        from random import randint
-        from ophyd.sim import SynAxis
-
-        # Fill IndicatorGrid
-        for stand in ('DIA', 'DG1', 'TFS', 'DG2', 'TAB', 'DET', 'DG3'):
-            for system in ('Timing', 'Beam Control', 'Diagnostics', 'Motion',
-                           'Vacuum'):
-                # Create devices
-                device_count = randint(2, 20)
-                system_name = system.lower().replace(' ', '_')
-                devices = [SynAxis(name=f'{stand.lower()}_{system_name}_{i}')
-                           for i in range(device_count)]
-                grid.add_devices(devices, stand=stand, system=system)
+    splash.update_status(f"Loading {beamline} devices")
+    cbs = [(grid.add_from_dict, True),
+           (splash.accept, False),
+           (window.show, False)
+           ]
+    loader = HappiLoader(beamline=beamline,
+                         group_keys=(row_group_key, col_group_key),
+                         callbacks=cbs
+                         )
+    loader.start()
 
     dock_widget = QtAds.CDockWidget('Grid')
     dock_widget.setWidget(grid.frame)
@@ -135,7 +175,6 @@ def launch(beamline, *, toolbar=None, row_group_key="location_group",
     dock_widget.setFeature(dock_widget.DockWidgetMovable, False)
 
     window.dock_manager.addDockWidget(QtAds.LeftDockWidgetArea, dock_widget)
-    window.show()
 
     app.exec_()
 
