@@ -83,7 +83,7 @@ def indicator_for_device(device):
                          ' qproperty-penColor: black;'
                          ' qproperty-penWidth: 2;'
                          ' qproperty-penStyle: SolidLine;'
-                         ' qproperty-brush: rgba(0,220,0,120);} ')
+                         ' qproperty-brush: rgba(82,101,244,255);} ')
     return circle
 
 
