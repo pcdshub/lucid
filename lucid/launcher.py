@@ -69,6 +69,12 @@ def parse_arguments(*args, **kwargs):
         choices=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
         default='INFO'
     )
+    parser.add_argument(
+        '--dark',
+        help='Use dark Stylesheet',
+        action='store_true',
+        default=False
+    )
     return parser.parse_args(*args, **kwargs)
 
 
@@ -128,7 +134,8 @@ class HappiLoader(QtCore.QThread):
 
 
 def launch(beamline, *, toolbar=None, row_group_key="location_group",
-           col_group_key="functional_group", log_level="INFO"):
+           col_group_key="functional_group", log_level="INFO",
+           dark=True):
 
     logger = logging.getLogger('')
     handler = logging.StreamHandler()
@@ -144,13 +151,13 @@ def launch(beamline, *, toolbar=None, row_group_key="location_group",
     app.setOrganizationDomain("slac.stanford.edu")
     app.setApplicationName("LUCID")
 
-    typhos.use_stylesheet(dark=False)
+    typhos.use_stylesheet(dark=dark)
 
     splash = lucid.splash.Splash()
     splash.show()
 
     splash.update_status("Creating Main Window")
-    window = lucid.main_window.LucidMainWindow()
+    window = lucid.main_window.LucidMainWindow(dark=dark)
 
     grid = lucid.overview.IndicatorGridWithOverlay()
 

@@ -106,15 +106,18 @@ class LucidMainWindow(QMainWindow):
     Parameters
     ----------
     parent: optional
+    dark: bool
+        Whether or not to use the dark stylesheet
     """
     __instance = None
     escape_pressed = Signal()
     window_moved = Signal(QtGui.QMoveEvent)
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, dark=False):
         if self.__initialized:
             return
         self.dock_manager = None
+        self.dark = dark
         super().__init__(parent=parent)
         self.setup_ui()
         self.__initialized = True
@@ -152,8 +155,12 @@ class LucidMainWindow(QMainWindow):
         # Use the dockmanager for the main window - it will set itself as the
         # central widget
         self.dock_manager = QtAds.CDockManager(self)
-        self.dock_manager.setStyleSheet(
-            open(MODULE_PATH / 'dock_style.css', 'rt').read())
+        if self.dark:
+            self.dock_manager.setStyleSheet(
+                open(MODULE_PATH / 'dock_style_dark.css', 'rt').read())
+        else:
+            self.dock_manager.setStyleSheet(
+                open(MODULE_PATH / 'dock_style.css', 'rt').read())
 
     @property
     def settings(self):
