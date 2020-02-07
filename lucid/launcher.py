@@ -135,7 +135,7 @@ class HappiLoader(QtCore.QThread):
 
 def launch(beamline, *, toolbar=None, row_group_key="location_group",
            col_group_key="functional_group", log_level="INFO",
-           dark=True):
+           dark=False):
 
     logger = logging.getLogger('')
     handler = logging.StreamHandler()
