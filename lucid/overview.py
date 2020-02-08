@@ -338,7 +338,13 @@ class IndicatorGridWithOverlay(IndicatorGrid):
     def __init__(self, parent=None):
         super().__init__(parent=None)
         self.frame = QtWidgets.QFrame(parent)
-        self.setParent(self.frame)
+        self.frame.setLayout(QtWidgets.QVBoxLayout())
+        self.frame.layout().addWidget(self)
+
+        verticalSpacer = QtWidgets.QSpacerItem(10, 10,
+                                               QtWidgets.QSizePolicy.Minimum,
+                                               QtWidgets.QSizePolicy.Expanding)
+        self.frame.layout().addItem(verticalSpacer)
 
         self.overlay = IndicatorOverlay(self.frame, self)
         self.overlay.setVisible(False)

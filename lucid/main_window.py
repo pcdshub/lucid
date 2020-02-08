@@ -291,6 +291,8 @@ class LucidMainWindow(QMainWindow):
                 return widget
 
             dock = QtAds.CDockWidget(title)
+            dock.setSizePolicy(QtWidgets.QSizePolicy.Minimum,
+                               QtWidgets.QSizePolicy.Minimum)
             dock.setWidget(widget)
             widget.setParent(dock)
             window.dock_manager.addDockWidgetTab(

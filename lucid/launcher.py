@@ -173,7 +173,11 @@ def launch(beamline, *, toolbar=None, row_group_key="location_group",
     loader.start()
 
     dock_widget = QtAds.CDockWidget('Grid')
-    dock_widget.setWidget(grid.frame)
+    dock_widget.setSizePolicy(QtWidgets.QSizePolicy.Minimum,
+                              QtWidgets.QSizePolicy.Minimum)
+    dock_widget.setWidget(grid.frame,
+                          QtAds.CDockWidget.eInsertMode.ForceNoScrollArea)
+
 
     dock_widget.setToggleViewActionMode(QtAds.CDockWidget.ActionModeShow)
 
