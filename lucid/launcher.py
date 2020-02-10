@@ -13,6 +13,7 @@ import lucid
 
 from lucid.demo import DemoDevice
 
+
 MODULE_PATH = pathlib.Path(__file__).parent
 
 
@@ -107,22 +108,20 @@ class HappiLoader(QtCore.QThread):
         else:
             # Fill with random fake simulated devices
             from random import randint
-            from ophyd.sim import SynAxis
 
             # Fill IndicatorGrid
-            # for stand in ('DIA',):#, 'DG1', 'TFS', 'DG2', 'TAB', 'DET', 'DG3'):
-            #     for system in ('Timing',):#, 'Beam Control', 'Diagnostics', 'Motion', 'Vacuum'):
             for stand in ('DIA', 'DG1', 'TFS', 'DG2', 'TAB', 'DET', 'DG3'):
-                for system in ('Timing', 'Beam Control', 'Diagnostics', 'Motion', 'Vacuum'):
+                for system in ('Timing', 'Beam Control', 'Diagnostics',
+                               'Motion', 'Vacuum'):
                     # Create devices
                     device_count = randint(1, 12)
                     # device_count = 1
                     system_name = system.lower().replace(' ', '_')
-                    devices = [DemoDevice(name=f'{stand.lower()}_{system_name}_{i}', prefix='MTEST')
-                               for i in range(device_count)]
+                    devices = [
+                        DemoDevice(name=f'{stand.lower()}_{system_name}_{i}',
+                                   prefix='MTEST')
+                        for i in range(device_count)]
                     dev_groups[f"{stand}|{system}"] = devices
-
-
 
         # Call the callback using the Receiver Slot Thread
         for cb, send_devices in self.callbacks:
@@ -177,7 +176,6 @@ def launch(beamline, *, toolbar=None, row_group_key="location_group",
                               QtWidgets.QSizePolicy.Minimum)
     dock_widget.setWidget(grid.frame,
                           QtAds.CDockWidget.eInsertMode.ForceNoScrollArea)
-
 
     dock_widget.setToggleViewActionMode(QtAds.CDockWidget.ActionModeShow)
 

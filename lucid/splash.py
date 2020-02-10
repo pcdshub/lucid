@@ -21,7 +21,6 @@ class Splash(QtWidgets.QDialog):
         logo.setPixmap(logo_pixmap)
         layout.addWidget(logo)
 
-
         self.status_display = QtWidgets.QLabel()
         loading = typhos.utils.TyphosLoading(self)
 
