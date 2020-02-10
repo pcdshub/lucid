@@ -1,5 +1,4 @@
 codecov
-flake8
 pytest
 pytest-qt
 pyqtads
