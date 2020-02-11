@@ -11,9 +11,6 @@ from qtpy import QtWidgets, QtCore
 
 import lucid
 
-from lucid.demo import DemoDevice
-
-
 MODULE_PATH = pathlib.Path(__file__).parent
 
 
@@ -107,6 +104,7 @@ class HappiLoader(QtCore.QThread):
 
         else:
             # Fill with random fake simulated devices
+            from ophyd.sim import SynAxis
             from random import randint
 
             # Fill IndicatorGrid
@@ -118,8 +116,7 @@ class HappiLoader(QtCore.QThread):
                     # device_count = 1
                     system_name = system.lower().replace(' ', '_')
                     devices = [
-                        DemoDevice(name=f'{stand.lower()}_{system_name}_{i}',
-                                   prefix='MTEST')
+                        SynAxis(name=f'{stand.lower()}_{system_name}_{i}')
                         for i in range(device_count)]
                     dev_groups[f"{stand}|{system}"] = devices
 
