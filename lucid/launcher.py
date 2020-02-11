@@ -2,6 +2,7 @@ import collections
 import functools
 import logging
 import pathlib
+import signal
 
 import happi
 import typhos
@@ -132,6 +133,8 @@ class HappiLoader(QtCore.QThread):
 def launch(beamline, *, toolbar=None, row_group_key="location_group",
            col_group_key="functional_group", log_level="INFO",
            dark=False):
+    # Re-enable sigint (usually blocked by pyqt)
+    signal.signal(signal.SIGINT, signal.SIG_DFL)
 
     logger = logging.getLogger('')
     handler = logging.StreamHandler()
