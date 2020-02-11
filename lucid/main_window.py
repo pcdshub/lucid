@@ -3,16 +3,14 @@ import logging
 import pathlib
 
 import happi
-import lucid
 import typhos
-
 from PyQtAds import QtAds
 from qtpy import QtCore, QtWidgets, QtGui
 from qtpy.QtCore import Qt, Signal
 from qtpy.QtWidgets import QMainWindow, QStyle, QSizePolicy
 
+import lucid
 from . import utils
-
 
 logger = logging.getLogger(__name__)
 
@@ -157,7 +155,9 @@ class LucidMainWindow(QMainWindow):
         self.dock_manager = QtAds.CDockManager(self)
         if self.dark:
             self.dock_manager.setStyleSheet(
-                open(MODULE_PATH / ('dock_style_dark.css' if dark else 'dock_style.css'), 'rt').read())
+                open(MODULE_PATH / (
+                    'dock_style_dark.css' if self.dark else 'dock_style.css'),
+                     'rt').read())
         else:
             self.dock_manager.setStyleSheet(
                 open(MODULE_PATH / 'dock_style.css', 'rt').read())
