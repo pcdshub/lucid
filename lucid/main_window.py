@@ -157,7 +157,7 @@ class LucidMainWindow(QMainWindow):
         self.dock_manager = QtAds.CDockManager(self)
         if self.dark:
             self.dock_manager.setStyleSheet(
-                open(MODULE_PATH / 'dock_style_dark.css', 'rt').read())
+                open(MODULE_PATH / ('dock_style_dark.css' if dark else 'dock_style.css'), 'rt').read())
         else:
             self.dock_manager.setStyleSheet(
                 open(MODULE_PATH / 'dock_style.css', 'rt').read())
