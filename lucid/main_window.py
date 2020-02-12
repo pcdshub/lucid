@@ -293,7 +293,8 @@ class LucidMainWindow(QMainWindow):
             dock = QtAds.CDockWidget(title)
             dock.setSizePolicy(QtWidgets.QSizePolicy.Minimum,
                                QtWidgets.QSizePolicy.Minimum)
-            dock.setWidget(widget)
+            dock.setWidget(widget,
+                           QtAds.CDockWidget.eInsertMode.ForceNoScrollArea)
             widget.setParent(dock)
             window.dock_manager.addDockWidgetTab(
                 QtAds.RightDockWidgetArea, dock)
