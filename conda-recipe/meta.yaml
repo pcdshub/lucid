@@ -18,12 +18,13 @@ requirements:
 
   run:
     - python {{PY_VER}}*,>=3
+    - fuzzywuzzy
+    - happi >=1.3.0
     - pydm
     - pyqtads
     - ophyd
     - qtpy
     - typhos >=0.4
-    - fuzzywuzzy
 
 test:
   imports:

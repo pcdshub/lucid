@@ -8,7 +8,7 @@ import fuzzywuzzy.fuzz
 from pydm.widgets import PyDMDrawingCircle
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QGridLayout
-from typhon import TyphonDeviceDisplay, TyphonSuite
+from typhos import TyphosDeviceDisplay, TyphosSuite
 
 logger = logging.getLogger(__name__)
 
@@ -83,22 +83,22 @@ def indicator_for_device(device):
                          ' qproperty-penColor: black;'
                          ' qproperty-penWidth: 2;'
                          ' qproperty-penStyle: SolidLine;'
-                         ' qproperty-brush: rgba(0,220,0,120);} ')
+                         ' qproperty-brush: rgba(82,101,244,255);} ')
     return circle
 
 
 def display_for_device(device, display_type=None):
-    """Create a TyphonDeviceDisplay for a given device"""
+    """Create a TyphosDeviceDisplay for a given device"""
     logger.debug("Creating device display for %r", device)
-    display = TyphonDeviceDisplay.from_device(device)
+    display = TyphosDeviceDisplay.from_device(device)
     if display_type:
         display.display_type = display_type
     return display
 
 
 def suite_for_devices(devices, *, parent=None):
-    """Create a TyphonSuite to display multiple devices"""
-    suite = TyphonSuite(parent=parent)
+    """Create a TyphosSuite to display multiple devices"""
+    suite = TyphosSuite(parent=parent)
     for device in devices:
         suite.add_device(device)
     return suite

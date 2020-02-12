@@ -3,16 +3,14 @@ import logging
 import pathlib
 
 import happi
-import lucid
-import typhon
-
+import typhos
 from PyQtAds import QtAds
 from qtpy import QtCore, QtWidgets, QtGui
 from qtpy.QtCore import Qt, Signal
 from qtpy.QtWidgets import QMainWindow, QStyle, QSizePolicy
 
+import lucid
 from . import utils
-
 
 logger = logging.getLogger(__name__)
 
@@ -106,15 +104,18 @@ class LucidMainWindow(QMainWindow):
     Parameters
     ----------
     parent: optional
+    dark: bool
+        Whether or not to use the dark stylesheet
     """
     __instance = None
     escape_pressed = Signal()
     window_moved = Signal(QtGui.QMoveEvent)
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, dark=False):
         if self.__initialized:
             return
         self.dock_manager = None
+        self.dark = dark
         super().__init__(parent=parent)
         self.setup_ui()
         self.__initialized = True
@@ -152,8 +153,14 @@ class LucidMainWindow(QMainWindow):
         # Use the dockmanager for the main window - it will set itself as the
         # central widget
         self.dock_manager = QtAds.CDockManager(self)
-        self.dock_manager.setStyleSheet(
-            open(MODULE_PATH / 'dock_style.css', 'rt').read())
+        if self.dark:
+            self.dock_manager.setStyleSheet(
+                open(MODULE_PATH / (
+                    'dock_style_dark.css' if self.dark else 'dock_style.css'),
+                     'rt').read())
+        else:
+            self.dock_manager.setStyleSheet(
+                open(MODULE_PATH / 'dock_style.css', 'rt').read())
 
     @property
     def settings(self):
@@ -284,7 +291,10 @@ class LucidMainWindow(QMainWindow):
                 return widget
 
             dock = QtAds.CDockWidget(title)
-            dock.setWidget(widget)
+            dock.setSizePolicy(QtWidgets.QSizePolicy.Minimum,
+                               QtWidgets.QSizePolicy.Minimum)
+            dock.setWidget(widget,
+                           QtAds.CDockWidget.eInsertMode.ForceNoScrollArea)
             widget.setParent(dock)
             window.dock_manager.addDockWidgetTab(
                 QtAds.RightDockWidgetArea, dock)
@@ -370,7 +380,7 @@ def _thread_screens_search(callback, *, general_search, category_search,
         return
 
     main = LucidMainWindow.get_instance()
-    for display in main.findChildren(typhon.TyphonDeviceDisplay):
+    for display in main.findChildren(typhos.TyphosDeviceDisplay):
         ratio = max(utils.fuzzy_match(display.device_name, text,
                                       threshold=threshold)
                     for text in general_search)
@@ -384,7 +394,7 @@ def _thread_screens_search(callback, *, general_search, category_search,
                 callback=lambda disp=display: _raise_display(disp),
             )
 
-    for suite in main.findChildren(typhon.TyphonSuite):
+    for suite in main.findChildren(typhos.TyphosSuite):
         suite_parent = suite.parent()
         if not hasattr(suite_parent, 'title'):
             continue

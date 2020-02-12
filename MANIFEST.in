@@ -1,2 +1,3 @@
 include versioneer.py
 include lucid/_version.py
+include lucid/logo.png

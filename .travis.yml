@@ -53,7 +53,6 @@ before_script:
   - sleep 1
 
 script:
-  - flake8 lucid
   - coverage run run_tests.py
   - coverage report -m
   - set -e
