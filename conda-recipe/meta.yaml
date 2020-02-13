@@ -25,6 +25,7 @@ requirements:
     - ophyd
     - qtpy
     - typhos >=0.4
+    - pyyaml
 
 test:
   imports:

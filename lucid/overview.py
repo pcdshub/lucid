@@ -1,5 +1,7 @@
 """Overview of the Experimental Area"""
+import yaml
 import weakref
+import logging
 from functools import partial
 
 from qtpy import QtWidgets, QtGui, QtCore
@@ -11,6 +13,8 @@ from typhos.utils import reload_widget_stylesheet
 import lucid
 from .utils import (SnakeLayout, indicator_for_device, display_for_device,
                     suite_for_devices)
+
+logger = logging.getLogger(__name__)
 
 
 class BaseDeviceButton(QPushButton):
@@ -354,3 +358,44 @@ class IndicatorGridWithOverlay(IndicatorGrid):
         for location, dev_list in items.items():
             stand, system = location.split("|")
             self.add_devices(dev_list, stand=stand, system=system)
+
+
+class QuickAccessToolbar(QtWidgets.QWidget):
+    """Tab Widget with tabs containing buttons defined via a yaml file"""
+    def __init__(self, parent=None):
+        super().__init__(parent=parent)
+        self._tools_file = None
+        self._setup_ui()
+
+    @Property(str)
+    def toolsFile(self):
+        return self._tools_file
+
+    @toolsFile.setter
+    def toolsFile(self, file):
+        if self._tools_file != file:
+            self._tools_file = file
+            self._assemble_tabs()
+
+    def _setup_ui(self):
+        main_layout = QtWidgets.QVBoxLayout()
+        self.setLayout(main_layout)
+        self.tab = QtWidgets.QTabWidget()
+        main_layout.addWidget(self.tab)
+
+    def _assemble_tabs(self):
+        self.tab.clear()
+        try:
+            tools = {}
+            with open(self._tools_file, 'r') as tf:
+                tools = yaml.full_load(tf)
+            for tab_name, tab_items in tools.items():
+                page = QtWidgets.QWidget()
+                page.setLayout(SnakeLayout(4))
+                for button in tab_items:
+                    for button_text, button_config in button.items():
+                        button_widget = QPushButton(parent=page, text=button_text)
+                        page.layout().addWidget(button_widget)
+                self.tab.addTab(page, tab_name)
+        except (IOError, ValueError):
+            logger.error('Invalid file for QuickAccessToolbar widget. %s', self._tools_file)
