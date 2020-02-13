@@ -83,6 +83,8 @@ class LucidMainWindowMenu(QtWidgets.QMenuBar):
             if old_value is None or value != old_value:
                 signal = getattr(self, f'{key}_changed', None)
                 if signal is not None:
+                    if isinstance(value, str):
+                        value = value == "true"
                     signal.emit(value)
                 self.settings_changed.emit(dict(self.settings))
 
