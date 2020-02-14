@@ -431,8 +431,8 @@ class QuickAccessToolbar(QtWidgets.QWidget):
         for prop, val in config.items():
             try:
                 setattr(btn, prop, val)
-            except Exception:
+            except Exception as ex:
                 logger.error(f'Failed to set property {prop} with '
-                             f'value {val} for {tp}: {exception_text}')
+                             f'value {val} for {tp}: {ex}')
 
         return btn
