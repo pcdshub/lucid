@@ -1,6 +1,7 @@
 pydm
 git+https://github.com/githubuser0xFFFF/Qt-Advanced-Docking-System
 ophyd
+pyyaml
 qtpy
 qtpy
 typhos
