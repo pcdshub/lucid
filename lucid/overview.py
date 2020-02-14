@@ -1,4 +1,5 @@
 """Overview of the Experimental Area"""
+import os
 import yaml
 import weakref
 import logging
@@ -9,6 +10,8 @@ from qtpy.QtCore import QEvent, Qt, Property, QSize
 from qtpy.QtGui import QContextMenuEvent, QHoverEvent
 from qtpy.QtWidgets import (QPushButton, QMenu, QGridLayout, QWidget)
 from typhos.utils import reload_widget_stylesheet
+
+from pydm.widgets import PyDMShellCommand, PyDMRelatedDisplayButton
 
 import lucid
 from .utils import (SnakeLayout, indicator_for_device, display_for_device,
@@ -364,8 +367,12 @@ class QuickAccessToolbar(QtWidgets.QWidget):
     """Tab Widget with tabs containing buttons defined via a yaml file"""
     def __init__(self, parent=None):
         super().__init__(parent=parent)
-        self._tools_file = None
+        self._tools = None
+        self.setSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Minimum)
         self._setup_ui()
+
+    def sizeHint(self):
+        return QtCore.QSize(100, 100)
 
     @Property(str)
     def toolsFile(self):
@@ -373,9 +380,14 @@ class QuickAccessToolbar(QtWidgets.QWidget):
 
     @toolsFile.setter
     def toolsFile(self, file):
-        if self._tools_file != file:
-            self._tools_file = file
-            self._assemble_tabs()
+        if not file:
+            return
+        if isinstance(file, (str, bytes, os.PathLike)):
+            with open(self._tools_file, 'r') as tf:
+                self._tools = yaml.full_load(tf)
+        else:
+            self._tools = yaml.full_load(file)
+        self._assemble_tabs()
 
     def _setup_ui(self):
         main_layout = QtWidgets.QVBoxLayout()
@@ -386,16 +398,33 @@ class QuickAccessToolbar(QtWidgets.QWidget):
     def _assemble_tabs(self):
         self.tab.clear()
         try:
-            tools = {}
-            with open(self._tools_file, 'r') as tf:
-                tools = yaml.full_load(tf)
-            for tab_name, tab_items in tools.items():
+            for tab_name, tab_items in self._tools.items():
                 page = QtWidgets.QWidget()
                 page.setLayout(SnakeLayout(4))
                 for button in tab_items:
                     for button_text, button_config in button.items():
-                        button_widget = QPushButton(parent=page, text=button_text)
+                        button_widget = self._button_factory(button_text, button_config)
                         page.layout().addWidget(button_widget)
                 self.tab.addTab(page, tab_name)
         except (IOError, ValueError):
             logger.error('Invalid file for QuickAccessToolbar widget. %s', self._tools_file)
+
+    def _button_factory(self, text, config):
+        tp = config.pop('type')
+        btn = QPushButton()
+        if tp == 'shell':
+            btn = PyDMShellCommand()
+            btn.showIcon = False
+            btn.setText(text)
+        elif tp == 'display':
+            btn = PyDMRelatedDisplayButton()
+            btn.showIcon = False
+            btn.setText(text)
+
+        for prop, val in config.items():
+            try:
+                setattr(btn, prop, val)
+            except:
+                logger.error(f'Failed to set property {prop} with value {val} for {tp}.')
+
+        return btn
