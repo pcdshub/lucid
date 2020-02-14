@@ -190,10 +190,10 @@ def launch(beamline, *, toolbar=None, row_group_key="location_group",
 
     bar_widget = QtAds.CDockWidget('Quick Launcher Toolbar')
     bar_widget.setSizePolicy(QtWidgets.QSizePolicy.Minimum,
-                              QtWidgets.QSizePolicy.Minimum)
+                             QtWidgets.QSizePolicy.Minimum)
 
     bar_widget.setWidget(quick_toolbar,
-                          QtAds.CDockWidget.eInsertMode.ForceNoScrollArea)
+                         QtAds.CDockWidget.eInsertMode.ForceNoScrollArea)
     bar_widget.setToggleViewActionMode(QtAds.CDockWidget.ActionModeShow)
     bar_widget.setFeature(dock_widget.DockWidgetClosable, False)
     bar_widget.setFeature(dock_widget.DockWidgetFloatable, False)

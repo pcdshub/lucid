@@ -368,7 +368,8 @@ class QuickAccessToolbar(QtWidgets.QWidget):
     def __init__(self, parent=None):
         super().__init__(parent=parent)
         self._tools = None
-        self.setSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Minimum)
+        self.setSizePolicy(QtWidgets.QSizePolicy.Minimum,
+                           QtWidgets.QSizePolicy.Minimum)
         self._setup_ui()
 
     def sizeHint(self):
@@ -403,11 +404,13 @@ class QuickAccessToolbar(QtWidgets.QWidget):
                 page.setLayout(SnakeLayout(4))
                 for button in tab_items:
                     for button_text, button_config in button.items():
-                        button_widget = self._button_factory(button_text, button_config)
+                        button_widget = self._button_factory(button_text,
+                                                             button_config)
                         page.layout().addWidget(button_widget)
                 self.tab.addTab(page, tab_name)
         except (IOError, ValueError):
-            logger.error('Invalid file for QuickAccessToolbar widget. %s', self._tools_file)
+            logger.error('Invalid file for QuickAccessToolbar widget. %s',
+                         self._tools_file)
 
     def _button_factory(self, text, config):
         tp = config.pop('type')
@@ -424,7 +427,8 @@ class QuickAccessToolbar(QtWidgets.QWidget):
         for prop, val in config.items():
             try:
                 setattr(btn, prop, val)
-            except:
-                logger.error(f'Failed to set property {prop} with value {val} for {tp}.')
+            except Exception:
+                logger.error(f'Failed to set property {prop} with '
+                             f'value {val} for {tp}.')
 
         return btn
