@@ -1,11 +1,15 @@
 DEMO:
-  - Open PyDM:
-      type: shell
-      commands:
-        - pydm
-  - Demo Displays:
-      type: display
-      foo: baaaar
-      filenames:
-        - home.ui
-        - label/label.ui
+  config:
+    cols: 4
+
+  buttons:
+    Open PyDM:
+        type: shell
+        commands:
+          - pydm
+    Demo Displays:
+        type: display
+        foo: baaaar
+        filenames:
+          - home.ui
+          - label/label.ui

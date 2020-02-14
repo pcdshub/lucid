@@ -368,8 +368,7 @@ class QuickAccessToolbar(QtWidgets.QWidget):
     def __init__(self, parent=None):
         super().__init__(parent=parent)
         self._tools = None
-        self.setSizePolicy(QtWidgets.QSizePolicy.Minimum,
-                           QtWidgets.QSizePolicy.Minimum)
+        self._default_config = {'cols': 4}
         self._setup_ui()
 
     def sizeHint(self):
@@ -391,6 +390,9 @@ class QuickAccessToolbar(QtWidgets.QWidget):
         self._assemble_tabs()
 
     def _setup_ui(self):
+        self.setSizePolicy(QtWidgets.QSizePolicy.Minimum,
+                           QtWidgets.QSizePolicy.Minimum)
+
         main_layout = QtWidgets.QVBoxLayout()
         self.setLayout(main_layout)
         self.tab = QtWidgets.QTabWidget()
@@ -398,19 +400,20 @@ class QuickAccessToolbar(QtWidgets.QWidget):
 
     def _assemble_tabs(self):
         self.tab.clear()
-        try:
-            for tab_name, tab_items in self._tools.items():
-                page = QtWidgets.QWidget()
-                page.setLayout(SnakeLayout(4))
-                for button in tab_items:
-                    for button_text, button_config in button.items():
-                        button_widget = self._button_factory(button_text,
-                                                             button_config)
-                        page.layout().addWidget(button_widget)
-                self.tab.addTab(page, tab_name)
-        except (IOError, ValueError):
-            logger.error('Invalid file for QuickAccessToolbar widget. %s',
-                         self._tools_file)
+        for tab_name, tab_params in self._tools.items():
+            page = QtWidgets.QWidget()
+
+            config = dict(self._default_config)
+            config.update(tab_params.get('config', {}))
+
+            cols = config.get('cols', 4)
+            page.setLayout(SnakeLayout(cols))
+
+            for button_text, button_config in tab_params.get('buttons',{}).items():
+                button_widget = self._button_factory(button_text,
+                                                     button_config)
+                page.layout().addWidget(button_widget)
+            self.tab.addTab(page, tab_name)
 
     def _button_factory(self, text, config):
         tp = config.pop('type')
