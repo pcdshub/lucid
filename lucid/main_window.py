@@ -298,7 +298,7 @@ class LucidMainWindow(QMainWindow):
             dock.setWidget(widget,
                            QtAds.CDockWidget.eInsertMode.ForceNoScrollArea)
             widget.setParent(dock)
-            window.dock_manager.addDockWidgetTab(
+            window.dock_manager.addDockWidget(
                 QtAds.RightDockWidgetArea, dock)
 
             # Ensure the main dock is actually visible

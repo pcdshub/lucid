@@ -1,5 +1,8 @@
 """Overview of the Experimental Area"""
+import os
+import yaml
 import weakref
+import logging
 from functools import partial
 
 from qtpy import QtWidgets, QtGui, QtCore
@@ -8,9 +11,13 @@ from qtpy.QtGui import QContextMenuEvent, QHoverEvent
 from qtpy.QtWidgets import (QPushButton, QMenu, QGridLayout, QWidget)
 from typhos.utils import reload_widget_stylesheet
 
+from pydm.widgets import PyDMShellCommand, PyDMRelatedDisplayButton
+
 import lucid
 from .utils import (SnakeLayout, indicator_for_device, display_for_device,
                     suite_for_devices)
+
+logger = logging.getLogger(__name__)
 
 
 class BaseDeviceButton(QPushButton):
@@ -354,3 +361,78 @@ class IndicatorGridWithOverlay(IndicatorGrid):
         for location, dev_list in items.items():
             stand, system = location.split("|")
             self.add_devices(dev_list, stand=stand, system=system)
+
+
+class QuickAccessToolbar(QtWidgets.QWidget):
+    """Tab Widget with tabs containing buttons defined via a yaml file"""
+    def __init__(self, parent=None):
+        super().__init__(parent=parent)
+        self._tools = None
+        self._default_config = {'cols': 4}
+        self._setup_ui()
+
+    def sizeHint(self):
+        return QtCore.QSize(100, 100)
+
+    @Property(str)
+    def toolsFile(self):
+        return self._tools_file
+
+    @toolsFile.setter
+    def toolsFile(self, file):
+        if not file:
+            return
+        if isinstance(file, (str, bytes, os.PathLike)):
+            with open(self._tools_file, 'r') as tf:
+                self._tools = yaml.full_load(tf)
+        else:
+            self._tools = yaml.full_load(file)
+        self._assemble_tabs()
+
+    def _setup_ui(self):
+        self.setSizePolicy(QtWidgets.QSizePolicy.Minimum,
+                           QtWidgets.QSizePolicy.Minimum)
+
+        main_layout = QtWidgets.QVBoxLayout()
+        self.setLayout(main_layout)
+        self.tab = QtWidgets.QTabWidget()
+        main_layout.addWidget(self.tab)
+
+    def _assemble_tabs(self):
+        self.tab.clear()
+        for tab_name, tab_params in self._tools.items():
+            page = QtWidgets.QWidget()
+
+            config = dict(self._default_config)
+            config.update(tab_params.get('config', {}))
+
+            cols = config.get('cols', 4)
+            page.setLayout(SnakeLayout(cols))
+
+            buttons = tab_params.get('buttons', {})
+            for button_text, button_config in buttons.items():
+                button_widget = self._button_factory(button_text,
+                                                     button_config)
+                page.layout().addWidget(button_widget)
+            self.tab.addTab(page, tab_name)
+
+    def _button_factory(self, text, config):
+        tp = config.pop('type')
+        btn = QPushButton()
+        if tp == 'shell':
+            btn = PyDMShellCommand()
+            btn.showIcon = False
+            btn.setText(text)
+        elif tp == 'display':
+            btn = PyDMRelatedDisplayButton()
+            btn.showIcon = False
+            btn.setText(text)
+
+        for prop, val in config.items():
+            try:
+                setattr(btn, prop, val)
+            except Exception as ex:
+                logger.error(f'Failed to set property {prop} with '
+                             f'value {val} for {tp}: {ex}')
+
+        return btn
