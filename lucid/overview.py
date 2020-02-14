@@ -409,7 +409,8 @@ class QuickAccessToolbar(QtWidgets.QWidget):
             cols = config.get('cols', 4)
             page.setLayout(SnakeLayout(cols))
 
-            for button_text, button_config in tab_params.get('buttons',{}).items():
+            buttons = tab_params.get('buttons', {})
+            for button_text, button_config in buttons.items():
                 button_widget = self._button_factory(button_text,
                                                      button_config)
                 page.layout().addWidget(button_widget)
