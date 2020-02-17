@@ -98,7 +98,8 @@ class HappiLoader(QtCore.QThread):
                     try:
                         stand = get_happi_entry_value(dev, row_group_key)
                         system = get_happi_entry_value(dev, col_group_key)
-                        dev_obj = happi.loader.from_container(dev, threaded=True)
+                        dev_obj = happi.loader.from_container(dev,
+                                                              threaded=True)
                         dev_groups[f"{stand}|{system}"].append(dev_obj)
                     except ValueError as ex:
                         print(ex)
