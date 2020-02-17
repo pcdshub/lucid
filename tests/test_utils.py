@@ -2,7 +2,7 @@ import pytest
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QWidget
 
-from lucid.utils import SnakeLayout
+from lucid.utils import SnakeLayout, no_device_lazy_load
 
 
 @pytest.mark.parametrize('direction,shape',
@@ -18,3 +18,12 @@ def test_snake_layout_add(qtbot, direction, shape):
         qtbot.addWidget(widget)
 
     assert (layout.columnCount(), layout.rowCount()) == shape
+
+
+def test_no_device_lazy_load():
+    from ophyd import Device
+    old_val = Device.lazy_wait_for_connection
+    with no_device_lazy_load():
+        assert Device.lazy_wait_for_connection is False
+
+    assert Device.lazy_wait_for_connection == old_val
