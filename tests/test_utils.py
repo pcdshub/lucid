@@ -21,9 +21,24 @@ def test_snake_layout_add(qtbot, direction, shape):
 
 
 def test_no_device_lazy_load():
-    from ophyd import Device
-    old_val = Device.lazy_wait_for_connection
-    with no_device_lazy_load():
-        assert Device.lazy_wait_for_connection is False
+    from ophyd import Device, Component as Cpt
 
-    assert Device.lazy_wait_for_connection == old_val
+    class TestDevice(Device):
+        c = Cpt(Device, suffix='Test')
+
+    dev = TestDevice(name='foo')
+
+    old_val = Device.lazy_wait_for_connection
+    assert dev.lazy_wait_for_connection is old_val
+    assert dev.c.lazy_wait_for_connection is old_val
+
+    with no_device_lazy_load():
+        dev2 = TestDevice(name='foo')
+
+        assert Device.lazy_wait_for_connection is False
+        assert dev2.lazy_wait_for_connection is False
+        assert dev2.c.lazy_wait_for_connection is False
+
+    assert Device.lazy_wait_for_connection is old_val
+    assert dev.lazy_wait_for_connection is old_val
+    assert dev.c.lazy_wait_for_connection is old_val
