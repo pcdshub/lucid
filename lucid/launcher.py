@@ -102,7 +102,7 @@ class HappiLoader(QtCore.QThread):
                                                               threaded=True)
                         dev_groups[f"{stand}|{system}"].append(dev_obj)
                     except ValueError as ex:
-                        print(ex)
+                        logger.exception('Failed to load device %s', dev)
                         continue
 
         else:
