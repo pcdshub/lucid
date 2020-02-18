@@ -217,8 +217,8 @@ def no_device_lazy_load():
     `lazy_wait_for_connection` behavior and later restore its value.
     '''
     old_val = Device.lazy_wait_for_connection
-    Device.lazy_wait_for_connection = False
     try:
+        Device.lazy_wait_for_connection = False
         yield
     finally:
         Device.lazy_wait_for_connection = old_val
