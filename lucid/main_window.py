@@ -608,6 +608,7 @@ class SearchDialog(QtWidgets.QDialog):
         self.setWindowFlag(Qt.FramelessWindowHint, True)
         self.setWindowFlag(Qt.WindowStaysOnTopHint, True)
         self.setWindowFlag(Qt.Popup, True)
+        self.setWindowFlag(Qt.SplashScreen, True)
 
         if hasattr(parent, 'key_pressed'):
             parent.key_pressed.connect(self._handle_search_keypress)
