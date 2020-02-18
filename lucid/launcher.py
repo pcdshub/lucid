@@ -14,6 +14,8 @@ import lucid
 
 MODULE_PATH = pathlib.Path(__file__).parent
 
+logger = logging.getLogger(__name__)
+
 
 def get_happi_entry_value(entry, key, search_extraneous=True):
     extraneous = entry.extraneous
@@ -138,13 +140,13 @@ def launch(beamline, *, toolbar=None, row_group_key="location_group",
     # Re-enable sigint (usually blocked by pyqt)
     signal.signal(signal.SIGINT, signal.SIG_DFL)
 
-    logger = logging.getLogger('')
+    lucid_logger = logging.getLogger('')
     handler = logging.StreamHandler()
     formatter = logging.Formatter(
         '[%(asctime)s] [%(levelname)-8s] - %(message)s')
     handler.setFormatter(formatter)
-    logger.addHandler(handler)
-    logger.setLevel(log_level)
+    lucid_logger.addHandler(handler)
+    lucid_logger.setLevel(log_level)
     handler.setLevel(log_level)
 
     app = QtWidgets.QApplication([])
