@@ -14,6 +14,8 @@ import lucid
 
 MODULE_PATH = pathlib.Path(__file__).parent
 
+logger = logging.getLogger(__name__)
+
 
 def get_happi_entry_value(entry, key, search_extraneous=True):
     extraneous = entry.extraneous
@@ -23,7 +25,7 @@ def get_happi_entry_value(entry, key, search_extraneous=True):
         value = extraneous.get(key, None)
 
     if not value:
-        raise ValueError('Invalid Key for Device.')
+        raise ValueError(f'Invalid Key ({key} not in {entry}.')
     return value
 
 
@@ -93,15 +95,17 @@ class HappiLoader(QtCore.QThread):
             cli = lucid.utils.get_happi_client()
             devices = cli.search(beamline=self.beamline) or []
 
-            for dev in devices:
-                try:
-                    stand = get_happi_entry_value(dev, row_group_key)
-                    system = get_happi_entry_value(dev, col_group_key)
-                    dev_obj = happi.loader.from_container(dev, threaded=True)
-                    dev_groups[f"{stand}|{system}"].append(dev_obj)
-                except ValueError as ex:
-                    print(ex)
-                    continue
+            with lucid.utils.no_device_lazy_load():
+                for dev in devices:
+                    try:
+                        stand = get_happi_entry_value(dev, row_group_key)
+                        system = get_happi_entry_value(dev, col_group_key)
+                        dev_obj = happi.loader.from_container(dev,
+                                                              threaded=True)
+                        dev_groups[f"{stand}|{system}"].append(dev_obj)
+                    except ValueError:
+                        logger.exception('Failed to load device %s', dev)
+                        continue
 
         else:
             # Fill with random fake simulated devices
@@ -136,13 +140,13 @@ def launch(beamline, *, toolbar=None, row_group_key="location_group",
     # Re-enable sigint (usually blocked by pyqt)
     signal.signal(signal.SIGINT, signal.SIG_DFL)
 
-    logger = logging.getLogger('')
+    lucid_logger = logging.getLogger('')
     handler = logging.StreamHandler()
     formatter = logging.Formatter(
         '[%(asctime)s] [%(levelname)-8s] - %(message)s')
     handler.setFormatter(formatter)
-    logger.addHandler(handler)
-    logger.setLevel(log_level)
+    lucid_logger.addHandler(handler)
+    lucid_logger.setLevel(log_level)
     handler.setLevel(log_level)
 
     app = QtWidgets.QApplication([])

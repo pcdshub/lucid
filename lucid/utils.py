@@ -1,14 +1,17 @@
 import logging
 import re
 import time
+import contextlib
 
-import happi
 import fuzzywuzzy.fuzz
 
-from pydm.widgets import PyDMDrawingCircle
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QGridLayout
+
+import happi
+from pydm.widgets import PyDMDrawingCircle
 from typhos import TyphosDeviceDisplay, TyphosSuite
+from ophyd import Device
 
 logger = logging.getLogger(__name__)
 
@@ -89,18 +92,20 @@ def indicator_for_device(device):
 
 def display_for_device(device, display_type=None):
     """Create a TyphosDeviceDisplay for a given device"""
-    logger.debug("Creating device display for %r", device)
-    display = TyphosDeviceDisplay.from_device(device)
-    if display_type:
-        display.display_type = display_type
+    with no_device_lazy_load():
+        logger.debug("Creating device display for %r", device)
+        display = TyphosDeviceDisplay.from_device(device)
+        if display_type:
+            display.display_type = display_type
     return display
 
 
 def suite_for_devices(devices, *, parent=None):
     """Create a TyphosSuite to display multiple devices"""
-    suite = TyphosSuite(parent=parent)
-    for device in devices:
-        suite.add_device(device)
+    with no_device_lazy_load():
+        suite = TyphosSuite(parent=parent)
+        for device in devices:
+            suite.add_device(device)
     return suite
 
 
@@ -203,3 +208,17 @@ def get_happi_device_cache():
         _HAPPI_CACHE = (time.monotonic(), list(client.search(as_dict=True)))
 
     return _HAPPI_CACHE[1]
+
+
+@contextlib.contextmanager
+def no_device_lazy_load():
+    '''
+    Context manager which disables the ophyd.device.Device
+    `lazy_wait_for_connection` behavior and later restore its value.
+    '''
+    old_val = Device.lazy_wait_for_connection
+    try:
+        Device.lazy_wait_for_connection = False
+        yield
+    finally:
+        Device.lazy_wait_for_connection = old_val
