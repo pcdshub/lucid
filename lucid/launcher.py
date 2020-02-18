@@ -23,7 +23,7 @@ def get_happi_entry_value(entry, key, search_extraneous=True):
         value = extraneous.get(key, None)
 
     if not value:
-        raise ValueError(f'Invalid Key ({key} for {entry}.')
+        raise ValueError(f'Invalid Key ({key} not in {entry}.')
     return value
 
 
