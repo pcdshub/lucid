@@ -608,6 +608,12 @@ class SearchDialog(QtWidgets.QDialog):
         self.setWindowFlag(Qt.FramelessWindowHint, True)
         self.setWindowFlag(Qt.WindowStaysOnTopHint, True)
         self.setWindowFlag(Qt.Popup, True)
+        # Using SplashScreen and WindowDoesNotAcceptFocus to address issue when
+        # running with OSX and XForwarding. Without the flag below it will make
+        # the Dialog show its Title bar and appear over the search box which
+        # makes the search useless.
+        self.setWindowFlag(Qt.SplashScreen, True)
+        self.setWindowFlag(Qt.WindowDoesNotAcceptFocus, True)
 
         if hasattr(parent, 'key_pressed'):
             parent.key_pressed.connect(self._handle_search_keypress)
