@@ -1,6 +1,7 @@
 import functools
 import logging
 import pathlib
+import sys
 
 import happi
 import typhos
@@ -300,6 +301,10 @@ class LucidMainWindow(QMainWindow):
             widget.setParent(dock)
             window.dock_manager.addDockWidget(
                 QtAds.RightDockWidgetArea, dock)
+
+            if sys.platform == 'linux':
+                # TODO: fix PyQtAds bug on Linux
+                dock.setFeature(dock.DockWidgetFloatable, False)
 
             # Ensure the main dock is actually visible
             widget.raise_()
