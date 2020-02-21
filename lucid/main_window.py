@@ -174,7 +174,6 @@ class LucidMainWindow(QMainWindow):
     def gather_windows(self):
         'Move all dock widgets to the right dock widget area'
         name_to_dock_widget = self.dock_manager.dockWidgetsMap()
-        grid = name_to_dock_widget['Grid']
         for name, dock_widget in name_to_dock_widget.items():
             if name in ('Grid', 'Quick Launcher Toolbar'):
                 continue
