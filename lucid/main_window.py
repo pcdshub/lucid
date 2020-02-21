@@ -37,6 +37,11 @@ class LucidMainWindowMenu(QtWidgets.QMenuBar):
         # - Exit
         self.exit = self.file_menu.addAction('E&xit')
 
+        # Tools
+        self.tools_menu = self.addMenu('&Tools')
+        # - Gather windows
+        self.gather_windows = self.tools_menu.addAction('&Gather windows...')
+
         # Options
         self.options_menu = self.addMenu('&Options')
         # - Search overlay
@@ -143,6 +148,7 @@ class LucidMainWindow(QMainWindow):
         self.menu = LucidMainWindowMenu(self)
         self.setMenuBar(self.menu)
         self.menu.exit.triggered.connect(self.close)
+        self.menu.gather_windows.triggered.connect(self.gather_windows)
 
         # Restore settings prior to setting up the toolbar/dock
         # TODO: look into why restoring geometry post-dock_manager
@@ -164,6 +170,23 @@ class LucidMainWindow(QMainWindow):
         else:
             self.dock_manager.setStyleSheet(
                 open(MODULE_PATH / 'dock_style.css', 'rt').read())
+
+    def gather_windows(self):
+        'Move all dock widgets to the right dock widget area'
+        name_to_dock_widget = self.dock_manager.dockWidgetsMap()
+        grid = name_to_dock_widget['Grid']
+        for name, dock_widget in name_to_dock_widget.items():
+            if name in ('Grid', 'Quick Launcher Toolbar'):
+                continue
+
+            if dock_widget.isFloating():
+                self.dock_manager.addDockWidget(QtAds.RightDockWidgetArea,
+                                                dock_widget)
+            elif dock_widget.isInFloatingContainer():
+                container = dock_widget.dockContainer()
+                for dock_widget in container.dockWidgets():
+                    self.dock_manager.addDockWidget(QtAds.RightDockWidgetArea,
+                                                    dock_widget)
 
     @property
     def settings(self):
