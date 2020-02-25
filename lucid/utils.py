@@ -1,7 +1,6 @@
 import logging
 import re
 import time
-import contextlib
 
 import fuzzywuzzy.fuzz
 
@@ -11,7 +10,7 @@ from qtpy.QtWidgets import QGridLayout
 import happi
 from pydm.widgets import PyDMDrawingCircle
 from typhos import TyphosDeviceDisplay, TyphosSuite
-from ophyd import Device
+from typhos.utils import no_device_lazy_load
 
 logger = logging.getLogger(__name__)
 
@@ -208,17 +207,3 @@ def get_happi_device_cache():
         _HAPPI_CACHE = (time.monotonic(), list(client.search(as_dict=True)))
 
     return _HAPPI_CACHE[1]
-
-
-@contextlib.contextmanager
-def no_device_lazy_load():
-    '''
-    Context manager which disables the ophyd.device.Device
-    `lazy_wait_for_connection` behavior and later restore its value.
-    '''
-    old_val = Device.lazy_wait_for_connection
-    try:
-        Device.lazy_wait_for_connection = False
-        yield
-    finally:
-        Device.lazy_wait_for_connection = old_val
