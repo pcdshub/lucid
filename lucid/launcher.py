@@ -95,7 +95,7 @@ class HappiLoader(QtCore.QThread):
             cli = lucid.utils.get_happi_client()
             devices = cli.search(beamline=self.beamline) or []
 
-            with lucid.utils.no_device_lazy_load():
+            with typhos.utils.no_device_lazy_load():
                 for dev in devices:
                     try:
                         stand = get_happi_entry_value(dev, row_group_key)
