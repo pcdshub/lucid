@@ -373,8 +373,7 @@ class IndicatorGridWithOverlay(IndicatorGrid):
         data = collections.OrderedDict()
         for r in sorted(rows):
             for c in sorted(cols):
-                entry = items.get(f"{r}|{c}", None)
-                data[f"{r}|{c}"] = entry if entry else []
+                data[f"{r}|{c}"] = items.get(f"{r}|{c}") or []
 
         for location, dev_list in data.items():
             stand, system = location.split("|")
