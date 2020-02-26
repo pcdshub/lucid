@@ -3,6 +3,7 @@ import os
 import yaml
 import weakref
 import logging
+import collections
 from functools import partial
 
 from qtpy import QtWidgets, QtGui, QtCore
@@ -219,9 +220,11 @@ QWidget[selected="true"] {background-color: rgba(20, 140, 210, 150);}
 
     def add_devices(self, devices, system=None, stand=None):
         # Create cell
-        cell = IndicatorCell(title=f'{stand} {system}')
-        for device in devices:
-            cell.add_device(device)
+        cell = None
+        if len(devices):
+            cell = IndicatorCell(title=f'{stand} {system}')
+            for device in devices:
+                cell.add_device(device)
         # Add to proper location in grid
         coords = []
         for i, group_name in enumerate((system, stand)):
@@ -233,9 +236,11 @@ QWidget[selected="true"] {background-color: rgba(20, 140, 210, 150);}
             group = self._groups[group_name]
             idx = self.layout().indexOf(group)
             coords.append(self.layout().getItemPosition(idx)[i])
-            group.add_cell(cell)
+            if cell:
+                group.add_cell(cell)
         # Add cell to correct location in grid
-        self.layout().addWidget(cell, *coords, Qt.AlignTop)
+        if cell:
+            self.layout().addWidget(cell, *coords, Qt.AlignTop)
 
     def _add_group(self, group, as_row):
         # Add to layout
@@ -358,7 +363,20 @@ class IndicatorGridWithOverlay(IndicatorGrid):
         self.stackUnder(self.overlay)
 
     def add_from_dict(self, items):
-        for location, dev_list in items.items():
+        rows = set()
+        cols = set()
+        for e in items:
+            r, c = e.split('|')
+            rows.add(r)
+            cols.add(c)
+
+        data = collections.OrderedDict()
+        for r in sorted(rows):
+            for c in sorted(cols):
+                entry = items.get(f"{r}|{c}", None)
+                data[f"{r}|{c}"] = entry if entry else []
+
+        for location, dev_list in data.items():
             stand, system = location.split("|")
             self.add_devices(dev_list, stand=stand, system=system)
 
