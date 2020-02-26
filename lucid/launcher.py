@@ -140,6 +140,9 @@ def launch(beamline, *, toolbar=None, row_group_key="location_group",
     # Re-enable sigint (usually blocked by pyqt)
     signal.signal(signal.SIGINT, signal.SIG_DFL)
 
+    # Silence the logger from pyPDB.dbd.yacc
+    logging.getLogger("pyPDB.dbd.yacc").setLevel(logging.WARNING)
+
     lucid_logger = logging.getLogger('')
     handler = logging.StreamHandler()
     formatter = logging.Formatter(
