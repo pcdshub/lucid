@@ -8,7 +8,7 @@ from functools import partial
 
 from qtpy import QtWidgets, QtGui, QtCore
 from qtpy.QtCore import QEvent, Qt, Property, QSize
-from qtpy.QtGui import QContextMenuEvent, QHoverEvent
+from qtpy.QtGui import QHoverEvent
 from qtpy.QtWidgets import (QPushButton, QMenu, QGridLayout, QWidget)
 from typhos.utils import reload_widget_stylesheet
 
@@ -30,19 +30,10 @@ class BaseDeviceButton(QPushButton):
         # References for created screens
         self._device_displays = {}
         self._suite = None
-        # Click button action
-        self.clicked.connect(lucid.LucidMainWindow.in_dock(
-            self.show_all,
-            title=self.title,
-            active_slot=self._devices_shown))
         # Setup Menu
-        self.setContextMenuPolicy(Qt.DefaultContextMenu)
+        self.setContextMenuPolicy(Qt.PreventContextMenu)
         self.device_menu = QMenu()
         self.device_menu.aboutToShow.connect(self._menu_shown)
-
-    def contextMenuEvent(self, event):
-        """QWidget.contextMenuEvent to display available devices"""
-        self.device_menu.exec_(self.mapToGlobal(event.pos()))
 
     def show_device(self, device):
         if device.name not in self._device_displays:
@@ -98,6 +89,7 @@ class IndicatorCell(BaseDeviceButton):
         self.layout().setSpacing(self.spacing)
         self.layout().setContentsMargins(*4 * [self.margin])
         self._selecting_widgets = list()
+        self.installEventFilter(self)
         self.devices = list()
 
     @property
@@ -114,7 +106,6 @@ class IndicatorCell(BaseDeviceButton):
         """Add an indicator to the Panel"""
         widget.setFixedSize(self.icon_size, self.icon_size)
         widget.setMinimumSize(self.icon_size, self.icon_size)
-        widget.installEventFilter(self)
         self.layout().addWidget(widget)
 
     def add_device(self, device):
@@ -131,15 +122,16 @@ class IndicatorCell(BaseDeviceButton):
         indicator is pressed.
         """
         # Filter child widgets events to show context menu
-        right_button = (event.type() == QEvent.MouseButtonPress
-                        and event.button() == Qt.RightButton)
-        if right_button:
-            position = obj.mapToParent(event.pos())
-            context_event = QContextMenuEvent(QContextMenuEvent.Mouse,
-                                              position)
-            self.contextMenuEvent(context_event)
-            return True
-        # False means do not filter
+        if event.type() == QEvent.MouseButtonPress:
+            if event.button() == Qt.RightButton:
+                lucid.LucidMainWindow.in_dock(
+                    self.show_all,
+                    title=self.title,
+                    active_slot=self._devices_shown)()
+                return True
+            elif event.button() == Qt.LeftButton:
+                self.device_menu.exec_(self.mapToGlobal(event.pos()))
+                return True
         return False
 
     def sizeHint(self):
