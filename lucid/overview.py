@@ -66,20 +66,26 @@ class BaseDeviceButton(QPushButton):
         menu_devices = [action.text()
                         for action in self.device_menu.actions()]
         if self._OPEN_ALL not in menu_devices:
-            show_all_devices = lucid.LucidMainWindow.in_dock(
-                        self.show_all,
-                        title=self.title,
-                        active_slot=self._devices_shown)
+            show_all_devices = self._show_all_wrapper()
             self.device_menu.addAction(self._OPEN_ALL, show_all_devices)
             self.device_menu.addSeparator()
         # Add devices
         for device in self.devices:
             if device.name not in menu_devices:
                 # Add to device menu
-                show_device = lucid.LucidMainWindow.in_dock(
-                    partial(self.show_device, device),
-                    title=device.name)
+                show_device = self._show_device_wrapper(device)
                 self.device_menu.addAction(device.name, show_device)
+
+    def _show_all_wrapper(self):
+        return lucid.LucidMainWindow.in_dock(
+                        self.show_all,
+                        title=self.title,
+                        active_slot=self._devices_shown)
+
+    def _show_device_wrapper(self, device):
+        return lucid.LucidMainWindow.in_dock(
+            partial(self.show_device, device),
+            title=device.name)
 
     def eventFilter(self, obj, event):
         """
@@ -91,13 +97,13 @@ class BaseDeviceButton(QPushButton):
         # Filter child widgets events to show context menu
         if event.type() == QEvent.MouseButtonPress:
             if event.button() == Qt.RightButton:
-                lucid.LucidMainWindow.in_dock(
-                    self.show_all,
-                    title=self.title,
-                    active_slot=self._devices_shown)()
+                self._show_all_wrapper()()
                 return True
             elif event.button() == Qt.LeftButton:
-                self.device_menu.exec_(self.mapToGlobal(event.pos()))
+                if len(self.devices) == 1:
+                    self._show_device_wrapper(self.devices[0])()
+                else:
+                    self.device_menu.exec_(self.mapToGlobal(event.pos()))
                 return True
         return False
 
