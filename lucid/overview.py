@@ -52,6 +52,8 @@ class BaseDeviceButton(QPushButton):
         return self._device_displays[device.name]
 
     def show_all(self):
+        if len(self.devices) == 0:
+            return None
         """Create a widget for contained devices"""
         if not self._suite:
             self._suite = suite_for_devices(self.devices, parent=self)
@@ -220,11 +222,9 @@ QWidget[selected="true"] {background-color: rgba(20, 140, 210, 150);}
 
     def add_devices(self, devices, system=None, stand=None):
         # Create cell
-        cell = None
-        if len(devices):
-            cell = IndicatorCell(title=f'{stand} {system}')
-            for device in devices:
-                cell.add_device(device)
+        cell = IndicatorCell(title=f'{stand} {system}')
+        for device in devices:
+            cell.add_device(device)
         # Add to proper location in grid
         coords = []
         for i, group_name in enumerate((system, stand)):

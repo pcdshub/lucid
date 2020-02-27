@@ -299,6 +299,8 @@ class LucidMainWindow(QMainWindow):
 
             # Retrieve widget
             widget = func()
+            if not widget:
+                return
             window = LucidMainWindow()
 
             # Add the widget to the dock
