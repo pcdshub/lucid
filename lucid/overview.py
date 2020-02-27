@@ -23,6 +23,7 @@ logger = logging.getLogger(__name__)
 
 class BaseDeviceButton(QPushButton):
     """Base class for QPushButton to show devices"""
+    _OPEN_ALL = "Open All"
 
     def __init__(self, title, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -64,6 +65,13 @@ class BaseDeviceButton(QPushButton):
         # Current menu options
         menu_devices = [action.text()
                         for action in self.device_menu.actions()]
+        if self._OPEN_ALL not in menu_devices:
+            show_all_devices = lucid.LucidMainWindow.in_dock(
+                        self.show_all,
+                        title=self.title,
+                        active_slot=self._devices_shown)
+            self.device_menu.addAction(self._OPEN_ALL, show_all_devices)
+            self.device_menu.addSeparator()
         # Add devices
         for device in self.devices:
             if device.name not in menu_devices:
@@ -72,6 +80,26 @@ class BaseDeviceButton(QPushButton):
                     partial(self.show_device, device),
                     title=device.name)
                 self.device_menu.addAction(device.name, show_device)
+
+    def eventFilter(self, obj, event):
+        """
+        QWidget.eventFilter to be installed on child indicators
+
+        This is required to display the :meth:`.contextMenuEvent` even if an
+        indicator is pressed.
+        """
+        # Filter child widgets events to show context menu
+        if event.type() == QEvent.MouseButtonPress:
+            if event.button() == Qt.RightButton:
+                lucid.LucidMainWindow.in_dock(
+                    self.show_all,
+                    title=self.title,
+                    active_slot=self._devices_shown)()
+                return True
+            elif event.button() == Qt.LeftButton:
+                self.device_menu.exec_(self.mapToGlobal(event.pos()))
+                return True
+        return False
 
 
 class IndicatorCell(BaseDeviceButton):
@@ -113,26 +141,6 @@ class IndicatorCell(BaseDeviceButton):
         indicator = indicator_for_device(device)
         self.devices.append(device)
         self.add_indicator(indicator)
-
-    def eventFilter(self, obj, event):
-        """
-        QWidget.eventFilter to be installed on child indicators
-
-        This is required to display the :meth:`.contextMenuEvent` even if an
-        indicator is pressed.
-        """
-        # Filter child widgets events to show context menu
-        if event.type() == QEvent.MouseButtonPress:
-            if event.button() == Qt.RightButton:
-                lucid.LucidMainWindow.in_dock(
-                    self.show_all,
-                    title=self.title,
-                    active_slot=self._devices_shown)()
-                return True
-            elif event.button() == Qt.LeftButton:
-                self.device_menu.exec_(self.mapToGlobal(event.pos()))
-                return True
-        return False
 
     def sizeHint(self):
         size_per_icon = self.icon_size + self.spacing
@@ -185,7 +193,7 @@ class IndicatorGroup(BaseDeviceButton):
             for cell in self.cells:
                 cell.event(event)
                 return False
-        return False
+        return super().eventFilter(obj, event)
 
     def _devices_shown(self, shown):
         """Selecting this button, selects all contained cells"""
