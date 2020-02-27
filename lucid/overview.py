@@ -8,7 +8,7 @@ from functools import partial
 
 from qtpy import QtWidgets, QtGui, QtCore
 from qtpy.QtCore import QEvent, Qt, Property, QSize
-from qtpy.QtGui import QContextMenuEvent, QHoverEvent
+from qtpy.QtGui import QHoverEvent
 from qtpy.QtWidgets import (QPushButton, QMenu, QGridLayout, QWidget)
 from typhos.utils import reload_widget_stylesheet
 
@@ -23,6 +23,7 @@ logger = logging.getLogger(__name__)
 
 class BaseDeviceButton(QPushButton):
     """Base class for QPushButton to show devices"""
+    _OPEN_ALL = "Open All"
 
     def __init__(self, title, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -30,19 +31,10 @@ class BaseDeviceButton(QPushButton):
         # References for created screens
         self._device_displays = {}
         self._suite = None
-        # Click button action
-        self.clicked.connect(lucid.LucidMainWindow.in_dock(
-            self.show_all,
-            title=self.title,
-            active_slot=self._devices_shown))
         # Setup Menu
-        self.setContextMenuPolicy(Qt.DefaultContextMenu)
+        self.setContextMenuPolicy(Qt.PreventContextMenu)
         self.device_menu = QMenu()
         self.device_menu.aboutToShow.connect(self._menu_shown)
-
-    def contextMenuEvent(self, event):
-        """QWidget.contextMenuEvent to display available devices"""
-        self.device_menu.exec_(self.mapToGlobal(event.pos()))
 
     def show_device(self, device):
         if device.name not in self._device_displays:
@@ -52,6 +44,8 @@ class BaseDeviceButton(QPushButton):
         return self._device_displays[device.name]
 
     def show_all(self):
+        if len(self.devices) == 0:
+            return None
         """Create a widget for contained devices"""
         if not self._suite:
             self._suite = suite_for_devices(self.devices, parent=self)
@@ -71,14 +65,47 @@ class BaseDeviceButton(QPushButton):
         # Current menu options
         menu_devices = [action.text()
                         for action in self.device_menu.actions()]
+        if self._OPEN_ALL not in menu_devices:
+            show_all_devices = self._show_all_wrapper()
+            self.device_menu.addAction(self._OPEN_ALL, show_all_devices)
+            self.device_menu.addSeparator()
         # Add devices
         for device in self.devices:
             if device.name not in menu_devices:
                 # Add to device menu
-                show_device = lucid.LucidMainWindow.in_dock(
-                    partial(self.show_device, device),
-                    title=device.name)
+                show_device = self._show_device_wrapper(device)
                 self.device_menu.addAction(device.name, show_device)
+
+    def _show_all_wrapper(self):
+        return lucid.LucidMainWindow.in_dock(
+                        self.show_all,
+                        title=self.title,
+                        active_slot=self._devices_shown)
+
+    def _show_device_wrapper(self, device):
+        return lucid.LucidMainWindow.in_dock(
+            partial(self.show_device, device),
+            title=device.name)
+
+    def eventFilter(self, obj, event):
+        """
+        QWidget.eventFilter to be installed on child indicators
+
+        This is required to display the :meth:`.contextMenuEvent` even if an
+        indicator is pressed.
+        """
+        # Filter child widgets events to show context menu
+        if event.type() == QEvent.MouseButtonPress:
+            if event.button() == Qt.RightButton:
+                self._show_all_wrapper()()
+                return True
+            elif event.button() == Qt.LeftButton:
+                if len(self.devices) == 1:
+                    self._show_device_wrapper(self.devices[0])()
+                else:
+                    self.device_menu.exec_(self.mapToGlobal(event.pos()))
+                return True
+        return False
 
 
 class IndicatorCell(BaseDeviceButton):
@@ -96,6 +123,7 @@ class IndicatorCell(BaseDeviceButton):
         self.layout().setSpacing(self.spacing)
         self.layout().setContentsMargins(*4 * [self.margin])
         self._selecting_widgets = list()
+        self.installEventFilter(self)
         self.devices = list()
 
     @property
@@ -112,7 +140,6 @@ class IndicatorCell(BaseDeviceButton):
         """Add an indicator to the Panel"""
         widget.setFixedSize(self.icon_size, self.icon_size)
         widget.setMinimumSize(self.icon_size, self.icon_size)
-        widget.installEventFilter(self)
         self.layout().addWidget(widget)
 
     def add_device(self, device):
@@ -120,25 +147,6 @@ class IndicatorCell(BaseDeviceButton):
         indicator = indicator_for_device(device)
         self.devices.append(device)
         self.add_indicator(indicator)
-
-    def eventFilter(self, obj, event):
-        """
-        QWidget.eventFilter to be installed on child indicators
-
-        This is required to display the :meth:`.contextMenuEvent` even if an
-        indicator is pressed.
-        """
-        # Filter child widgets events to show context menu
-        right_button = (event.type() == QEvent.MouseButtonPress
-                        and event.button() == Qt.RightButton)
-        if right_button:
-            position = obj.mapToParent(event.pos())
-            context_event = QContextMenuEvent(QContextMenuEvent.Mouse,
-                                              position)
-            self.contextMenuEvent(context_event)
-            return True
-        # False means do not filter
-        return False
 
     def sizeHint(self):
         size_per_icon = self.icon_size + self.spacing
@@ -191,7 +199,7 @@ class IndicatorGroup(BaseDeviceButton):
             for cell in self.cells:
                 cell.event(event)
                 return False
-        return False
+        return super().eventFilter(obj, event)
 
     def _devices_shown(self, shown):
         """Selecting this button, selects all contained cells"""
@@ -220,11 +228,9 @@ QWidget[selected="true"] {background-color: rgba(20, 140, 210, 150);}
 
     def add_devices(self, devices, system=None, stand=None):
         # Create cell
-        cell = None
-        if len(devices):
-            cell = IndicatorCell(title=f'{stand} {system}')
-            for device in devices:
-                cell.add_device(device)
+        cell = IndicatorCell(title=f'{stand} {system}')
+        for device in devices:
+            cell.add_device(device)
         # Add to proper location in grid
         coords = []
         for i, group_name in enumerate((system, stand)):
