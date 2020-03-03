@@ -10,6 +10,8 @@ import typhos.utils
 from PyQtAds import QtAds
 from qtpy import QtWidgets, QtCore
 
+from pydm import exception
+
 import lucid
 
 MODULE_PATH = pathlib.Path(__file__).parent
@@ -103,7 +105,7 @@ class HappiLoader(QtCore.QThread):
                         dev_obj = happi.loader.from_container(dev,
                                                               threaded=True)
                         dev_groups[f"{stand}|{system}"].append(dev_obj)
-                    except ValueError:
+                    except (ValueError, ImportError):
                         logger.exception('Failed to load device %s', dev)
                         continue
 
@@ -139,6 +141,9 @@ def launch(beamline, *, toolbar=None, row_group_key="location_group",
            dark=False):
     # Re-enable sigint (usually blocked by pyqt)
     signal.signal(signal.SIGINT, signal.SIG_DFL)
+
+    # Install exception hook handler with dialog popup
+    exception.install(use_dialog=True)
 
     # Silence the logger from pyPDB.dbd.yacc
     logging.getLogger("pyPDB.dbd.yacc").setLevel(logging.WARNING)
