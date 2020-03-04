@@ -155,8 +155,10 @@ class HappiLoader(QtCore.QThread):
             if send_devices:
                 args.append(dev_groups)
             if send_exception:
-                if exception:
-                    args.append(exception)
+                if not exception:
+                    exception = (None, None, None)
+
+                args.append(exception)
             if len(args) > 0:
                 f = functools.partial(cb, *args)
 
