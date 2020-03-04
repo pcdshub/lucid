@@ -113,7 +113,7 @@ class HappiLoader(QtCore.QThread):
         return dev_groups
 
     def _load_demo(self):
-        # Fill with random fake simulated devices
+        '''Fill with random fake simulated devices'''
         from ophyd.sim import SynAxis
         from random import randint
 
