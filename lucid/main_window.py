@@ -191,10 +191,8 @@ class LucidMainWindow(QMainWindow):
     @QtCore.Slot(tuple)
     def handle_error(self, data):
         exc_type, exc_value, exc_trace = data
-        if exc_value is None:
-            return
         logger.exception("An uncaught exception happened: %s", exc_value,
-                         exc_info=exc_value)
+                         exc_info=data)
         exception.raise_to_operator(exc_value)
 
     @property
