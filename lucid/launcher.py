@@ -89,7 +89,7 @@ class HappiLoader(QtCore.QThread):
         super(HappiLoader, self).__init__(*args, **kwargs)
 
     def _load_from_happi(self, row_group_key, col_group_key):
-        # Fill with Data from Happi
+        '''Fill with Data from Happi'''
         cli = lucid.utils.get_happi_client()
         devices = cli.search(beamline=self.beamline) or []
 
