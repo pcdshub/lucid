@@ -10,6 +10,8 @@ from qtpy import QtCore, QtWidgets, QtGui
 from qtpy.QtCore import Qt, Signal
 from qtpy.QtWidgets import QMainWindow, QStyle, QSizePolicy
 
+from pydm import exception
+
 import lucid
 from . import utils
 
@@ -186,6 +188,12 @@ class LucidMainWindow(QMainWindow):
                 for dock_widget in container.dockWidgets():
                     self.dock_manager.addDockWidget(QtAds.RightDockWidgetArea,
                                                     dock_widget)
+    @QtCore.Slot(tuple)
+    def handle_error(self, data):
+        exc_type, exc_value, exc_trace = data
+        logger.exception("An uncaught exception happened: %s", exc_value,
+                         exc_info=exc_value)
+        exception.raise_to_operator(exc_value)
 
     @property
     def settings(self):

@@ -371,6 +371,8 @@ class IndicatorGridWithOverlay(IndicatorGrid):
     def add_from_dict(self, items):
         rows = set()
         cols = set()
+        if items is None:
+            return
         for e in items:
             r, c = e.split('|')
             rows.add(r)

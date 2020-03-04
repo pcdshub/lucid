@@ -88,50 +88,77 @@ class HappiLoader(QtCore.QThread):
         self.callbacks = callbacks
         super(HappiLoader, self).__init__(*args, **kwargs)
 
-    def run(self):
-        row_group_key, col_group_key = self.group_keys
+    def _load_from_happi(self, row_group_key, col_group_key):
+        # Fill with Data from Happi
+        cli = lucid.utils.get_happi_client()
+        devices = cli.search(beamline=self.beamline) or []
+
         dev_groups = collections.defaultdict(list)
 
-        if self.beamline != 'DEMO':
-            # Fill with Data from Happi
-            cli = lucid.utils.get_happi_client()
-            devices = cli.search(beamline=self.beamline) or []
+        if not len(devices):
+            raise ValueError(
+                f"Could not find devices for beamline {self.beamline}")
 
-            with typhos.utils.no_device_lazy_load():
-                for dev in devices:
-                    try:
-                        stand = get_happi_entry_value(dev, row_group_key)
-                        system = get_happi_entry_value(dev, col_group_key)
-                        dev_obj = happi.loader.from_container(dev,
-                                                              threaded=True)
-                        dev_groups[f"{stand}|{system}"].append(dev_obj)
-                    except (ValueError, ImportError):
-                        logger.exception('Failed to load device %s', dev)
-                        continue
+        with typhos.utils.no_device_lazy_load():
+            for dev in devices:
+                try:
+                    stand = get_happi_entry_value(dev, row_group_key)
+                    system = get_happi_entry_value(dev, col_group_key)
+                    dev_obj = happi.loader.from_container(dev,
+                                                          threaded=True)
+                    dev_groups[f"{stand}|{system}"].append(dev_obj)
+                except (ValueError, ImportError):
+                    logger.exception('Failed to load device %s', dev)
+                    continue
+        return dev_groups
 
-        else:
-            # Fill with random fake simulated devices
-            from ophyd.sim import SynAxis
-            from random import randint
+    def _load_demo(self):
+        # Fill with random fake simulated devices
+        from ophyd.sim import SynAxis
+        from random import randint
 
-            # Fill IndicatorGrid
-            for stand in ('DIA', 'DG1', 'TFS', 'DG2', 'TAB', 'DET', 'DG3'):
-                for system in ('Timing', 'Beam Control', 'Diagnostics',
-                               'Motion', 'Vacuum'):
-                    # Create devices
-                    device_count = randint(1, 12)
-                    # device_count = 1
-                    system_name = system.lower().replace(' ', '_')
-                    devices = [
-                        SynAxis(name=f'{stand.lower()}_{system_name}_{i}')
-                        for i in range(device_count)]
-                    dev_groups[f"{stand}|{system}"] = devices
+        dev_groups = collections.defaultdict(list)
+
+        # Fill IndicatorGrid
+        for stand in ('DIA', 'DG1', 'TFS', 'DG2', 'TAB', 'DET', 'DG3'):
+            for system in ('Timing', 'Beam Control', 'Diagnostics',
+                           'Motion', 'Vacuum'):
+                # Create devices
+                device_count = randint(1, 12)
+                # device_count = 1
+                system_name = system.lower().replace(' ', '_')
+                devices = [
+                    SynAxis(name=f'{stand.lower()}_{system_name}_{i}')
+                    for i in range(device_count)]
+                dev_groups[f"{stand}|{system}"] = devices
+        return dev_groups
+
+    def run(self):
+        exception = None
+        row_group_key, col_group_key = self.group_keys
+
+        dev_groups = None
+
+        try:
+            if self.beamline != 'DEMO':
+                dev_groups = self._load_from_happi(row_group_key,
+                                                   col_group_key)
+            else:
+                dev_groups = self._load_demo()
+        except Exception as e:
+            exception = (type(e), e, None)
 
         # Call the callback using the Receiver Slot Thread
-        for cb, send_devices in self.callbacks:
+        for cb, send_devices, send_exception in self.callbacks:
             f = cb
+            args = []
             if send_devices:
-                f = functools.partial(cb, dev_groups)
+                args.append(dev_groups)
+            if send_exception:
+                if exception:
+                    args.append(exception)
+            if len(args) > 0:
+                f = functools.partial(cb, *args)
 
             QtCore.QTimer.singleShot(0, f)
 
@@ -141,9 +168,6 @@ def launch(beamline, *, toolbar=None, row_group_key="location_group",
            dark=False):
     # Re-enable sigint (usually blocked by pyqt)
     signal.signal(signal.SIGINT, signal.SIG_DFL)
-
-    # Install exception hook handler with dialog popup
-    exception.install(use_dialog=True)
 
     # Silence the logger from pyPDB.dbd.yacc
     logging.getLogger("pyPDB.dbd.yacc").setLevel(logging.WARNING)
@@ -170,12 +194,19 @@ def launch(beamline, *, toolbar=None, row_group_key="location_group",
     splash.update_status("Creating Main Window")
     window = lucid.main_window.LucidMainWindow(dark=dark)
 
+    # Install exception hook handler with dialog popup
+    exception.install(use_default_handler=False)
+    # Use custom exception handler
+    exception.ExceptionDispatcher().newException.connect(window.handle_error)
+
     grid = lucid.overview.IndicatorGridWithOverlay()
 
     splash.update_status(f"Loading {beamline} devices")
-    cbs = [(grid.add_from_dict, True),
-           (splash.accept, False),
-           (window.show, False)
+    # callback list with: callback, send devices list, send exception
+    cbs = [(grid.add_from_dict, True, False),
+           (splash.accept, False, False),
+           (window.show, False, False),
+           (window.handle_error, False, True)
            ]
     loader = HappiLoader(beamline=beamline,
                          group_keys=(row_group_key, col_group_key),
