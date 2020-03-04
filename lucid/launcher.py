@@ -107,7 +107,7 @@ class HappiLoader(QtCore.QThread):
                     dev_obj = happi.loader.from_container(dev,
                                                           threaded=True)
                     dev_groups[f"{stand}|{system}"].append(dev_obj)
-                except (ValueError, ImportError):
+                except Exception:
                     logger.exception('Failed to load device %s', dev)
                     continue
         return dev_groups
