@@ -150,9 +150,7 @@ class HappiLoader(QtCore.QThread):
 
         # Call the callback using the Receiver Slot Thread
         for cb in self.callbacks:
-            kwargs = dict()
-            kwargs['devices'] = dev_groups
-            f = functools.partial(cb, **kwargs)
+            f = functools.partial(cb, devices=dev_groups)
             QtCore.QTimer.singleShot(0, f)
 
         # This will be grabbed by the uncaught exception handler
