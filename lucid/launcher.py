@@ -134,7 +134,7 @@ class HappiLoader(QtCore.QThread):
         return dev_groups
 
     def run(self):
-        exception = None
+        exc = None
         row_group_key, col_group_key = self.group_keys
 
         dev_groups = None
@@ -146,21 +146,16 @@ class HappiLoader(QtCore.QThread):
             else:
                 dev_groups = self._load_demo()
         except Exception as e:
-            exception = (type(e), e, None)
+            exc = e
 
         # Call the callback using the Receiver Slot Thread
-        for cb, send_devices, send_exception in self.callbacks:
-            f = cb
-            args = []
-            if send_devices:
-                args.append(dev_groups)
-            if send_exception:
-                if exception:
-                    args.append(exception)
-            if len(args) > 0:
-                f = functools.partial(cb, *args)
-
+        for cb in self.callbacks:
+            f = functools.partial(cb, devices=dev_groups)
             QtCore.QTimer.singleShot(0, f)
+
+        # This will be grabbed by the uncaught exception handler
+        if exc:
+            raise exc
 
 
 def launch(beamline, *, toolbar=None, row_group_key="location_group",
@@ -202,16 +197,15 @@ def launch(beamline, *, toolbar=None, row_group_key="location_group",
     grid = lucid.overview.IndicatorGridWithOverlay()
 
     splash.update_status(f"Loading {beamline} devices")
-    # callback list with: callback, send devices list, send exception
-    cbs = [(grid.add_from_dict, True, False),
-           (splash.accept, False, False),
-           (window.show, False, False),
-           (window.handle_error, False, True)
-           ]
+
+    # callback list for Happi Loader
+    cbs = [grid.add_from_dict]
     loader = HappiLoader(beamline=beamline,
                          group_keys=(row_group_key, col_group_key),
                          callbacks=cbs
                          )
+    loader.finished.connect(splash.accept)
+    loader.finished.connect(window.show)
     loader.start()
 
     dock_widget = QtAds.CDockWidget('Grid')

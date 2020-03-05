@@ -368,12 +368,12 @@ class IndicatorGridWithOverlay(IndicatorGrid):
         self.overlay.setVisible(False)
         self.stackUnder(self.overlay)
 
-    def add_from_dict(self, items):
+    def add_from_dict(self, devices=None):
         rows = set()
         cols = set()
-        if items is None:
+        if devices is None:
             return
-        for e in items:
+        for e in devices:
             r, c = e.split('|')
             rows.add(r)
             cols.add(c)
@@ -381,7 +381,7 @@ class IndicatorGridWithOverlay(IndicatorGrid):
         data = collections.OrderedDict()
         for r in sorted(rows):
             for c in sorted(cols):
-                data[f"{r}|{c}"] = items.get(f"{r}|{c}") or []
+                data[f"{r}|{c}"] = devices.get(f"{r}|{c}") or []
 
         for location, dev_list in data.items():
             stand, system = location.split("|")
