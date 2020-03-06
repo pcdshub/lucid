@@ -1,18 +1,19 @@
+import asyncio
 import collections
 import functools
 import logging
 import pathlib
+import random
 import signal
 
+from PyQtAds import QtAds
+from qtpy import QtCore, QtWidgets
+
 import happi
+import lucid
 import typhos
 import typhos.utils
-from PyQtAds import QtAds
-from qtpy import QtWidgets, QtCore
-
 from pydm import exception
-
-import lucid
 
 MODULE_PATH = pathlib.Path(__file__).parent
 
@@ -115,8 +116,9 @@ class HappiLoader(QtCore.QThread):
     def _load_demo(self):
         '''Fill with random fake simulated devices'''
         from ophyd.sim import SynAxis
-        from random import randint
 
+        # Create an event loop in this thread for ophyd.sim
+        asyncio.set_event_loop(asyncio.new_event_loop())
         dev_groups = collections.defaultdict(list)
 
         # Fill IndicatorGrid
@@ -124,7 +126,7 @@ class HappiLoader(QtCore.QThread):
             for system in ('Timing', 'Beam Control', 'Diagnostics',
                            'Motion', 'Vacuum'):
                 # Create devices
-                device_count = randint(1, 12)
+                device_count = random.randint(1, 12)
                 # device_count = 1
                 system_name = system.lower().replace(' ', '_')
                 devices = [
