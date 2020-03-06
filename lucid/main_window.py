@@ -393,6 +393,8 @@ def _thread_grid_search(callback, *, general_search, category_search,
                 # Only iterate over vertical-column groups
                 continue
             for cell in group.cells:
+                if len(cell.devices) == 0:
+                    continue
                 ratio, match = _cell_match(cell, general_search,
                                            threshold=threshold)
                 if ratio > threshold:
@@ -867,6 +869,8 @@ class SearchLineEdit(QtWidgets.QLineEdit):
                     # Only iterate over vertical-column groups
                     continue
                 for cell in group.cells:
+                    if len(cell.devices) == 0:
+                        continue
                     old_ratio = grid.overlay.cell_to_percentage.get(cell, 0.0)
                     new_ratio, matched = _cell_match(cell, general_search)
                     new_ratio /= 100.
