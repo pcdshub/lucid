@@ -99,10 +99,10 @@ def display_for_device(device, display_type=None):
     return display
 
 
-def suite_for_devices(devices, *, parent=None):
+def suite_for_devices(devices, *, parent=None, **kwargs):
     """Create a TyphosSuite to display multiple devices"""
     with no_device_lazy_load():
-        suite = TyphosSuite(parent=parent)
+        suite = TyphosSuite(parent=parent, **kwargs)
         for device in devices:
             suite.add_device(device)
     return suite
