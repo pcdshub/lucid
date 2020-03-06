@@ -48,7 +48,8 @@ class BaseDeviceButton(QPushButton):
             return None
         """Create a widget for contained devices"""
         if not self._suite:
-            self._suite = suite_for_devices(self.devices, parent=self)
+            self._suite = suite_for_devices(
+                self.devices, parent=self, pin=True)
         else:
             # Check that any devices that have been added since our last show
             # request have been added to the TyphosSuite
