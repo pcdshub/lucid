@@ -654,6 +654,12 @@ class SearchDialog(QtWidgets.QDialog):
         self.setWindowFlag(Qt.SplashScreen, True)
         self.setWindowFlag(Qt.WindowDoesNotAcceptFocus, True)
 
+        # Using BypassWindowManagerHint to address issue when running with
+        # linux. Without the flag below it will make the Dialog capture the
+        # focus from the line edit and clear the search result display along
+        # with the overlay.
+        self.setWindowFlag(Qt.BypassWindowManagerHint, True)
+
         if hasattr(parent, 'key_pressed'):
             parent.key_pressed.connect(self._handle_search_keypress)
 
