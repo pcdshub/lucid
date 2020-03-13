@@ -1,5 +1,5 @@
 pydm
-git+https://github.com/githubuser0xFFFF/Qt-Advanced-Docking-System
+pyqtads
 ophyd
 pyyaml
 qtpy
