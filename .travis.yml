@@ -35,8 +35,8 @@ install:
   - conda config --set always_yes yes --set changeps1 no
   - conda install conda-build anaconda-client
   - conda update -q conda conda-build
-  - conda config --add channels pcds-dev
-  - conda config --append channels conda-forge
+  - conda config --remove defaults
+  - conda config --add channels conda-forge
   # Useful for debugging
   - conda info -a
   - conda build -q conda-recipe --python $TRAVIS_PYTHON_VERSION --output-folder bld-dir
