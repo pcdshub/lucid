@@ -188,6 +188,7 @@ class LucidMainWindow(QMainWindow):
                 for dock_widget in container.dockWidgets():
                     self.dock_manager.addDockWidget(QtAds.RightDockWidgetArea,
                                                     dock_widget)
+
     @QtCore.Slot(tuple)
     def handle_error(self, data):
         exc_type, exc_value, exc_trace = data
