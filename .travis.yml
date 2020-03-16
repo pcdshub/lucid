@@ -23,6 +23,7 @@ matrix:
     - python: 3.6
 #      env: BUILD_DOCS=0
     - python: 3.7
+    - python: 3.8
 
 install:
   - git clone --depth 1 git://github.com/pcdshub/pcds-ci-helpers.git
@@ -57,7 +58,7 @@ script:
   - coverage report -m
   - set -e
   - |
-    if [[ $TRAVIS_REPO_SLUG == $OFFICIAL_REPO && $BUILD_DOCS ]]; then
+    if [[ $TRAVIS_REPO_SLUG == $OFFICIAL_REPO && "$BUILD_DOCS" == "1" ]]; then
       pushd docs
       make html
       popd
