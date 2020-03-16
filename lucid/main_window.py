@@ -251,6 +251,57 @@ class LucidMainWindow(QMainWindow):
                                    "in widget hierarchy")
         return cls.find_window(parent)
 
+    def find_dock_widget_by_title(self, title):
+        '''
+        Find a dock widget given its title
+
+        Parameters
+        ----------
+        title : str
+            The title to find
+
+        Returns
+        -------
+        dock_widget : QtAds.DockWidget or None
+        '''
+        return self.dock_manager.findDockWidget(title)
+
+    def add_dock(self, title, widget, *,
+                 area=QtAds.RightDockWidgetArea):
+        '''
+        Add dock widget by title
+
+        If the dock already exists, it will be re-docked if necessary.
+        Otherwise, a new dock will be added to the given area.
+
+        Parameters
+        ----------
+        title : str
+            The DockWidget title
+        widget : QWidget
+            The widget to put inside the dock
+        area : QtAds.DockWidgetArea, optional
+            The area to put the dock in
+        '''
+        dock = self.find_dock_widget_by_title(title)
+        if dock:
+            if dock.isFloating():
+                self.dock_manager.addDockWidgetTab(area, dock)
+            dock.toggleView(True)
+            return dock
+
+        dock = QtAds.CDockWidget(title)
+        dock.setSizePolicy(QtWidgets.QSizePolicy.Minimum,
+                           QtWidgets.QSizePolicy.Minimum)
+        dock.setWidget(widget, QtAds.CDockWidget.eInsertMode.ForceNoScrollArea)
+        # widget.setParent(dock)
+        self.dock_manager.addDockWidget(area, dock)
+
+        # Ensure the main dock is actually visible
+        widget.raise_()
+        widget.setVisible(True)
+        return dock
+
     @classmethod
     def in_dock(cls, func=None, title=None, area=None, active_slot=None):
         """
@@ -303,45 +354,22 @@ class LucidMainWindow(QMainWindow):
 
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
-            nonlocal title
-
             # Retrieve widget
             widget = func()
             if not widget:
                 return
-            window = LucidMainWindow()
+            dock_title = (title or
+                          widget.objectName() or
+                          (widget.__class__.__name__ + hex(id(widget))[:5])
+                          )
 
-            # Add the widget to the dock
-            if not title:
-                title = (widget.objectName() or
-                         (widget.__class__.__name__ + hex(id(widget))[:5])
-                         )
-
-            dock = window.dock_manager.findDockWidget(title)
-            if dock:
-                if dock.isFloating():
-                    window.dock_manager.addDockWidgetTab(
-                        QtAds.RightDockWidgetArea, dock)
-                dock.toggleView(True)
-                return widget
-
-            dock = QtAds.CDockWidget(title)
-            dock.setSizePolicy(QtWidgets.QSizePolicy.Minimum,
-                               QtWidgets.QSizePolicy.Minimum)
-            dock.setWidget(widget,
-                           QtAds.CDockWidget.eInsertMode.ForceNoScrollArea)
-            widget.setParent(dock)
-            window.dock_manager.addDockWidget(
-                QtAds.RightDockWidgetArea, dock)
-
-            # Ensure the main dock is actually visible
-            widget.raise_()
-            widget.setVisible(True)
+            dock = LucidMainWindow().add_dock(
+                title=dock_title, widget=widget,
+                area=QtAds.RightDockWidgetArea)
 
             if active_slot:
                 dock.viewToggled.connect(active_slot)
                 active_slot(True)
-
             return widget
 
         return wrapper
