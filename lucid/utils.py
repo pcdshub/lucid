@@ -204,6 +204,6 @@ def get_happi_device_cache():
     if _HAPPI_CACHE is None or check_stale_cache():
         logger.debug('Updating happi cache')
         client = get_happi_client()
-        _HAPPI_CACHE = (time.monotonic(), list(client.search(as_dict=True)))
+        _HAPPI_CACHE = (time.monotonic(), list(client.search()))
 
     return _HAPPI_CACHE[1]

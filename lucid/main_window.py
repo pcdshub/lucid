@@ -498,7 +498,7 @@ def _thread_happi_search(callback, *, general_search, category_search,
     for item in utils.get_happi_device_cache():
         item_results = []
         for key, text in category_search:
-            value = item.get(key)
+            value = item.metadata.get(key)
             if value is not None:
                 ratio = utils.fuzzy_match(text, str(value),
                                           threshold=threshold)
@@ -506,7 +506,7 @@ def _thread_happi_search(callback, *, general_search, category_search,
 
         for text in general_search:
             for key in utils.HAPPI_GENERAL_SEARCH_KEYS:
-                value = item.get(key)
+                value = item.metadata.get(key)
                 if value is not None:
                     ratio = utils.fuzzy_match(text, str(value),
                                               threshold=threshold)
