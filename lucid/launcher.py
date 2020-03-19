@@ -20,13 +20,8 @@ MODULE_PATH = pathlib.Path(__file__).parent
 logger = logging.getLogger(__name__)
 
 
-def get_happi_entry_value(entry, key, search_extraneous=True):
-    extraneous = entry.extraneous
-    value = getattr(entry, key, None)
-    if value is None and search_extraneous:
-        # Try to look at extraneous
-        value = extraneous.get(key, None)
-
+def get_happi_entry_value(entry, key):
+    value = entry.metadata.get(key, None)
     if not value:
         raise ValueError(f'Invalid Key ({key} not in {entry}.')
     return value
@@ -92,24 +87,23 @@ class HappiLoader(QtCore.QThread):
     def _load_from_happi(self, row_group_key, col_group_key):
         '''Fill with Data from Happi'''
         cli = lucid.utils.get_happi_client()
-        devices = cli.search(beamline=self.beamline) or []
+        results = cli.search(beamline=self.beamline) or []
 
         dev_groups = collections.defaultdict(list)
 
-        if not len(devices):
+        if not len(results):
             raise ValueError(
-                f"Could not find devices for beamline {self.beamline}")
+                f"Could not find entries for beamline {self.beamline}")
 
         with typhos.utils.no_device_lazy_load():
-            for dev in devices:
+            for res in results:
                 try:
-                    stand = get_happi_entry_value(dev, row_group_key)
-                    system = get_happi_entry_value(dev, col_group_key)
-                    dev_obj = happi.loader.from_container(dev,
-                                                          threaded=True)
+                    stand = get_happi_entry_value(res, row_group_key)
+                    system = get_happi_entry_value(res, col_group_key)
+                    dev_obj = res.get(threaded=True)
                     dev_groups[f"{stand}|{system}"].append(dev_obj)
                 except Exception:
-                    logger.exception('Failed to load device %s', dev)
+                    logger.exception('Failed to load device %s', res)
                     continue
         return dev_groups
 
