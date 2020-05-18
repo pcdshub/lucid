@@ -9,7 +9,7 @@ import signal
 from PyQtAds import QtAds
 from qtpy import QtCore, QtWidgets
 
-import happi
+import happi  # noqa
 import lucid
 import typhos
 import typhos.utils
