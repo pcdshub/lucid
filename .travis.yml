@@ -29,12 +29,12 @@ env:
     # CONDA_EXTRAS) but for pip
     - PIP_EXTRAS="PyQt5 happi"
 
-# jobs:
-#   allow_failures:
-#     # This makes the PIP based Python 3.6 optional for passing.
-#     # Remove this block if passing tests with PIP is mandatory for your
-#     # package
-#     - name: "Python 3.6 - PIP"
+jobs:
+  allow_failures:
+    # ** pyqtads is not available on PyPI, so this cannot succeed:
+    - name: "Python 3.6 - PIP"
+    # ** docs? we don't need any docs...
+    - name: "Docs Build"
 
 import:
   - pcdshub/pcds-ci-helpers:travis/shared_configs/setup-env-ui.yml
