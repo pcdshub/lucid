@@ -35,6 +35,7 @@ jobs:
     - name: "Python 3.6 - PIP"
     # ** docs? we don't need any docs...
     - name: "Docs Build"
+    - name: "Docs Upload"
 
 import:
   - pcdshub/pcds-ci-helpers:travis/shared_configs/setup-env-ui.yml
