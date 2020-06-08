@@ -1,8 +1,9 @@
-pydm
-pyqtads
+fuzzywuzzy
+happi
 ophyd
+pydm
+pyqt5>=5
+pyqtads
 pyyaml
 qtpy
-qtpy
 typhos
-fuzzywuzzy

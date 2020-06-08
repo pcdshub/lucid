@@ -1,78 +1,53 @@
-dist: xenial
-language: python
-sudo: false
-
-services:
-  - xvfb
-
-addons:
-  apt:
-    packages:
-      - herbstluftwm
-      - libxkbcommon-x11-0
+version: ~> 1.0
 
 env:
   global:
-    - OFFICIAL_REPO="slaclab/lucid"
+    # doctr generated secure variable for documentation upload
+    # - secure: "<your secure here>"
+    
+    # enable the usage of versions menu which allow versioning of the docs
+    # pages and not only the master branch
+    - DOCTR_VERSIONS_MENU="1"
+    
+    # Dependency files used to build the documentation (space separated)
+    - DOCS_REQUIREMENTS="dev-requirements.txt requirements.txt"
+    # Options to be passed to flake8 for package linting. Usually this is just
+    # the package name but you can enable other flake8 options via this config
+    - PYTHON_LINT_OPTIONS="lucid"
 
-matrix:
-  include:
-    - name: flake8 linting
-      python: 3.6
-      env: LINT_PYTHON=lucid
-    - python: 3.6
-#      env: BUILD_DOCS=0
-    - python: 3.7
-    - python: 3.8
+    # The name of the conda package
+    - CONDA_PACKAGE="lucid"
+    # The folder containing the conda recipe (meta.yaml)
+    - CONDA_RECIPE_FOLDER="conda-recipe"
+    # Extra dependencies needed to run the tests which are not included
+    # in the recipe or CONDA_REQUIREMENTS. E.g. PyQt
+    - CONDA_EXTRAS="pip pyqt=5 happi"
+    # Requirements file with contents for tests dependencies
+    - CONDA_REQUIREMENTS="dev-requirements.txt"
 
-install:
-  - git clone --depth 1 git://github.com/pcdshub/pcds-ci-helpers.git
-  - source pcds-ci-helpers/travis/init.sh
- 
-  # Install, configure conda
-  - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
-  - bash miniconda.sh -b -p $HOME/miniconda
-  - export PATH="$HOME/miniconda/bin:$PATH"
-  - conda config --set always_yes yes --set changeps1 no
-  - conda install conda-build anaconda-client
-  - conda update -q conda conda-build
-  - conda config --remove channels defaults
-  - conda config --add channels conda-forge
-  # Useful for debugging
-  - conda info -a
-  - conda build -q conda-recipe --python $TRAVIS_PYTHON_VERSION --output-folder bld-dir
-  - conda config --add channels "file://`pwd`/bld-dir"
-  # Manage conda environment
-  - conda create -n lucid-env python=$TRAVIS_PYTHON_VERSION lucid pip pyqt --file dev-requirements.txt
-  - source activate lucid-env
-  # Useful for debugging
-  - conda list
+    # Extra dependencies needed to run the test with Pip (similar to
+    # CONDA_EXTRAS) but for pip
+    - PIP_EXTRAS="PyQt5 happi"
 
-before_script:
-  # Run windows manager
-  - "herbstluftwm &"
-  - sleep 1
+jobs:
+  allow_failures:
+    # ** pyqtads is not available on PyPI, so this cannot succeed:
+    - name: "Python 3.6 - PIP"
+    # ** docs? we don't need any docs...
+    - name: "Docs Build"
 
-script:
-  - coverage run run_tests.py
-  - coverage report -m
-  - set -e
-  - |
-    if [[ $TRAVIS_REPO_SLUG == $OFFICIAL_REPO && "$BUILD_DOCS" == "1" ]]; then
-      pushd docs
-      make html
-      popd
-      doctr deploy . --built-docs docs/_build/html --deploy-branch-name gh-pages --command "touch .nojekyll; git add .nojekyll"
-    fi
-after_success:
-  - codecov
-  - |
-    if [[ $TRAVIS_PULL_REQUEST == false && $TRAVIS_REPO_SLUG == $OFFICIAL_REPO && $TRAVIS_BRANCH == $TRAVIS_TAG  && $TRAVIS_TAG != '' ]]; then
-      export ANACONDA_API_TOKEN=$CONDA_UPLOAD_TOKEN_TAG
-      anaconda upload bld-dir/linux-64/*.tar.bz2
-    fi
-  - |
-    if [[ $TRAVIS_PULL_REQUEST == false && $TRAVIS_REPO_SLUG == $OFFICIAL_REPO && $TRAVIS_BRANCH == 'master' ]]; then
-      export ANACONDA_API_TOKEN=$CONDA_UPLOAD_TOKEN_DEV
-      anaconda upload bld-dir/linux-64/*.tar.bz2
-    fi
+import:
+  - pcdshub/pcds-ci-helpers:travis/shared_configs/setup-env-ui.yml
+  # This import enables a set of standard python jobs including:
+  # - Build
+  #   - Anaconda Package Build
+  # - Tests
+  #   - Linter
+  #   - Documentation
+  #   - Python 3.6 - PIP based
+  #   - Python 3.6, 3.7 & 3.8 - Conda base
+  # - Deploy
+  #   - Documentation using doctr
+  #   - Conda Package - uploaded to pcds-dev and pcds-tag
+  #   - PyPI
+  - pcdshub/pcds-ci-helpers:travis/shared_configs/standard-python-conda.yml
