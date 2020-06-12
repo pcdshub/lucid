@@ -162,6 +162,7 @@ def launch(beamline, *, toolbar=None, row_group_key="location_group",
 
     # Silence the logger from pyPDB.dbd.yacc
     logging.getLogger("pyPDB.dbd.yacc").setLevel(logging.WARNING)
+    logging.getLogger("ophyd").setLevel(logging.WARNING)
 
     lucid_logger = logging.getLogger('')
     handler = logging.StreamHandler()
@@ -190,7 +191,7 @@ def launch(beamline, *, toolbar=None, row_group_key="location_group",
     # Use custom exception handler
     exception.ExceptionDispatcher().newException.connect(window.handle_error)
 
-    grid = lucid.overview.IndicatorGridWithOverlay()
+    grid = lucid.overview.IndicatorGridWithOverlay(toolbar_file=toolbar)
 
     splash.update_status(f"Loading {beamline} devices")
 
@@ -200,40 +201,27 @@ def launch(beamline, *, toolbar=None, row_group_key="location_group",
                          group_keys=(row_group_key, col_group_key),
                          callbacks=cbs
                          )
+
+    def grid_to_dock():
+        dock_widget = QtAds.CDockWidget('Grid')
+        dock_widget.setToggleViewActionMode(QtAds.CDockWidget.ActionModeShow)
+        dock_widget.setFeature(dock_widget.DockWidgetClosable, False)
+        dock_widget.setFeature(dock_widget.DockWidgetFloatable, False)
+        dock_widget.setFeature(dock_widget.DockWidgetMovable, False)
+        dock_widget.setMinimumSizeHintMode(
+            QtAds.CDockWidget.MinimumSizeHintFromContent
+        )
+        dock_widget.setWidget(grid.frame,
+                              QtAds.CDockWidget.eInsertMode.ForceNoScrollArea)
+
+        window.dock_manager.addDockWidget(QtAds.LeftDockWidgetArea,
+                                          dock_widget)
+
     loader.finished.connect(splash.accept)
+    loader.finished.connect(grid_to_dock)
     loader.finished.connect(window.show)
+
     loader.start()
-
-    dock_widget = QtAds.CDockWidget('Grid')
-    dock_widget.setSizePolicy(QtWidgets.QSizePolicy.Minimum,
-                              QtWidgets.QSizePolicy.Minimum)
-    dock_widget.setWidget(grid.frame,
-                          QtAds.CDockWidget.eInsertMode.ForceNoScrollArea)
-
-    dock_widget.setToggleViewActionMode(QtAds.CDockWidget.ActionModeShow)
-
-    dock_widget.setFeature(dock_widget.DockWidgetClosable, False)
-    dock_widget.setFeature(dock_widget.DockWidgetFloatable, False)
-    dock_widget.setFeature(dock_widget.DockWidgetMovable, False)
-
-    window.dock_manager.addDockWidget(QtAds.LeftDockWidgetArea, dock_widget)
-
-    quick_toolbar = lucid.overview.QuickAccessToolbar()
-    quick_toolbar.toolsFile = toolbar
-
-    bar_widget = QtAds.CDockWidget('Quick Launcher Toolbar')
-    bar_widget.setSizePolicy(QtWidgets.QSizePolicy.Minimum,
-                             QtWidgets.QSizePolicy.Minimum)
-
-    bar_widget.setWidget(quick_toolbar,
-                         QtAds.CDockWidget.eInsertMode.ForceNoScrollArea)
-    bar_widget.setToggleViewActionMode(QtAds.CDockWidget.ActionModeShow)
-    bar_widget.setFeature(dock_widget.DockWidgetClosable, False)
-    bar_widget.setFeature(dock_widget.DockWidgetFloatable, False)
-    bar_widget.setFeature(dock_widget.DockWidgetMovable, False)
-
-    dock_widget.dockContainer().addDockWidget(QtAds.BottomDockWidgetArea,
-                                              bar_widget)
 
     app.exec_()
 
