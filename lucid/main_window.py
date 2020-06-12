@@ -305,6 +305,7 @@ class LucidMainWindow(QMainWindow):
             QtAds.CDockWidget.MinimumSizeHintFromContent
         )
         dock.setWidget(widget)
+        widget.setParent(dock)
         self.dock_manager.addDockWidget(area, dock)
 
         # Ensure the main dock is actually visible
