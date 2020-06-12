@@ -354,17 +354,21 @@ class IndicatorOverlay(QWidget):
 
 
 class IndicatorGridWithOverlay(IndicatorGrid):
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, toolbar_file=None):
         super().__init__(parent=None)
         self.frame = QtWidgets.QFrame(parent)
         self.frame.setLayout(QtWidgets.QVBoxLayout())
         self.frame.layout().addWidget(self)
+        vertical_spacer = QtWidgets.QSpacerItem(
+            10, 40, QtWidgets.QSizePolicy.Minimum,
+            QtWidgets.QSizePolicy.MinimumExpanding
+        )
+        self.frame.layout().addItem(vertical_spacer)
 
-        verticalSpacer = QtWidgets.QSpacerItem(10, 10,
-                                               QtWidgets.QSizePolicy.Minimum,
-                                               QtWidgets.QSizePolicy.Expanding)
-        self.frame.layout().addItem(verticalSpacer)
-
+        if toolbar_file is not None:
+            quick_toolbar = lucid.overview.QuickAccessToolbar(self.frame)
+            quick_toolbar.toolsFile = toolbar_file
+            self.frame.layout().addWidget(quick_toolbar)
         self.overlay = IndicatorOverlay(self.frame, self)
         self.overlay.setVisible(False)
         self.stackUnder(self.overlay)
@@ -393,6 +397,7 @@ class QuickAccessToolbar(QtWidgets.QWidget):
     """Tab Widget with tabs containing buttons defined via a yaml file"""
     def __init__(self, parent=None):
         super().__init__(parent=parent)
+
         self._tools = None
         self._default_config = {'cols': 4}
         self._setup_ui()

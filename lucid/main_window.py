@@ -290,11 +290,21 @@ class LucidMainWindow(QMainWindow):
             dock.toggleView(True)
             return dock
 
+        # The current minimumSizeHint from the widget is too small ~(68, 68)
+        # Here we suggest the minimumSizeHint as being the size
+        def min_size_hint(*args, **kwargs):
+            return widget.sizeHint()
+        widget.minimumSizeHint = min_size_hint
+        widget.setSizePolicy(
+            QtWidgets.QSizePolicy.Ignored,
+            QtWidgets.QSizePolicy.Ignored
+        )
+
         dock = QtAds.CDockWidget(title)
-        dock.setSizePolicy(QtWidgets.QSizePolicy.Minimum,
-                           QtWidgets.QSizePolicy.Minimum)
-        dock.setWidget(widget, QtAds.CDockWidget.eInsertMode.ForceNoScrollArea)
-        # widget.setParent(dock)
+        dock.setMinimumSizeHintMode(
+            QtAds.CDockWidget.MinimumSizeHintFromContent
+        )
+        dock.setWidget(widget)
         self.dock_manager.addDockWidget(area, dock)
 
         # Ensure the main dock is actually visible
