@@ -27,7 +27,7 @@ def get_happi_entry_value(entry, key):
     return value
 
 
-def parse_arguments(*args, **kwargs):
+def get_parser():
     import argparse
     from . import __version__
 
@@ -74,6 +74,11 @@ def parse_arguments(*args, **kwargs):
         action='store_true',
         default=False
     )
+    return parser
+
+
+def parse_arguments(*args, **kwargs):
+    parser = get_parser()
     return parser.parse_args(*args, **kwargs)
 
 
