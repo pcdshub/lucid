@@ -1,0 +1,252 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>LUCID Launcher Options &mdash; lucid 0.6.0+6.gd952f46 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="LUCID" href="index.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home"> lucid
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.6.0+6.gd952f46
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">User Documentation</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">LUCID Launcher Options</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#Positional Arguments">Positional Arguments</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Named Arguments">Named Arguments</a></li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">lucid</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>LUCID Launcher Options</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/launcher.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="lucid-launcher-options">
+<h1>LUCID Launcher Options<a class="headerlink" href="#lucid-launcher-options" title="Permalink to this headline">¶</a></h1>
+<p><p>LUCID - LCLS User Control and Interface Design</p>
+</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">usage</span><span class="p">:</span> <span class="n">lucid</span> <span class="p">[</span><span class="o">-</span><span class="n">h</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">version</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">toolbar</span> <span class="n">TOOLBAR</span><span class="p">]</span>
+             <span class="p">[</span><span class="o">--</span><span class="n">row_group_key</span> <span class="n">ROW_GROUP_KEY</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">col_group_key</span> <span class="n">COL_GROUP_KEY</span><span class="p">]</span>
+             <span class="p">[</span><span class="o">--</span><span class="n">log_level</span> <span class="p">{</span><span class="n">DEBUG</span><span class="p">,</span><span class="n">INFO</span><span class="p">,</span><span class="n">WARNING</span><span class="p">,</span><span class="n">ERROR</span><span class="p">,</span><span class="n">CRITICAL</span><span class="p">}]</span> <span class="p">[</span><span class="o">--</span><span class="n">dark</span><span class="p">]</span>
+             <span class="n">beamline</span>
+</pre></div>
+</div>
+<div class="section" id="Positional Arguments">
+<h2>Positional Arguments<a class="headerlink" href="#Positional Arguments" title="Permalink to this headline">¶</a></h2>
+<dl class="option-list">
+<dt><kbd>beamline</kbd></dt>
+<dd><p>Specify the beamline name to compose the home screen.</p>
+</dd>
+</dl>
+</div>
+<div class="section" id="Named Arguments">
+<h2>Named Arguments<a class="headerlink" href="#Named Arguments" title="Permalink to this headline">¶</a></h2>
+<dl class="option-list">
+<dt><kbd>--version</kbd></dt>
+<dd><p>Show LUCID’s version number and exit.</p>
+</dd>
+<dt><kbd>--toolbar</kbd></dt>
+<dd><p>Path to the YAML file describing the entries for the Quick Access Toolbar.</p>
+</dd>
+<dt><kbd>--row_group_key</kbd></dt>
+<dd><p>The Happi field to use for row grouping.</p>
+<p>Default: “location_group”</p>
+</dd>
+<dt><kbd>--col_group_key</kbd></dt>
+<dd><p>The Happi field to use for column grouping.</p>
+<p>Default: “functional_group”</p>
+</dd>
+<dt><kbd>--log_level</kbd></dt>
+<dd><p>Possible choices: DEBUG, INFO, WARNING, ERROR, CRITICAL</p>
+<p>Configure level of log display</p>
+<p>Default: “INFO”</p>
+</dd>
+<dt><kbd>--dark</kbd></dt>
+<dd><p>Use dark Stylesheet</p>
+<p>Default: False</p>
+</dd>
+</dl>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+      
+        <a href="index.html" class="btn btn-neutral float-left" title="LUCID" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, SLAC National Accelerator Laboratory
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>
