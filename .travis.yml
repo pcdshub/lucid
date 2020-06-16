@@ -3,14 +3,14 @@ version: ~> 1.0
 env:
   global:
     # doctr generated secure variable for documentation upload
-    # - secure: "<your secure here>"
-    
+    - secure: "bu8tGaeBlkdLeKuBjUFVf8rZ7asJvHQDavNhH9V6NB/oxxhpOdlHZhnM+kClb/GNZEJ5O+MM6Tr1guqAj8WUi/Ub/BtHf8ryARlufI6UGOtRx3IBphrtUVTB7ou09Fpmr4JkjAR8fm+bQjCY9T3LIqtqTI5BIrJ+NBvzy4bb+law7qaQO4bMp8G/zSo77q6bg3lX9hirJlbivYd8oIm7BBWvDCf9+BCd+1i5yvreT2mAS5fObzR5817vNe6FAIoMRLicR1IEkKRVGSl7ir/rQ5pTLAr4BZ7lmCPgnqG0sYQbC7cp19w9hRc1JaOxo+TiBIJdbsw3725bTxlKdtq9LmaYtyc1P1nPQdXXFSKum5upHHbg+qY0uUYfheDb/zbDeSsrSp6v+9Nwe0BH57hVEJL/zkRvQZojeYJ8bTMeOAkiIKPWrNayHSspQu5HBuq/ZtgcFYB5OPv3eKjH/J+jkC/inQsoCvkO/8+A3dWIf6sCO/5PLSM8gIx4MS3PAXga6H//tKvV1m52dYjZToSqcqqCs4Atxky1JlOi/orhy987OjMfTIWZN+8tPe/c9vDAnsNXoSI/W9+vnAQPBrPPVf1OsSEshoKrj9wnEQJApnwKkrd9+P3/w7OnV6hxQ9QjMu9fFvsuOvOodpJHn3oGxaJ/2+DFr3kDNcCsHu0uoX4="
+
     # enable the usage of versions menu which allow versioning of the docs
     # pages and not only the master branch
     - DOCTR_VERSIONS_MENU="1"
-    
+
     # Dependency files used to build the documentation (space separated)
-    - DOCS_REQUIREMENTS="dev-requirements.txt requirements.txt"
+    - DOCS_REQUIREMENTS="docs-requirements.txt"
     # Options to be passed to flake8 for package linting. Usually this is just
     # the package name but you can enable other flake8 options via this config
     - PYTHON_LINT_OPTIONS="lucid"
@@ -33,9 +33,6 @@ jobs:
   allow_failures:
     # ** pyqtads is not available on PyPI, so this cannot succeed:
     - name: "Python 3.6 - PIP"
-    # ** docs? we don't need any docs...
-    - name: "Docs Build"
-    - name: "Docs Upload"
 
 import:
   - pcdshub/pcds-ci-helpers:travis/shared_configs/setup-env-ui.yml
