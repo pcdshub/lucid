@@ -190,6 +190,7 @@ def launch(beamline, *, toolbar=None, row_group_key="location_group",
 
     splash.update_status("Creating Main Window")
     window = lucid.main_window.LucidMainWindow(dark=dark)
+    window.setWindowTitle(f"LUCID - {beamline}")
 
     # Install exception hook handler with dialog popup
     exception.install(use_default_handler=False)
