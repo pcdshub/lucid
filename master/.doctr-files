@@ -1,5 +1,8 @@
+master/_images/nomachine_issue.png
+master/_images/nomachine_settings.png
 master/_sources/index.rst.txt
 master/_sources/launcher.rst.txt
+master/_sources/troubleshooting/remote_access.rst.txt
 master/_static/basic.css
 master/_static/css/badge_only.css
 master/_static/css/fonts/Roboto-Slab-Bold.woff
@@ -78,6 +81,8 @@ master/_static/js/modernizr.min.js
 master/_static/js/theme.js
 master/_static/language_data.js
 master/_static/minus.png
+master/_static/nomachine_issue.png
+master/_static/nomachine_settings.png
 master/_static/plus.png
 master/_static/pygments.css
 master/_static/searchtools.js
@@ -89,3 +94,4 @@ master/launcher.html
 master/objects.inv
 master/search.html
 master/searchindex.js
+master/troubleshooting/remote_access.html
