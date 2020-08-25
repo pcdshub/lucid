@@ -153,7 +153,7 @@ class IndicatorCell(BaseDeviceButton):
         size_per_icon = self.icon_size + self.spacing
         return QSize(self.max_columns * size_per_icon
                      + self.spacing + 2 * self.margin,
-                     48)
+                     36)
 
     def _devices_shown(self, shown, selector=None):
         """Callback when corresponding ``TyphosSuite`` is accessed"""
@@ -359,13 +359,14 @@ class IndicatorGridWithOverlay(IndicatorGrid):
         self.frame = QtWidgets.QFrame(parent)
         self.frame.setLayout(QtWidgets.QVBoxLayout())
         self.frame.layout().addWidget(self)
-        vertical_spacer = QtWidgets.QSpacerItem(
-            10, 40, QtWidgets.QSizePolicy.Minimum,
-            QtWidgets.QSizePolicy.MinimumExpanding
-        )
-        self.frame.layout().addItem(vertical_spacer)
 
         if toolbar_file is not None:
+            vertical_spacer = QtWidgets.QSpacerItem(
+                10, 20, QtWidgets.QSizePolicy.Minimum,
+                QtWidgets.QSizePolicy.MinimumExpanding
+            )
+            self.frame.layout().addItem(vertical_spacer)
+
             quick_toolbar = lucid.overview.QuickAccessToolbar(self.frame)
             quick_toolbar.toolsFile = toolbar_file
             self.frame.layout().addWidget(quick_toolbar)
@@ -402,9 +403,6 @@ class QuickAccessToolbar(QtWidgets.QWidget):
         self._default_config = {'cols': 4}
         self._setup_ui()
 
-    def sizeHint(self):
-        return QtCore.QSize(100, 100)
-
     @Property(str)
     def toolsFile(self):
         return self._tools_file
@@ -421,8 +419,8 @@ class QuickAccessToolbar(QtWidgets.QWidget):
         self._assemble_tabs()
 
     def _setup_ui(self):
-        self.setSizePolicy(QtWidgets.QSizePolicy.Minimum,
-                           QtWidgets.QSizePolicy.Minimum)
+        self.setSizePolicy(QtWidgets.QSizePolicy.Preferred,
+                           QtWidgets.QSizePolicy.Preferred)
 
         main_layout = QtWidgets.QVBoxLayout()
         self.setLayout(main_layout)
@@ -446,9 +444,13 @@ class QuickAccessToolbar(QtWidgets.QWidget):
                                                      button_config)
                 page.layout().addWidget(button_widget)
 
+            def min_scroll_size_hint(*args, **kwargs):
+                return QtCore.QSize(40, 40)
+
             scroll_area = QtWidgets.QScrollArea()
             scroll_area.setWidgetResizable(True)
             scroll_area.setWidget(page)
+            scroll_area.minimumSizeHint = min_scroll_size_hint
             self.tab.addTab(scroll_area, tab_name)
 
     def _button_factory(self, text, config):
