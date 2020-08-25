@@ -111,10 +111,10 @@ class BaseDeviceButton(QPushButton):
 
 class IndicatorCell(BaseDeviceButton):
     """Single Cell of Indicator Lights in the Overview Grid"""
-    max_columns = 6
+    max_columns = 5
     icon_size = 12
-    spacing = 2
-    margin = 10
+    spacing = 1
+    margin = 5
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -153,7 +153,7 @@ class IndicatorCell(BaseDeviceButton):
         size_per_icon = self.icon_size + self.spacing
         return QSize(self.max_columns * size_per_icon
                      + self.spacing + 2 * self.margin,
-                     70)
+                     48)
 
     def _devices_shown(self, shown, selector=None):
         """Callback when corresponding ``TyphosSuite`` is accessed"""
