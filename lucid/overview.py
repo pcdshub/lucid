@@ -445,7 +445,11 @@ class QuickAccessToolbar(QtWidgets.QWidget):
                 button_widget = self._button_factory(button_text,
                                                      button_config)
                 page.layout().addWidget(button_widget)
-            self.tab.addTab(page, tab_name)
+
+            scroll_area = QtWidgets.QScrollArea()
+            scroll_area.setWidgetResizable(True)
+            scroll_area.setWidget(page)
+            self.tab.addTab(scroll_area, tab_name)
 
     def _button_factory(self, text, config):
         tp = config.pop('type')
