@@ -22,8 +22,11 @@ class Splash(QtWidgets.QDialog):
         layout.addWidget(logo)
 
         self.status_display = QtWidgets.QLabel()
+        tout = typhos.utils.TyphosLoading.LOADING_TIMEOUT_MS
+        # No Timeout!
+        typhos.utils.TyphosLoading.LOADING_TIMEOUT_MS = -1
         loading = typhos.utils.TyphosLoading(self)
-        loading._handle_timeout = lambda *args, **kwargs: None
+        typhos.utils.TyphosLoading.LOADING_TIMEOUT_MS = tout
 
         status_layout = QtWidgets.QHBoxLayout()
         status_layout.addWidget(self.status_display)
