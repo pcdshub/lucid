@@ -32,7 +32,6 @@ requirements:
 
 test:
   requires:
-    - codecov
     - pyqtads
     - pytest
     - pytest-qt

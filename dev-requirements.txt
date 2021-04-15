@@ -1,4 +1,3 @@
-codecov
 pytest
 pytest-qt
 pyqtads
