@@ -86,7 +86,7 @@ def indicator_for_device(device):
 
     circle = PyDMDrawingCircle()
     circle.setStyleSheet(indicator_stylesheet())
-    alarm_setter = AlarmAmalgamator(sigs, circle)
+    AlarmAmalgamator(sigs, circle)
 
     return circle
 
