@@ -8,7 +8,10 @@ from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QGridLayout
 
 import happi
+from ophyd.device import Kind
+from ophyd.utils.epics_pvs import AlarmSeverity
 from pydm.widgets import PyDMDrawingCircle
+from pydm.widgets.base import PyDMWidget
 from typhos import TyphosDeviceDisplay, TyphosSuite
 from typhos.utils import no_device_lazy_load
 
@@ -76,17 +79,68 @@ class SnakeLayout(QGridLayout):
 
 def indicator_for_device(device):
     """Create a QWidget to indicate the alarm state of a QWidget"""
-    # This is a placeholder. There will be a system for determining the mapping
-    # of Device to icon put in place
+    sigs = []
+    for walk in device.walk_signals():
+        if walk.item.kind in (Kind.hinted, Kind.normal):
+            sigs.append(walk.item)
+
     circle = PyDMDrawingCircle()
-    circle.setStyleSheet('PyDMDrawingCircle '
-                         '{border: none; '
-                         ' background: transparent;'
-                         ' qproperty-penColor: black;'
-                         ' qproperty-penWidth: 2;'
-                         ' qproperty-penStyle: SolidLine;'
-                         ' qproperty-brush: rgba(82,101,244,255);} ')
+    circle.setStyleSheet(indicator_stylesheet())
+    alarm_setter = AlarmAmalgamator(sigs, circle)
+
     return circle
+
+
+def indicator_stylesheet(alarm=None):
+    base = (
+        'PyDMDrawingCircle '
+        '{border: none; '
+        ' background: transparent;'
+        ' qproperty-penColor: black;'
+        ' qproperty-penWidth: 2;'
+        ' qproperty-penStyle: SolidLine;'
+        ' qproperty-brush: rgba'
+        )
+
+    if alarm in (None, PyDMWidget.ALARM_DISCONNECTED):
+        return base + '(255,255,255,255);}'
+    elif alarm is PyDMWidget.ALARM_NONE:
+        return base + '(0,255,0,255);}'
+    elif alarm is PyDMWidget.ALARM_MINOR:
+        return base + '(255,255,0,255);}'
+    elif alarm is PyDMWidget.ALARM_MAJOR:
+        return base + '(255,0,0,255);}'
+    elif alarm is PyDMWidget.ALARM_INVALID:
+        return base + '(255,0,255,255);}'
+
+
+class AlarmAmalgamator:
+    def __init__(self, sigs, widget):
+        self.sigs = sigs
+        self.sig_alarms = {sig: PyDMWidget.ALARM_NONE for sig in sigs}
+        self.widget = widget
+        self.alarm = PyDMWidget.ALARM_NONE
+
+        for sig in sigs:
+            sig.subscribe(self.alarm_cb, event_type=sig.SUB_META)
+
+    def alarm_cb(self, obj, severity, connected, **kwargs):
+        if not connected:
+            self.sig_alarms[obj] = PyDMWidget.ALARM_DISCONNECTED
+        elif severity == AlarmSeverity.NO_ALARM:
+            self.sig_alarms[obj] = PyDMWidget.ALARM_NONE
+        elif severity == AlarmSeverity.MINOR:
+            self.sig_alarms[obj] = PyDMWidget.ALARM_MINOR
+        elif severity == AlarmSeverity.MAJOR:
+            self.sig_alarms[obj] = PyDMWidget.ALARM_MAJOR
+        elif severity == AlarmSeverity.INVALID:
+            self.sig_alarms[obj] = PyDMWidget.ALARM_INVALID
+
+        self.update_alarm()
+
+    def update_alarm(self):
+        alarm_to_use = max(self.sig_alarms.values())
+        self.widget.setStyleSheet(indicator_stylesheet(alarm_to_use))
 
 
 def display_for_device(device, display_type=None):

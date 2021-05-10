@@ -119,7 +119,11 @@ class IndicatorCell(BaseDeviceButton):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # Disable borders on the widget unless a hover occurs
-        self.setStyleSheet('QPushButton:!hover {border: None}')
+        # Make the background slightly grey for contrast
+        self.setStyleSheet(
+            'QPushButton:!hover {border: None} '
+            'QPushButton {background-color: rgba(240,240,240,255);}'
+            )
         self.setLayout(SnakeLayout(self.max_columns))
         self.layout().setSpacing(self.spacing)
         self.layout().setContentsMargins(*4 * [self.margin])
