@@ -489,15 +489,12 @@ def _thread_screens_search(callback, *, general_search, category_search,
             )
 
 
-def _happi_dict_to_display(d):
-    name = d['name']
+def _happi_searchresult_to_display(search_result):
+    name = search_result['name']
 
     @LucidMainWindow.in_dock(title=f'[happi] {name}')
     def wrapped():
-        client = utils.get_happi_client()
-        # dictionary -> device container -> device -> display
-        happi_device = client.find_device(**d)
-        device = happi.loader.from_container(happi_device)
+        device = search_result.get()
         return utils.display_for_device(device)
 
     wrapped()
@@ -535,7 +532,7 @@ def _thread_happi_search(callback, *, general_search, category_search,
                 name=item['name'],
                 item=item,
                 reason=f'{key}: {value}',
-                callback=lambda ct=item: _happi_dict_to_display(ct),
+                callback=lambda ct=item: _happi_searchresult_to_display(ct),
             )
 
 
