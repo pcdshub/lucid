@@ -2,16 +2,15 @@ import functools
 import logging
 import pathlib
 
-import happi
 import typhos
-from PyQtAds import QtAds
-from qtpy import QtCore, QtWidgets, QtGui
-from qtpy.QtCore import Qt, Signal
-from qtpy.QtWidgets import QMainWindow, QStyle, QSizePolicy
-
 from pydm import exception
+from PyQtAds import QtAds
+from qtpy import QtCore, QtGui, QtWidgets
+from qtpy.QtCore import Qt, Signal
+from qtpy.QtWidgets import QMainWindow, QSizePolicy, QStyle
 
 import lucid
+
 from . import utils
 
 logger = logging.getLogger(__name__)
