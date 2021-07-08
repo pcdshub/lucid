@@ -15,7 +15,7 @@ from typhos.utils import no_device_lazy_load
 try:
     from typhos.alarm import TyphosAlarmCircle
 except ImportError:
-    # TODO: likely unnecessary back-compat
+    # Compatibility with older versions of typhos
     TyphosAlarmCircle = None
 
 
