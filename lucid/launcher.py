@@ -236,3 +236,7 @@ def main():
     args = parse_arguments()
     kwargs = vars(args)
     launch(**kwargs)
+
+
+if __name__ == "__main__":
+    main()

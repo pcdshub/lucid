@@ -12,6 +12,13 @@ from pydm.widgets import PyDMDrawingCircle
 from typhos import TyphosDeviceDisplay, TyphosSuite
 from typhos.utils import no_device_lazy_load
 
+try:
+    from typhos.alarm import TyphosAlarmCircle
+except ImportError:
+    # Compatibility with older versions of typhos
+    TyphosAlarmCircle = None
+
+
 logger = logging.getLogger(__name__)
 
 HAPPI_GENERAL_SEARCH_KEYS = ('name', 'prefix', 'stand')
@@ -74,19 +81,28 @@ class SnakeLayout(QGridLayout):
                           grid_position[1])
 
 
-def indicator_for_device(device):
-    """Create a QWidget to indicate the alarm state of a QWidget"""
-    # This is a placeholder. There will be a system for determining the mapping
-    # of Device to icon put in place
-    circle = PyDMDrawingCircle()
-    circle.setStyleSheet('PyDMDrawingCircle '
-                         '{border: none; '
-                         ' background: transparent;'
-                         ' qproperty-penColor: black;'
-                         ' qproperty-penWidth: 2;'
-                         ' qproperty-penStyle: SolidLine;'
-                         ' qproperty-brush: rgba(82,101,244,255);} ')
-    return circle
+if TyphosAlarmCircle is not None:
+    def indicator_for_device(device):
+        """Create a QWidget to indicate the alarm state of a QWidget"""
+        circle = TyphosAlarmCircle()
+        circle.add_device(device)
+        return circle
+else:
+    def indicator_for_device(device):
+        """Create a QWidget to indicate the alarm state of a QWidget"""
+        # This is a placeholder if a new version of typhos with alarm support
+        # is unavailable.
+        circle = PyDMDrawingCircle()
+        circle.setStyleSheet(
+            "PyDMDrawingCircle "
+            "{border: none; "
+            " background: transparent;"
+            " qproperty-penColor: black;"
+            " qproperty-penWidth: 2;"
+            " qproperty-penStyle: SolidLine;"
+            " qproperty-brush: rgba(82,101,244,255);} "
+        )
+        return circle
 
 
 def display_for_device(device, display_type=None):
