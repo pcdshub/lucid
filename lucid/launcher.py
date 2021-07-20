@@ -6,14 +6,17 @@ import pathlib
 import random
 import signal
 
-from PyQtAds import QtAds
-from qtpy import QtCore, QtWidgets
-
 import happi  # noqa
-import lucid
+import pcdsutils.log
 import typhos
 import typhos.utils
 from pydm import exception
+from PyQtAds import QtAds
+from qtpy import QtCore, QtWidgets
+
+import lucid
+
+from . import utils
 
 MODULE_PATH = pathlib.Path(__file__).parent
 
@@ -29,6 +32,7 @@ def get_happi_entry_value(entry, key):
 
 def get_parser():
     import argparse
+
     from . import __version__
 
     proj_desc = "LUCID - LCLS User Control and Interface Design"
@@ -191,6 +195,10 @@ def launch(beamline, *, toolbar=None, row_group_key="location_group",
     splash.update_status("Creating Main Window")
     window = lucid.main_window.LucidMainWindow(dark=dark)
     window.setWindowTitle(f"LUCID - {beamline}")
+
+    # Configure centralized PCDS logging:
+    if utils.centralized_logging_enabled():
+        pcdsutils.log.configure_pcds_logging()
 
     # Install exception hook handler with dialog popup
     exception.install(use_default_handler=False)

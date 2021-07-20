@@ -1,14 +1,18 @@
+import functools
 import logging
+import os
+import pathlib
 import re
+import socket
 import time
+import uuid
 
 import fuzzywuzzy.fuzz
-
-from qtpy.QtCore import Qt
-from qtpy.QtWidgets import QGridLayout
-
 import happi
+import pcdsutils.log
 from pydm.widgets import PyDMDrawingCircle
+from qtpy.QtCore import Qt
+from qtpy.QtWidgets import QApplication, QGridLayout
 from typhos import TyphosDeviceDisplay, TyphosSuite
 from typhos.utils import no_device_lazy_load
 
@@ -24,6 +28,9 @@ logger = logging.getLogger(__name__)
 HAPPI_GENERAL_SEARCH_KEYS = ('name', 'prefix', 'stand')
 _HAPPI_CACHE = None
 HAPPI_CACHE_UPDATE_PERIOD = 60 * 30
+NO_LOG_EXCEPTIONS = (KeyboardInterrupt, SystemExit)
+LOG_DOMAINS = {".pcdsn", ".slac.stanford.edu"}
+SCREENSHOT_DIR = pathlib.Path(os.environ.get("LUCID_SCREENSHOT_DIR", "/tmp"))
 
 
 class SnakeLayout(QGridLayout):
@@ -223,3 +230,90 @@ def get_happi_device_cache():
         _HAPPI_CACHE = (time.monotonic(), list(client.search()))
 
     return _HAPPI_CACHE[1]
+
+
+def screenshot_top_level_widgets():
+    """Yield screenshots of all top-level widgets."""
+    app = QApplication.instance()
+    for idx, widget in enumerate(app.topLevelWidgets()):
+        screenshot = widget.screen().grabWindow(widget.winId())
+        name = widget.windowTitle().replace(" ", "_")
+        suffix = ".{name}" if name else ""
+        yield f"{idx}{suffix}", screenshot
+
+
+def save_all_screenshots(format="png") -> str:
+    """Save screenshots of all top-level widgets to SCREENSHOT_DIR."""
+    screenshot_id = str(uuid.uuid4())[:8]
+    for name, screenshot in screenshot_top_level_widgets():
+        screenshot.save(
+            str(SCREENSHOT_DIR / f"{screenshot_id}.{name}.{format}"),
+            format
+        )
+    return screenshot_id
+
+
+def log_exception_to_central_server(
+    exc_info, *,
+    context='exception',
+    message=None,
+    level=logging.ERROR,
+    save_screenshots: bool = True,
+):
+    """
+    Log an exception to the central server (i.e., logstash/grafana).
+
+    Parameters
+    ----------
+    exc_info : (exc_type, exc_value, exc_traceback)
+        The exception information.
+
+    context : str, optional
+        Additional context for the log message.
+
+    message : str, optional
+        Override the default log message.
+
+    level : int, optional
+        The log level to use.  Defaults to ERROR.
+
+    save_screenshots : bool, optional
+        Save screenshots of all top-level widgets and attach a screenshot ID to
+        the log message.
+    """
+    exc_type, exc_value, exc_traceback = exc_info
+    if issubclass(exc_type, NO_LOG_EXCEPTIONS):
+        return
+
+    if not pcdsutils.log.logger.handlers:
+        # Do not allow log messages unless the central logger has been
+        # configured with a log handler.  Otherwise, the log message will
+        # hit the default handler and output to the terminal.
+        return
+
+    message = message or f'[{context}] {exc_value}'
+    if save_screenshots:
+        screenshot_id = save_all_screenshots()
+        message = f'id={screenshot_id} {message}'
+
+    pcdsutils.log.logger.log(level, message, exc_info=exc_info)
+
+
+@functools.lru_cache(maxsize=1)
+def get_fully_qualified_domain_name():
+    """Get the fully qualified domain name of this host."""
+    try:
+        return socket.getfqdn()
+    except Exception:
+        logger.warning(
+            "Unable to get machine name.  Things like centralized "
+            "logging may not work."
+        )
+        logger.debug("getfqdn failed", exc_info=True)
+        return ""
+
+
+def centralized_logging_enabled() -> bool:
+    """Returns True if centralized logging should be enabled."""
+    fqdn = get_fully_qualified_domain_name()
+    return any(fqdn.endswith(domain) for domain in LOG_DOMAINS)

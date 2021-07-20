@@ -22,6 +22,7 @@ requirements:
     - python >=3.6
     - fuzzywuzzy
     - ophyd
+    - pcdsutils
     - pydm
     - pyqt >=5
     - pyqtads

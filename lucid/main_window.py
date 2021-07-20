@@ -192,6 +192,8 @@ class LucidMainWindow(QMainWindow):
         exc_type, exc_value, exc_trace = data
         logger.exception("An uncaught exception happened: %s", exc_value,
                          exc_info=data)
+
+        utils.log_exception_to_central_server(data)
         exception.raise_to_operator(exc_value)
 
     @property
