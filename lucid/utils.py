@@ -318,8 +318,12 @@ def log_exception_to_central_server(
 
     message = message or f'[{context}] {exc_value}'
     if save_screenshots:
-        screenshot_id = save_all_screenshots()
-        message = f'id={screenshot_id} {message}'
+        try:
+            screenshot_id = save_all_screenshots()
+        except Exception:
+            logger.exception("Failed to save screenshots")
+        else:
+            message = f'id={screenshot_id} {message}'
 
     kwargs = dict()
     if sys.version_info >= (3, 8):
