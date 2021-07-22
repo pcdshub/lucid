@@ -4,6 +4,7 @@ import os
 import pathlib
 import re
 import socket
+import sys
 import time
 import uuid
 
@@ -276,6 +277,7 @@ def log_exception_to_central_server(
     message=None,
     level=logging.ERROR,
     save_screenshots: bool = True,
+    stacklevel=1,
 ):
     """
     Log an exception to the central server (i.e., logstash/grafana).
@@ -297,6 +299,12 @@ def log_exception_to_central_server(
     save_screenshots : bool, optional
         Save screenshots of all top-level widgets and attach a screenshot ID to
         the log message.
+
+    stacklevel : int, optional
+        The stack level of the message being reported.  Defaults to 1,
+        meaning that the message will be reported as having come from
+        the caller of ``log_exception_to_central_server``.  Applies
+        only to Python 3.8+, and ignored below.
     """
     exc_type, exc_value, exc_traceback = exc_info
     if issubclass(exc_type, NO_LOG_EXCEPTIONS):
@@ -313,7 +321,11 @@ def log_exception_to_central_server(
         screenshot_id = save_all_screenshots()
         message = f'id={screenshot_id} {message}'
 
-    pcdsutils.log.logger.log(level, message, exc_info=exc_info)
+    kwargs = dict()
+    if sys.version_info >= (3, 8):
+        kwargs = dict(stacklevel=stacklevel + 1)
+
+    pcdsutils.log.logger.log(level, message, exc_info=exc_info, **kwargs)
 
 
 @functools.lru_cache(maxsize=1)
