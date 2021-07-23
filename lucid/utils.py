@@ -6,6 +6,7 @@ import re
 import socket
 import sys
 import time
+import typing
 import uuid
 
 import fuzzywuzzy.fuzz
@@ -261,14 +262,16 @@ def screenshot_top_level_widgets():
         yield f"{index}{suffix}", screenshot
 
 
-def save_all_screenshots(format="png") -> str:
+def save_all_screenshots(format="png") -> typing.Tuple[str, typing.List[str]]:
     """Save screenshots of all top-level widgets to SCREENSHOT_DIR."""
+    screenshots = []
     screenshot_id = str(uuid.uuid4())[:8]
     for name, screenshot in screenshot_top_level_widgets():
         fn = str(SCREENSHOT_DIR / f"{screenshot_id}.{name}.{format}")
         screenshot.save(fn, format)
         logger.info("Saved screenshot: %s", fn)
-    return screenshot_id
+        screenshots.append(fn)
+    return screenshot_id, screenshots
 
 
 def log_exception_to_central_server(
@@ -319,11 +322,17 @@ def log_exception_to_central_server(
     message = message or f'[{context}] {exc_value}'
     if save_screenshots:
         try:
-            screenshot_id = save_all_screenshots()
+            screenshot_id, screenshot_files = save_all_screenshots()
         except Exception:
             logger.exception("Failed to save screenshots")
         else:
-            message = f'id={screenshot_id} {message}'
+            screenshots = "\n".join(
+                f'screenshot{idx}="{screenshot_fn}"'
+                for idx, screenshot_fn in enumerate(screenshot_files, 1)
+            )
+            message = (
+                f'{message}\nscreenshot_id={screenshot_id}\n{screenshots}'
+            )
 
     kwargs = dict()
     if sys.version_info >= (3, 8):
