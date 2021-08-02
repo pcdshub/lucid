@@ -188,10 +188,12 @@ class LucidMainWindow(QMainWindow):
                                                     dock_widget)
 
     @QtCore.Slot(tuple)
-    def handle_error(self, data):
-        exc_type, exc_value, exc_trace = data
+    def handle_error(self, exc_info):
+        exc_type, exc_value, exc_trace = exc_info
         logger.exception("An uncaught exception happened: %s", exc_value,
-                         exc_info=data)
+                         exc_info=exc_info)
+
+        utils.log_exception_to_central_server(exc_info)
         exception.raise_to_operator(exc_value)
 
     @property
