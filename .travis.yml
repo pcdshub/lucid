@@ -32,8 +32,7 @@ env:
 jobs:
   allow_failures:
     # ** pyqtads is not available on PyPI, so this cannot succeed:
-    - name: "Python 3.8 - PIP"
-    - name: "Python 3.9 - PIP"
+    - name: "Python - PIP"
 
 import:
   - pcdshub/pcds-ci-helpers:travis/shared_configs/setup-env-ui.yml
