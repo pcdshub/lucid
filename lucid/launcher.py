@@ -96,7 +96,9 @@ class HappiLoader(QtCore.QThread):
     def _load_from_happi(self, row_group_key, col_group_key):
         '''Fill with Data from Happi'''
         cli = lucid.utils.get_happi_client()
-        results = cli.search(beamline=self.beamline) or []
+        results = (cli.search(beamline=self.beamline,
+                              active=True)
+                   or [])
 
         dev_groups = collections.defaultdict(list)
 
