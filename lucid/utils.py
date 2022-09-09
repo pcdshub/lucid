@@ -93,7 +93,15 @@ class SnakeLayout(QGridLayout):
 if TyphosAlarmCircle is not None:
     def indicator_for_device(device):
         """Create a QWidget to indicate the alarm state of a QWidget"""
+        try:
+            hints = device.hints['fields']
+        except (AttributeError, KeyError):
+            hints = []
         circle = TyphosAlarmCircle()
+        if hints:
+            circle.kindLevel = TyphosAlarmCircle.KindLevel.HINTED
+        else:
+            circle.kindLevel = TyphosAlarmCircle.KindLevel.NORMAL
         circle.add_device(device)
         return circle
 else:
