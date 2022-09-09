@@ -1,7 +1,7 @@
 import os
-from qtpy import QtGui, QtWidgets, QtCore
 
 import typhos.utils
+from qtpy import QtCore, QtGui, QtWidgets
 
 
 class Splash(QtWidgets.QDialog):

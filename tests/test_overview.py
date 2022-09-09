@@ -1,5 +1,4 @@
 import pytest
-
 from ophyd.sim import SynAxis, motor
 from qtpy.QtWidgets import QWidget
 
