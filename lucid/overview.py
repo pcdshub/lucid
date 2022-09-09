@@ -1,21 +1,21 @@
 """Overview of the Experimental Area"""
-import os
-import yaml
-import weakref
-import logging
 import collections
+import logging
+import os
+import weakref
 from functools import partial
 
-from qtpy import QtWidgets, QtGui, QtCore
-from qtpy.QtCore import QEvent, Qt, Property, QSize
+import yaml
+from pydm.widgets import PyDMRelatedDisplayButton, PyDMShellCommand
+from qtpy import QtCore, QtGui, QtWidgets
+from qtpy.QtCore import Property, QEvent, QSize, Qt
 from qtpy.QtGui import QHoverEvent
-from qtpy.QtWidgets import (QPushButton, QMenu, QGridLayout, QWidget)
+from qtpy.QtWidgets import QGridLayout, QMenu, QPushButton, QWidget
 from typhos.utils import reload_widget_stylesheet
 
-from pydm.widgets import PyDMShellCommand, PyDMRelatedDisplayButton
-
 import lucid
-from .utils import (SnakeLayout, indicator_for_device, display_for_device,
+
+from .utils import (SnakeLayout, display_for_device, indicator_for_device,
                     suite_for_devices)
 
 logger = logging.getLogger(__name__)

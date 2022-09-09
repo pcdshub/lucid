@@ -1,6 +1,6 @@
 [run]
 source =
-    lucid 
+    lucid
 [report]
 omit =
     #tests
