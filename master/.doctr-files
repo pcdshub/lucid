@@ -40,6 +40,7 @@ master/_static/nomachine_settings.png
 master/_static/plus.png
 master/_static/pygments.css
 master/_static/searchtools.js
+master/_static/sphinx_highlight.js
 master/_static/underscore-1.13.1.js
 master/_static/underscore.js
 master/genindex.html
