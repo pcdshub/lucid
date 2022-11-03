@@ -10,6 +10,7 @@ import happi  # noqa
 import pcdsutils.log
 import typhos
 import typhos.utils
+from ophyd.signal import EpicsSignalBase
 from pydm import exception
 from PyQtAds import QtAds
 from qtpy import QtCore, QtWidgets
@@ -245,6 +246,12 @@ def launch(beamline, *, toolbar=None, row_group_key="location_group",
 def main():
     args = parse_arguments()
     kwargs = vars(args)
+    # TODO make configurable
+    timeout = 10
+    EpicsSignalBase.set_defaults(
+        timeout=timeout,
+        connection_timeout=timeout,
+    )
     launch(**kwargs)
 
 
