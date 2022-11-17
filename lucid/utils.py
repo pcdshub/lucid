@@ -80,7 +80,7 @@ class SnakeLayout(QGridLayout):
         # Number of widgets already existing
         position = self.count()
         # Desired position based on current count
-        grid_position = [position / self.size, position % self.size]
+        grid_position = [position // self.size, position % self.size]
         # Start vertically if desired
         if self.direction == Qt.Vertical:
             grid_position.reverse()
