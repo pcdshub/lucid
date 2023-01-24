@@ -78,6 +78,12 @@ def get_parser():
         action='store_true',
         default=False
     )
+    parser.add_argument(
+        '--skip_happi',
+        help='Skip loading entries from happi',
+        action='store_true',
+        default=False
+    )
     return parser
 
 
@@ -87,10 +93,11 @@ def parse_arguments(*args, **kwargs):
 
 
 class HappiLoader(QtCore.QThread):
-    def __init__(self, *args, beamline, group_keys, callbacks, **kwargs):
+    def __init__(self, *args, beamline, group_keys, callbacks, skip=False, **kwargs):
         self.beamline = beamline
         self.group_keys = group_keys
         self.callbacks = callbacks
+        self.skip = skip
         super(HappiLoader, self).__init__(*args, **kwargs)
 
     def _load_from_happi(self, row_group_key, col_group_key):
@@ -147,7 +154,9 @@ class HappiLoader(QtCore.QThread):
         dev_groups = None
 
         try:
-            if self.beamline != 'DEMO':
+            if self.skip:
+                dev_groups = {}
+            elif self.beamline != 'DEMO':
                 dev_groups = self._load_from_happi(row_group_key,
                                                    col_group_key)
             else:
@@ -167,7 +176,7 @@ class HappiLoader(QtCore.QThread):
 
 def launch(beamline, *, toolbar=None, row_group_key="location_group",
            col_group_key="functional_group", log_level="INFO",
-           dark=False):
+           dark=False, skip_happi=False):
     # Re-enable sigint (usually blocked by pyqt)
     signal.signal(signal.SIGINT, signal.SIG_DFL)
 
@@ -215,7 +224,8 @@ def launch(beamline, *, toolbar=None, row_group_key="location_group",
     cbs = [grid.add_from_dict]
     loader = HappiLoader(beamline=beamline,
                          group_keys=(row_group_key, col_group_key),
-                         callbacks=cbs
+                         callbacks=cbs,
+                         skip=skip_happi
                          )
 
     def grid_to_dock():
