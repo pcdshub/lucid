@@ -153,9 +153,7 @@ class HappiLoader(QtCore.QThread):
         dev_groups = None
 
         try:
-            if self.skip:
-                dev_groups = {}
-            elif self.beamline != 'DEMO':
+            if self.beamline != 'DEMO':
                 dev_groups = self._load_from_happi(row_group_key,
                                                    col_group_key)
             else:
