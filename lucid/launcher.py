@@ -93,11 +93,10 @@ def parse_arguments(*args, **kwargs):
 
 
 class HappiLoader(QtCore.QThread):
-    def __init__(self, *args, beamline, group_keys, callbacks, skip=False, **kwargs):
+    def __init__(self, *args, beamline, group_keys, callbacks, **kwargs):
         self.beamline = beamline
         self.group_keys = group_keys
         self.callbacks = callbacks
-        self.skip = skip
         super(HappiLoader, self).__init__(*args, **kwargs)
 
     def _load_from_happi(self, row_group_key, col_group_key):
@@ -174,6 +173,11 @@ class HappiLoader(QtCore.QThread):
             raise exc
 
 
+class NoOpLoader(QtCore.QThread):
+    def run(self):
+        return
+
+
 def launch(beamline, *, toolbar=None, row_group_key="location_group",
            col_group_key="functional_group", log_level="INFO",
            dark=False, skip_happi=False):
@@ -222,11 +226,12 @@ def launch(beamline, *, toolbar=None, row_group_key="location_group",
 
     # callback list for Happi Loader
     cbs = [grid.add_from_dict]
-    loader = HappiLoader(beamline=beamline,
-                         group_keys=(row_group_key, col_group_key),
-                         callbacks=cbs,
-                         skip=skip_happi
-                         )
+    if skip_happi:
+        loader = NoOpLoader()
+    else:
+        loader = HappiLoader(beamline=beamline,
+                             group_keys=(row_group_key, col_group_key),
+                             callbacks=cbs)
 
     def grid_to_dock():
         dock_widget = QtAds.CDockWidget('Grid')
