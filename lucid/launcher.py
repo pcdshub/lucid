@@ -79,6 +79,12 @@ def get_parser():
         action='store_true',
         default=False
     )
+    parser.add_argument(
+        '--skip_happi',
+        help='Skip loading entries from happi',
+        action='store_true',
+        default=False
+    )
     return parser
 
 
@@ -166,9 +172,14 @@ class HappiLoader(QtCore.QThread):
             raise exc
 
 
+class NoOpLoader(QtCore.QThread):
+    def run(self):
+        return
+
+
 def launch(beamline, *, toolbar=None, row_group_key="location_group",
            col_group_key="functional_group", log_level="INFO",
-           dark=False):
+           dark=False, skip_happi=False):
     # Re-enable sigint (usually blocked by pyqt)
     signal.signal(signal.SIGINT, signal.SIG_DFL)
 
@@ -214,10 +225,12 @@ def launch(beamline, *, toolbar=None, row_group_key="location_group",
 
     # callback list for Happi Loader
     cbs = [grid.add_from_dict]
-    loader = HappiLoader(beamline=beamline,
-                         group_keys=(row_group_key, col_group_key),
-                         callbacks=cbs
-                         )
+    if skip_happi:
+        loader = NoOpLoader()
+    else:
+        loader = HappiLoader(beamline=beamline,
+                             group_keys=(row_group_key, col_group_key),
+                             callbacks=cbs)
 
     def grid_to_dock():
         dock_widget = QtAds.CDockWidget('Grid')
