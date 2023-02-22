@@ -15,6 +15,7 @@ build:
     - lucid = lucid.launcher:main
 
 requirements:
+  build:
   host:
     - python >=3.6
     - pip
