@@ -14,10 +14,7 @@ build:
   noarch: python
   script: {{ PYTHON }} -m pip install . -vv
 
-
-
 requirements:
-  build: null
   host:
   - python >=3.6
   - pip
@@ -34,8 +31,6 @@ requirements:
   - typhos
   - happi
 
-
-
 test:
   commands:
   - lucid --help
@@ -46,21 +41,16 @@ test:
   - pytest
   - pytest-qt
 
-
-
 about:
   dev_url: https://github.com/pcdshub/lucid
   home: https://github.com/pcdshub/lucid
   license: SLAC Open
   license_family: OTHER
   license_file: LICENSE.md
-  summary: 'SLAC National Accelerator Laboratory: LCLS User Control and Interface
-    Design'
-
-
+  summary: 'SLAC National Accelerator Laboratory: LCLS User Control and Interface Design'
 
 extra:
   recipe-maintainers:
   - klauer
-  - hhslepicka
+  - tangkong
   - zllentz
