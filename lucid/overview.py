@@ -412,7 +412,7 @@ class QuickAccessToolbar(QtWidgets.QWidget):
         if not file:
             return
         if isinstance(file, (str, bytes, os.PathLike)):
-            with open(self._tools_file, 'r') as tf:
+            with open(self._tools_file) as tf:
                 self._tools = yaml.full_load(tf)
         else:
             self._tools = yaml.full_load(file)
