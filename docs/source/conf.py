@@ -16,7 +16,7 @@ import sys
 module_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../../")
 sys.path.insert(0, module_path)
 
-import lucid
+import lucid  # noqa: E402
 
 # -- Project information -----------------------------------------------------
 

@@ -247,8 +247,7 @@ class LucidMainWindow(QMainWindow):
         if isinstance(parent, cls):
             return parent
         elif parent is None:
-            raise OSError("No LucidMainWindow can be found "
-                                   "in widget hierarchy")
+            raise OSError("No LucidMainWindow can be found in widget hierarchy")
         return cls.find_window(parent)
 
     def find_dock_widget_by_title(self, title):
