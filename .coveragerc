@@ -3,9 +3,9 @@ source =
     lucid
 [report]
 omit =
-    #tests
-    */tests/*
-    *test*
     #versioning
     .*version.*
     *_version.py
+    #tests
+    *test*
+    lucid/tests/*
