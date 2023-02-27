@@ -349,7 +349,8 @@ class LucidMainWindow(QMainWindow):
             dock = LucidMainWindow().add_dock(title=dock_title, widget=widget, area="right")
 
             if active_slot:
-                dock.viewToggled.connect(active_slot)
+                if hasattr(dock, "viewToggled"):
+                    dock.viewToggled.connect(active_slot)
                 active_slot(True)
             return widget
 
