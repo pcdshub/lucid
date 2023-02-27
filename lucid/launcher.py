@@ -12,12 +12,12 @@ import typhos
 import typhos.utils
 from ophyd.signal import EpicsSignalBase
 from pydm import exception
-from PyQtAds import QtAds
 from qtpy import QtCore, QtWidgets
 
 import lucid
 
 from . import utils
+from .dock import DockWidget
 
 MODULE_PATH = pathlib.Path(__file__).parent
 
@@ -233,19 +233,9 @@ def launch(beamline, *, toolbar=None, row_group_key="location_group",
                              callbacks=cbs)
 
     def grid_to_dock():
-        dock_widget = QtAds.CDockWidget('Grid')
-        dock_widget.setToggleViewActionMode(QtAds.CDockWidget.ActionModeShow)
-        dock_widget.setFeature(dock_widget.DockWidgetClosable, False)
-        dock_widget.setFeature(dock_widget.DockWidgetFloatable, False)
-        dock_widget.setFeature(dock_widget.DockWidgetMovable, False)
-        dock_widget.setMinimumSizeHintMode(
-            QtAds.CDockWidget.MinimumSizeHintFromContent
-        )
-        dock_widget.setWidget(grid.frame,
-                              QtAds.CDockWidget.eInsertMode.ForceNoScrollArea)
-
-        window.dock_manager.addDockWidget(QtAds.LeftDockWidgetArea,
-                                          dock_widget)
+        grid_dock_widget = DockWidget("Grid")
+        grid_dock_widget.set_widget(grid.frame, force_no_scroll=True)
+        window.dock_manager.add_dock_widget("left", grid_dock_widget)
 
     loader.finished.connect(splash.accept)
     loader.finished.connect(grid_to_dock)

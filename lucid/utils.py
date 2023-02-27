@@ -25,6 +25,7 @@ except ImportError:
 
 logger = logging.getLogger(__name__)
 
+MODULE_PATH = pathlib.Path(__file__).parent
 HAPPI_GENERAL_SEARCH_KEYS = ('name', 'prefix', 'stand')
 _HAPPI_CACHE = None
 HAPPI_CACHE_UPDATE_PERIOD = 60 * 30
