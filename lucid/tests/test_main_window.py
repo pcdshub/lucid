@@ -48,7 +48,7 @@ def test_main_window_in_dock(main_window, qtbot):
     widget = create_widget()
 
     assert main_window.dock_manager is not None
-    dock = main_window.dock_manager.findDockWidget(title)
+    dock = main_window.dock_manager.find_dock_widget_by_title(title)
     assert dock is not None
     assert dock.widget() == widget
 
