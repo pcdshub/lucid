@@ -16,17 +16,21 @@ import sys
 module_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../../")
 sys.path.insert(0, module_path)
 
-import lucid  # noqa: E402
-
 # -- Project information -----------------------------------------------------
 
 project = "lucid"
 copyright = "2020, SLAC National Accelerator Laboratory"
 author = "SLAC National Accelerator Laboratory"
 
-version = str(lucid.__version__)
-# The full version, including alpha/beta/rc tags.
-release = str(lucid.__version__)
+try:
+    import lucid  # noqa: E402
+except ImportError:
+    print("Failed to import lucid; continuing with unknown version.")
+    version = "unknown"
+    release = "unknown"
+else:
+    version = str(lucid.__version__)
+    release = str(lucid.__version__)
 
 # -- General configuration ---------------------------------------------------
 
