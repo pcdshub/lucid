@@ -47,9 +47,3 @@ about:
   license_family: OTHER
   license_file: LICENSE.md
   summary: 'SLAC National Accelerator Laboratory: LCLS User Control and Interface Design'
-
-extra:
-  recipe-maintainers:
-  - klauer
-  - tangkong
-  - zllentz
