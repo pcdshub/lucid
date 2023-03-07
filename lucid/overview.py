@@ -48,8 +48,7 @@ class BaseDeviceButton(QPushButton):
             return None
         """Create a widget for contained devices"""
         if not self._suite:
-            self._suite = suite_for_devices(
-                self.devices, parent=self, pin=True)
+            self._suite = suite_for_devices(self.devices, parent=self, pin=True)
         else:
             # Check that any devices that have been added since our last show
             # request have been added to the TyphosSuite
@@ -79,9 +78,10 @@ class BaseDeviceButton(QPushButton):
 
     def _show_all_wrapper(self):
         return lucid.LucidMainWindow.in_dock(
-                        self.show_all,
-                        title=self.title,
-                        active_slot=self._devices_shown)
+            self.show_all,
+            title=self.title,
+            active_slot=self._devices_shown,
+        )
 
     def _show_device_wrapper(self, device):
         return lucid.LucidMainWindow.in_dock(
@@ -412,7 +412,7 @@ class QuickAccessToolbar(QtWidgets.QWidget):
         if not file:
             return
         if isinstance(file, (str, bytes, os.PathLike)):
-            with open(self._tools_file, 'r') as tf:
+            with open(self._tools_file) as tf:
                 self._tools = yaml.full_load(tf)
         else:
             self._tools = yaml.full_load(file)

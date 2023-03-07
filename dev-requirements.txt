@@ -1,3 +1,5 @@
+happi
+pyqt5
+pyqtads
 pytest
 pytest-qt
-pyqtads

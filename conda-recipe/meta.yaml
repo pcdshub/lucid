@@ -1,8 +1,10 @@
-{% set data = load_setup_py_data() %}
+{% set package_name = "lucid" %}
+{% set import_name = "lucid" %}
+{% set version = load_file_regex(load_file=os.path.join(import_name, "_version.py"), regex_pattern=".*version = '(\S+)'").group(1) %}
 
 package:
-  name: lucid
-  version : {{ data.get('version') }}
+  name: {{ package_name }}
+  version: {{ version }}
 
 source:
   path: ..
@@ -10,47 +12,38 @@ source:
 build:
   number: 0
   noarch: python
-  script: "{{ PYTHON }} -m pip install . --no-deps -vv"
-  entry_points:
-    - lucid = lucid.launcher:main
+  script: {{ PYTHON }} -m pip install . -vv
 
 requirements:
   host:
-    - python >=3.6
-    - pip
+  - python >=3.9
+  - pip
   run:
-    - python >=3.6
-    - fuzzywuzzy
-    - ophyd
-    - pcdsutils
-    - pydm
-    - pyqt >=5
-    - pyqtads
-    - pyyaml
-    - qtpy
-    - typhos
-    - happi
+  - python >=3.9
+  - fuzzywuzzy
+  - ophyd
+  - pcdsutils
+  - pydm
+  - pyqt >=5
+  - pyqtads
+  - pyyaml
+  - qtpy
+  - typhos
+  - happi
 
 test:
-  requires:
-    - pyqtads
-    - pytest
-    - pytest-qt
-  imports:
-    - lucid
   commands:
-    - lucid --help
+  - lucid --help
+  imports:
+  - lucid
+  requires:
+  - pytest
+  - pytest-qt
 
 about:
-  home: https://github.com/pcdshub/lucid
   dev_url: https://github.com/pcdshub/lucid
-  summary: 'SLAC National Accelerator Laboratory: LCLS User Control and Interface Design'
+  home: https://github.com/pcdshub/lucid
   license: SLAC Open
   license_family: OTHER
   license_file: LICENSE.md
-
-extra:
-  recipe-maintainers:
-    - klauer
-    - hhslepicka
-    - zllentz
+  summary: 'SLAC National Accelerator Laboratory: LCLS User Control and Interface Design'

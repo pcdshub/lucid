@@ -39,7 +39,7 @@ def get_parser():
     proj_desc = "LUCID - LCLS User Control and Interface Design"
     parser = argparse.ArgumentParser(description=proj_desc)
     parser.add_argument('--version', action='version',
-                        version='LUCID {version}'.format(version=__version__),
+                        version=f'LUCID {__version__}',
                         help="Show LUCID's version number and exit.")
 
     parser.add_argument(
@@ -98,7 +98,7 @@ class HappiLoader(QtCore.QThread):
         self.beamline = beamline
         self.group_keys = group_keys
         self.callbacks = callbacks
-        super(HappiLoader, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def _load_from_happi(self, row_group_key, col_group_key):
         '''Fill with Data from Happi'''

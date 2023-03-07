@@ -4,9 +4,7 @@ import os
 import pathlib
 import re
 import socket
-import sys
 import time
-import typing
 import uuid
 
 import fuzzywuzzy.fuzz
@@ -270,7 +268,7 @@ def screenshot_top_level_widgets():
         yield f"{index}{suffix}", screenshot
 
 
-def save_all_screenshots(format="png") -> typing.Tuple[str, typing.List[str]]:
+def save_all_screenshots(format="png") -> tuple[str, list[str]]:
     """Save screenshots of all top-level widgets to SCREENSHOT_DIR."""
     screenshots = []
     screenshot_id = str(uuid.uuid4())[:8]
@@ -343,8 +341,7 @@ def log_exception_to_central_server(
             )
 
     kwargs = dict()
-    if sys.version_info >= (3, 8):
-        kwargs = dict(stacklevel=stacklevel + 1)
+    kwargs = dict(stacklevel=stacklevel + 1)
 
     pcdsutils.log.logger.log(level, message, exc_info=exc_info, **kwargs)
 

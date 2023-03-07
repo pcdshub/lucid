@@ -6,7 +6,7 @@ from qtpy import QtCore, QtGui, QtWidgets
 
 class Splash(QtWidgets.QDialog):
     def __init__(self, *args, **kwargs):
-        super(Splash, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.setWindowFlags(QtCore.Qt.Window | QtCore.Qt.FramelessWindowHint)
 
         self._base_path = os.path.dirname(os.path.abspath(__file__))

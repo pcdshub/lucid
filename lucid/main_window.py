@@ -165,11 +165,10 @@ class LucidMainWindow(QMainWindow):
         if self.dark:
             self.dock_manager.setStyleSheet(
                 open(MODULE_PATH / (
-                    'dock_style_dark.css' if self.dark else 'dock_style.css'),
-                     'rt').read())
+                    'dock_style_dark.css' if self.dark else 'dock_style.css')).read())
         else:
             self.dock_manager.setStyleSheet(
-                open(MODULE_PATH / 'dock_style.css', 'rt').read())
+                open(MODULE_PATH / 'dock_style.css').read())
 
     def gather_windows(self):
         'Move all dock widgets to the right dock widget area'
@@ -248,8 +247,7 @@ class LucidMainWindow(QMainWindow):
         if isinstance(parent, cls):
             return parent
         elif parent is None:
-            raise EnvironmentError("No LucidMainWindow can be found "
-                                   "in widget hierarchy")
+            raise OSError("No LucidMainWindow can be found in widget hierarchy")
         return cls.find_window(parent)
 
     def find_dock_widget_by_title(self, title):
