@@ -4,13 +4,15 @@ import logging
 import os
 import weakref
 from functools import partial
+from typing import Optional
 
 import yaml
 from pydm.widgets import PyDMRelatedDisplayButton, PyDMShellCommand
 from qtpy import QtCore, QtGui, QtWidgets
 from qtpy.QtCore import Property, QEvent, QSize, Qt
 from qtpy.QtGui import QHoverEvent
-from qtpy.QtWidgets import QGridLayout, QMenu, QPushButton, QWidget
+from qtpy.QtWidgets import (QGridLayout, QHBoxLayout, QLineEdit, QMenu,
+                            QPushButton, QWidget, QWidgetAction)
 from typhos.utils import reload_widget_stylesheet
 
 import lucid
@@ -19,6 +21,32 @@ from .utils import (SnakeLayout, display_for_device, indicator_for_device,
                     suite_for_devices)
 
 logger = logging.getLogger(__name__)
+
+
+class ButtonDescriptionWidget(QWidget):
+    """Widget with a button an description line edit"""
+    def __init__(
+        self,
+        *args,
+        button_text: str = '',
+        button_cb: Optional[callable] = None,
+        desc_text: str = 'No desc.',
+        desc_cb: Optional[callable] = None,
+        **kwargs
+    ) -> None:
+        super().__init__(*args, **kwargs)
+        self.button = QPushButton(button_text)
+        if button_cb:
+            self.button.clicked.connect(button_cb)
+        self.desc_edit = QLineEdit(desc_text)
+        if desc_cb:
+            self.desc_edit.editingFinished.connect(
+                lambda: desc_cb(self.desc_edit.text())
+            )
+        self.hlayout = QHBoxLayout()
+        self.hlayout.addWidget(self.button)
+        self.hlayout.addWidget(self.desc_edit)
+        self.setLayout(self.hlayout)
 
 
 class BaseDeviceButton(QPushButton):
@@ -31,6 +59,7 @@ class BaseDeviceButton(QPushButton):
         # References for created screens
         self._device_displays = {}
         self._suite = None
+        self.config_file = None
         # Setup Menu
         self.setContextMenuPolicy(Qt.PreventContextMenu)
         self.device_menu = QMenu()
@@ -63,8 +92,15 @@ class BaseDeviceButton(QPushButton):
 
     def _menu_shown(self):
         # Current menu options
-        menu_devices = [action.text()
-                        for action in self.device_menu.actions()]
+        # gather current actions
+        menu_devices = []
+        for action in self.device_menu.actions():
+            if isinstance(action, QWidgetAction):
+                menu_devices.append(action.defaultWidget().button.text())
+            else:
+                menu_devices.append(action.text())
+        print(menu_devices)
+
         if self._OPEN_ALL not in menu_devices:
             show_all_devices = self._show_all_wrapper()
             self.device_menu.addAction(self._OPEN_ALL, show_all_devices)
@@ -74,7 +110,15 @@ class BaseDeviceButton(QPushButton):
             if device.name not in menu_devices:
                 # Add to device menu
                 show_device = self._show_device_wrapper(device)
-                self.device_menu.addAction(device.name, show_device)
+                action_widget = ButtonDescriptionWidget(
+                    button_text=device.name, button_cb=show_device,
+                    desc_text='hahahaha',
+                    desc_cb=partial(self._update_desc, device.name)
+                )
+                action = QWidgetAction(self.device_menu)
+                action.setDefaultWidget(action_widget)
+                self.device_menu.addAction(action)
+                # self.device_menu.addAction(device.name, show_device)
 
     def _show_all_wrapper(self):
         return lucid.LucidMainWindow.in_dock(
@@ -87,6 +131,25 @@ class BaseDeviceButton(QPushButton):
         return lucid.LucidMainWindow.in_dock(
             partial(self.show_device, device),
             title=device.name)
+
+    def _update_desc(self, device_name: str, device_desc: str) -> None:
+        if self.config_file:
+            # open yaml file
+            if isinstance(self.config_file, (str, bytes, os.PathLike)):
+                fpath = self.config_file
+                with open(self.config_file, 'r') as tf:
+                    config = yaml.full_load(tf)
+            else:
+                fpath = os.path.abspath(self.config_file.name)
+                with open(fpath, 'r') as tf:
+                    config = yaml.full_load(tf)
+
+            if not config.get('DEVICE_HINTS'):
+                config['DEVICE_HINTS'] = {}
+            config['DEVICE_HINTS'][device_name] = device_desc
+
+            with open(fpath, 'w') as wf:
+                yaml.dump(config, wf)
 
     def eventFilter(self, obj, event):
         """
@@ -116,7 +179,7 @@ class IndicatorCell(BaseDeviceButton):
     spacing = 1
     margin = 5
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, toolbar=None, **kwargs):
         super().__init__(*args, **kwargs)
         # Disable borders on the widget unless a hover occurs
         self.setStyleSheet('QPushButton:!hover {border: None}')
@@ -126,6 +189,7 @@ class IndicatorCell(BaseDeviceButton):
         self._selecting_widgets = list()
         self.installEventFilter(self)
         self.devices = list()
+        self.config_file = toolbar
 
     @property
     def matchable_names(self):
@@ -171,12 +235,13 @@ class IndicatorCell(BaseDeviceButton):
 class IndicatorGroup(BaseDeviceButton):
     """QPushButton to select an entire row or column of devices"""
 
-    def __init__(self, *args, orientation, **kwargs):
+    def __init__(self, *args, orientation, toolbar=None, **kwargs):
         super().__init__(*args, **kwargs)
         self.setText(str(self.title))
         self.cells = []
         self.installEventFilter(self)
         self.orientation = orientation
+        self.config_file = toolbar
 
     def add_cell(self, cell):
         self.cells.append(cell)
@@ -229,7 +294,7 @@ QWidget[selected="true"] {background-color: rgba(20, 140, 210, 150);}
 
     def add_devices(self, devices, system=None, stand=None):
         # Create cell
-        cell = IndicatorCell(title=f'{stand} {system}')
+        cell = IndicatorCell(title=f'{stand} {system}', toolbar=self.toolbar_file or None)
         for device in devices:
             cell.add_device(device)
         # Add to proper location in grid
@@ -252,7 +317,8 @@ QWidget[selected="true"] {background-color: rgba(20, 140, 210, 150);}
     def _add_group(self, group, as_row):
         # Add to layout
         group = IndicatorGroup(title=group,
-                               orientation='row' if as_row else 'column')
+                               orientation='row' if as_row else 'column',
+                               toolbar=self.toolbar_file or None)
         self._groups[group.title] = group
         # Find the correct position
         if as_row:
@@ -359,6 +425,7 @@ class IndicatorGridWithOverlay(IndicatorGrid):
         self.frame = QtWidgets.QFrame(parent)
         self.frame.setLayout(QtWidgets.QVBoxLayout())
         self.frame.layout().addWidget(self)
+        self.toolbar_file = toolbar_file
 
         if toolbar_file is not None:
             vertical_spacer = QtWidgets.QSpacerItem(

@@ -1,6 +1,6 @@
 import pytest
 from ophyd.sim import SynAxis, motor
-from qtpy.QtWidgets import QWidget
+from qtpy.QtWidgets import QWidget, QWidgetAction
 
 from lucid.overview import IndicatorCell
 
@@ -18,9 +18,14 @@ def test_base_device_button_menu(cell):
         motor = SynAxis(name=f'motor_{i}')
         cell.add_device(motor)
     cell._menu_shown()
+    device_names = []
+    for action in cell.device_menu.actions():
+        if isinstance(action, QWidgetAction):
+            device_names.append(action.defaultWidget().button.text())
+        else:
+            device_names.append(action.text())
     for device in cell.devices:
-        assert device.name in [action.text()
-                               for action in cell.device_menu.actions()]
+        assert device.name in device_names
 
 
 def test_base_device_button_show_device(cell):
