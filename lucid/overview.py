@@ -95,9 +95,9 @@ class BaseDeviceButton(QPushButton):
         return self._device_displays[device.name]
 
     def show_all(self):
+        """Create a widget for contained devices"""
         if len(self.devices) == 0:
             return None
-        """Create a widget for contained devices"""
         if not self._suite:
             self._suite = suite_for_devices(self.devices, parent=self, pin=True)
         else:
@@ -139,7 +139,6 @@ class BaseDeviceButton(QPushButton):
                 action = QWidgetAction(self.device_menu)
                 action.setDefaultWidget(action_widget)
                 self.device_menu.addAction(action)
-                # self.device_menu.addAction(device.name, show_device)
 
     def _show_all_wrapper(self):
         return lucid.LucidMainWindow.in_dock(
@@ -191,10 +190,7 @@ class BaseDeviceButton(QPushButton):
                 self._show_all_wrapper()()
                 return True
             elif event.button() == Qt.LeftButton:
-                if len(self.devices) == 1:
-                    self._show_device_wrapper(self.devices[0])()
-                else:
-                    self.device_menu.exec_(self.mapToGlobal(event.pos()))
+                self.device_menu.exec_(self.mapToGlobal(event.pos()))
                 return True
         return False
 
