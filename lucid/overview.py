@@ -4,7 +4,8 @@ import logging
 import os
 import weakref
 from functools import partial
-from typing import Optional
+from pathlib import Path
+from typing import Any, Optional
 
 import yaml
 from pydm.widgets import PyDMRelatedDisplayButton, PyDMShellCommand
@@ -13,6 +14,7 @@ from qtpy.QtCore import Property, QEvent, QSize, Qt
 from qtpy.QtGui import QHoverEvent
 from qtpy.QtWidgets import (QGridLayout, QHBoxLayout, QLineEdit, QMenu,
                             QPushButton, QWidget, QWidgetAction)
+from ruamel.yaml import YAML
 from typhos.utils import reload_widget_stylesheet
 
 import lucid
@@ -30,7 +32,7 @@ class ButtonDescriptionWidget(QWidget):
         *args,
         button_text: str = '',
         button_cb: Optional[callable] = None,
-        desc_text: str = 'No desc.',
+        desc_text: str = '',
         desc_cb: Optional[callable] = None,
         **kwargs
     ) -> None:
@@ -39,6 +41,7 @@ class ButtonDescriptionWidget(QWidget):
         if button_cb:
             self.button.clicked.connect(button_cb)
         self.desc_edit = QLineEdit(desc_text)
+        self.desc_edit.setPlaceholderText('no description')
         if desc_cb:
             self.desc_edit.editingFinished.connect(
                 lambda: desc_cb(self.desc_edit.text())
@@ -47,6 +50,25 @@ class ButtonDescriptionWidget(QWidget):
         self.hlayout.addWidget(self.button)
         self.hlayout.addWidget(self.desc_edit)
         self.setLayout(self.hlayout)
+
+
+def get_device_description(device_name: str, config_file: Optional[Any]) -> str:
+    """ Get the device description from the yaml file"""
+    if not config_file:
+        return ""
+
+    if isinstance(config_file, (str, bytes, os.PathLike)):
+        fpath = config_file
+        with open(config_file, 'r') as tf:
+            config = yaml.full_load(tf)
+    else:  # some TextIOWrapper
+        fpath = os.path.abspath(config_file.name)
+        with open(fpath, 'r') as tf:
+            config = yaml.full_load(tf)
+
+    if not config.get('DEVICE_HINTS'):
+        return ""
+    return config['DEVICE_HINTS'].get(device_name, "")
 
 
 class BaseDeviceButton(QPushButton):
@@ -99,7 +121,6 @@ class BaseDeviceButton(QPushButton):
                 menu_devices.append(action.defaultWidget().button.text())
             else:
                 menu_devices.append(action.text())
-        print(menu_devices)
 
         if self._OPEN_ALL not in menu_devices:
             show_all_devices = self._show_all_wrapper()
@@ -112,7 +133,7 @@ class BaseDeviceButton(QPushButton):
                 show_device = self._show_device_wrapper(device)
                 action_widget = ButtonDescriptionWidget(
                     button_text=device.name, button_cb=show_device,
-                    desc_text='hahahaha',
+                    desc_text=get_device_description(device.name, self.config_file),
                     desc_cb=partial(self._update_desc, device.name)
                 )
                 action = QWidgetAction(self.device_menu)
@@ -134,22 +155,28 @@ class BaseDeviceButton(QPushButton):
 
     def _update_desc(self, device_name: str, device_desc: str) -> None:
         if self.config_file:
+            logger.debug(f'updating device description: {device_name} = {device_desc}')
             # open yaml file
+            ryaml = YAML()
+            ryaml.default_flow_style = False
             if isinstance(self.config_file, (str, bytes, os.PathLike)):
                 fpath = self.config_file
                 with open(self.config_file, 'r') as tf:
-                    config = yaml.full_load(tf)
+                    config = ryaml.load(tf)
             else:
                 fpath = os.path.abspath(self.config_file.name)
                 with open(fpath, 'r') as tf:
-                    config = yaml.full_load(tf)
+                    config = ryaml.load(tf)
 
             if not config.get('DEVICE_HINTS'):
                 config['DEVICE_HINTS'] = {}
-            config['DEVICE_HINTS'][device_name] = device_desc
-
-            with open(fpath, 'w') as wf:
-                yaml.dump(config, wf)
+            if device_desc == config['DEVICE_HINTS'].get(device_name):
+                return
+            if device_desc == '':
+                config['DEVICE_HINTS'].pop(device_name, None)
+            else:
+                config['DEVICE_HINTS'][device_name] = device_desc
+            ryaml.dump(config, Path(fpath))
 
     def eventFilter(self, obj, event):
         """
