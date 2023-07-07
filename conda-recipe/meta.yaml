@@ -15,7 +15,7 @@ build:
   script: {{ PYTHON }} -m pip install . -vv
 
 requirements:
-  build:
+  host:
   - python >=3.9
   - pip
   - setuptools_scm
@@ -38,7 +38,7 @@ test:
   - lucid --help
   imports:
   - lucid
-  requirements:
+  requires:
   - pytest
   - pytest-qt
 
