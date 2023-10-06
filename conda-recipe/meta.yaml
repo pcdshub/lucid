@@ -24,8 +24,8 @@ requirements:
   - ophyd
   - pcdsutils
   - pydm
-  - pyqt >=5
-  - pyqtads
+  - pyqt =5
+  - pyqtads >=4
   - pyyaml
   - qtpy
   - typhos
