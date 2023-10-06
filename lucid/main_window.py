@@ -4,7 +4,7 @@ import pathlib
 
 import typhos
 from pydm import exception
-from PyQtAds import QtAds
+from PyQtAds import ads
 from qtpy import QtCore, QtGui, QtWidgets
 from qtpy.QtCore import Qt, Signal
 from qtpy.QtWidgets import QMainWindow, QSizePolicy, QStyle
@@ -161,7 +161,7 @@ class LucidMainWindow(QMainWindow):
 
         # Use the dockmanager for the main window - it will set itself as the
         # central widget
-        self.dock_manager = QtAds.CDockManager(self)
+        self.dock_manager = ads.CDockManager(self)
         if self.dark:
             self.dock_manager.setStyleSheet(
                 open(MODULE_PATH / (
@@ -178,12 +178,12 @@ class LucidMainWindow(QMainWindow):
                 continue
 
             if dock_widget.isFloating():
-                self.dock_manager.addDockWidget(QtAds.RightDockWidgetArea,
+                self.dock_manager.addDockWidget(ads.RightDockWidgetArea,
                                                 dock_widget)
             elif dock_widget.isInFloatingContainer():
                 container = dock_widget.dockContainer()
                 for dock_widget in container.dockWidgets():
-                    self.dock_manager.addDockWidget(QtAds.RightDockWidgetArea,
+                    self.dock_manager.addDockWidget(ads.RightDockWidgetArea,
                                                     dock_widget)
 
     @QtCore.Slot(tuple)
@@ -261,12 +261,12 @@ class LucidMainWindow(QMainWindow):
 
         Returns
         -------
-        dock_widget : QtAds.DockWidget or None
+        dock_widget : ads.DockWidget or None
         '''
         return self.dock_manager.findDockWidget(title)
 
     def add_dock(self, title, widget, *,
-                 area=QtAds.RightDockWidgetArea):
+                 area=ads.RightDockWidgetArea):
         '''
         Add dock widget by title
 
@@ -279,7 +279,7 @@ class LucidMainWindow(QMainWindow):
             The DockWidget title
         widget : QWidget
             The widget to put inside the dock
-        area : QtAds.DockWidgetArea, optional
+        area : ads.DockWidgetArea, optional
             The area to put the dock in
         '''
         dock = self.find_dock_widget_by_title(title)
@@ -299,9 +299,9 @@ class LucidMainWindow(QMainWindow):
             QtWidgets.QSizePolicy.Ignored
         )
 
-        dock = QtAds.CDockWidget(title)
+        dock = ads.CDockWidget(title)
         dock.setMinimumSizeHintMode(
-            QtAds.CDockWidget.MinimumSizeHintFromContent
+            ads.CDockWidget.MinimumSizeHintFromContent
         )
         dock.setWidget(widget)
         widget.setParent(dock)
@@ -375,7 +375,7 @@ class LucidMainWindow(QMainWindow):
 
             dock = LucidMainWindow().add_dock(
                 title=dock_title, widget=widget,
-                area=QtAds.RightDockWidgetArea)
+                area=ads.RightDockWidgetArea)
 
             if active_slot:
                 dock.viewToggled.connect(active_slot)
