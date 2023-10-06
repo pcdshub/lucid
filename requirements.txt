@@ -4,7 +4,7 @@ ophyd
 pcdsutils
 pydm
 pyqt5>=5
-pyqtads>=4
+pyqtads
 pyyaml
 qtpy
 typhos
