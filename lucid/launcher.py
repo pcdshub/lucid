@@ -195,6 +195,7 @@ def launch(beamline, *, toolbar=None, row_group_key="location_group",
     lucid_logger.addHandler(handler)
     lucid_logger.setLevel(log_level)
     handler.setLevel(log_level)
+    pcdsutils.log.PydmDemotionFilter.install(only_duplicates=False)
 
     app = QtWidgets.QApplication([])
     app.setOrganizationName("SLAC National Accelerator Laboratory")

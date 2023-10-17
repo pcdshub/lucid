@@ -1,7 +1,7 @@
 fuzzywuzzy
 happi
 ophyd
-pcdsutils
+pcdsutils>=0.14.0
 pydm
 pyqt5>=5
 pyqtads
