@@ -5,6 +5,11 @@ Lucid Grid Configuration
 where each indicator represents a device
 loaded from a ``happi`` database.
 
+.. figure:: /_static/lucid_grid.png
+   :scale: 100 %
+   :alt: Lucid display with the grid highlighted.
+
+
 Which Devices are Included?
 ---------------------------
 
@@ -69,6 +74,8 @@ This provides the following features:
 - The option to click the row or column header to select the device name for the
   same purpose as above, where the devices can be from any cell in the corresponding
   row or column.
+- The ability to search for devices within the grid using the search bar,
+  which will highlight their indicators in the grid view.
 
 
 Limitations

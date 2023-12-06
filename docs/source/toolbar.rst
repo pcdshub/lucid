@@ -6,6 +6,10 @@ the tabs that are displayed below the device grid.
 These tabs can be configured to hold buttons
 that open other screens.
 
+.. figure:: /_static/lucid_toolbar.png
+   :scale: 100 %
+   :alt: Lucid display with the toolbar highlighted.
+
 Invocation
 ----------
 
