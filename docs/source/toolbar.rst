@@ -1,7 +1,7 @@
-LUCID Toolbar Configuration
+Lucid Toolbar Configuration
 ===========================
 
-``LUCID`` can be launched with a toolbar file that specifies
+``lucid`` can be launched with a toolbar file that specifies
 the tabs that are displayed below the device grid.
 These tabs can be configured to hold buttons
 that open other screens.

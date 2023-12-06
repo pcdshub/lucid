@@ -1,7 +1,7 @@
-LUCID Grid Configuration
+Lucid Grid Configuration
 ========================
 
-``LUCID``'s main grid area is an auto-generated series of buttons and indicators,
+``lucid``'s main grid area is an auto-generated series of buttons and indicators,
 where each indicator represents a device
 loaded from a ``happi`` database.
 

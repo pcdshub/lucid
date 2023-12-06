@@ -1,4 +1,4 @@
-LUCID Launcher Options
+Lucid Launcher Options
 ======================
 
 .. argparse::

@@ -1,4 +1,4 @@
-LUCID
+Lucid
 =====
 
 LCLS User Control and Interface Design
