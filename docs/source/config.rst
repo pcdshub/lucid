@@ -20,13 +20,14 @@ Options and Limitations
 - Each tab can have an arbitrary number of columns.
 - The columns are filled from left to right, then from top to bottom.
 - Only ``PyDMShellCommand`` and ``PyDMRelatedDisplayButton`` widgets are supported.
-- Any property can specified on either of these button types.
+- Any available pyqt property or general python attribute can be specified on either
+  of these button types.
 
 Guidelines
 ----------
 
 - The related display option (``display``) should be used whenever it is possible to do so,
-because the screen will open more quickly.
+  because the screen will open more quickly.
 
 File Format
 -----------
