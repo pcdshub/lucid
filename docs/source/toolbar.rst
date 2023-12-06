@@ -44,9 +44,9 @@ Each of these tab names should contain another dictionary with the following top
 - ``config`` (optional)
 - ``buttons``
 
-The only config option right now is ``cols``, which defaults to 4.
+The only ``config`` option right now is ``cols``, which defaults to 4.
 
-Here's an example config file structure, omitting only the buttons sections:
+Here's an example config file structure, omitting only the ``buttons`` sections:
 
 .. code-block:: yaml
 
