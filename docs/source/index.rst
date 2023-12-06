@@ -8,6 +8,7 @@ LCLS User Control and Interface Design
     :caption: User Documentation
 
     launcher.rst
+    config.rst
 
 .. toctree::
     :maxdepth: 2
