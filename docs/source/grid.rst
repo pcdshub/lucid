@@ -6,7 +6,7 @@ where each indicator represents a device
 loaded from a ``happi`` database.
 
 .. figure:: /_static/lucid_grid.png
-   :scale: 100 %
+   :scale: 50 %
    :alt: Lucid display with the grid highlighted.
 
 

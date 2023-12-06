@@ -7,7 +7,7 @@ These tabs can be configured to hold buttons
 that open other screens.
 
 .. figure:: /_static/lucid_toolbar.png
-   :scale: 100 %
+   :scale: 50 %
    :alt: Lucid display with the toolbar highlighted.
 
 Invocation
