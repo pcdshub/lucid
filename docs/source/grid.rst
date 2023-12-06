@@ -1,16 +1,18 @@
 LUCID Grid Configuration
 ========================
 
-``LUCID``'s main grid area is an auto-generated series of buttons and
-indicators, seeded with devices loaded from a ``happi`` database.
+``LUCID``'s main grid area is an auto-generated series of buttons and indicators,
+where each indicator represents a device
+loaded from a ``happi`` database.
 
 Which Devices are Included?
 ---------------------------
 
-When ``LUCID`` is invoked, the only required argument is the positional ``beamline`` argument.
+When ``lucid`` is invoked, the only required argument is the positional ``beamline`` argument.
 This argument is used as a ``happi`` search term to fill the grid.
 
-This is equivalent to the following search using the ``happi`` command line:
+This is equivalent to the following search using the ``happi`` command line,
+assuming your beamline is named BEAMLINE:
 
 .. code-block:: bash
 
@@ -21,9 +23,10 @@ All devices that match this search and load without errors will be included in t
 All other devices will be excluded.
 The search is case-sensitive.
 
-Note that inactive devices are not included, and that this only targets happi entries
-that have a beamline associated with them at all.
-This requires the ``happi`` containers defined in ``pcdsdevices``.
+Note that inactive devices are not included,
+and that this only targets happi entries that have a beamline associated with them at all.
+This requires the ``happi`` containers defined in ``pcdsdevices``,
+which define the ``beamline`` field.
 
 Note: if you prefer not to load any devices, you can skip this step by passing
 a command-line parameter:
@@ -50,26 +53,29 @@ You can change which metadata keys are used by passing the
 to select the row grouping and column groupings respectively.
 
 Each unique string (case-sensitive) found in the group key metadata for the
-active devices will create an additional row or column in the grid.
+active devices will create an additional row or column in the grid
+with the corresponding header text.
 The rows and the columns will each be sorted in alphabetical order.
 
-Each device will be added to a single square cell in the grid that
+Each device indicator will be added to a single square cell in the grid that
 corresponds with its metadata sorting.
 
-This involves the following features:
+This provides the following features:
 
-- An alarm indicator that represents the device's worst alarm state
+- An alarm indicator that represents the device's worst alarm state,
+  with mouseover text that will show more precise information
 - The option to click the cell and select the device name to open the device's
   ``typhos`` screen in the right-hand dock area
 - The option to click the row or column header to select the device name for the
-  same purpose as above
+  same purpose as above, where the devices can be from any cell in the corresponding
+  row or column.
 
 
 Limitations
 -----------
 
-There are currently no configuration options for row/column ordering or
-customization of the happi search used to accumulate devices.
-The only way to adjust the grid is to carefully manipulate the ``happi`` database.
-There are no options for changing the sizes of cells or the sizes of the alarm
-indicators held inside the cells.
+- There are currently no configuration options for row/column ordering or
+  customization of the happi search used to accumulate devices.
+- The only way to adjust the grid is to carefully manipulate the ``happi`` database.
+- There are no options for changing the sizes of cells or the sizes of the alarm
+  indicators held inside the cells.

@@ -1,8 +1,10 @@
 LUCID Toolbar Configuration
 ===========================
 
-LUCID can be launched with a toolbar file that specifies button-filled tabs
-to include below the device grid.
+LUCID can be launched with a toolbar file that specifies
+the tabs that are displayed below the device grid.
+These tabs can be configured to hold buttons
+that open other screens.
 
 Invocation
 ----------
@@ -27,7 +29,8 @@ Guidelines
 ----------
 
 - The related display option (``display``) should be used whenever it is possible to do so,
-  because the screen will open more quickly.
+  because the screen will open more quickly compared to a shell script, which will need to
+  initialize an entire new python shell with new imports.
 
 File Format
 -----------
