@@ -101,3 +101,10 @@ and another with button text "Run Neat Script."
           - "echo 'neat'"
           - /path/to/some/neat/shell/script.sh
         redirectCommandOutput: true
+
+Examples
+--------
+
+The LCLS lucid toolbar configurations are backed up in
+`this github repo <https://github.com/pcdshub/lucid_config>`_.
+These are all good examples for how to set these files up.
