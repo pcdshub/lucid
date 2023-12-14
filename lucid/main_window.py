@@ -4,7 +4,6 @@ import pathlib
 
 import typhos
 from pydm import exception
-from PyQtAds import ads
 from qtpy import QtCore, QtGui, QtWidgets
 from qtpy.QtCore import Qt, Signal
 from qtpy.QtWidgets import QMainWindow, QSizePolicy, QStyle
@@ -12,6 +11,7 @@ from qtpy.QtWidgets import QMainWindow, QSizePolicy, QStyle
 import lucid
 
 from . import utils
+from .dock_shim import ads
 
 logger = logging.getLogger(__name__)
 

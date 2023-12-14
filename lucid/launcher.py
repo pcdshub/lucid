@@ -12,12 +12,12 @@ import typhos
 import typhos.utils
 from ophyd.signal import EpicsSignalBase
 from pydm import exception
-from PyQtAds import ads
 from qtpy import QtCore, QtWidgets
 
 import lucid
 
 from . import utils
+from .dock_shim import ads
 
 MODULE_PATH = pathlib.Path(__file__).parent
 
