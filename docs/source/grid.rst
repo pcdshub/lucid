@@ -51,7 +51,7 @@ The default metadata keys in use are:
 - ``functional_group``, to select with row to put a device into
 
 That is to say, by default we expect the row headers on the left to be functional names like
-"imager" or "vacuum" and column headers on the top to be location names like "SB3" or "VLS".
+"imager" or "vacuum" and column headers on the top to be location names like "Section 01" or "Section 02".
 
 You can change which metadata keys are used by passing the
 ``--row_group_key`` and ``--col_group_key`` command-line parameters
