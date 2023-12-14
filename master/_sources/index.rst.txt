@@ -1,4 +1,4 @@
-LUCID
+Lucid
 =====
 
 LCLS User Control and Interface Design
@@ -8,6 +8,8 @@ LCLS User Control and Interface Design
     :caption: User Documentation
 
     launcher.rst
+    grid.rst
+    toolbar.rst
 
 .. toctree::
     :maxdepth: 2
