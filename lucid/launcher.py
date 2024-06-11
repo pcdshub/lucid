@@ -13,6 +13,7 @@ import typhos.utils
 from ophyd.signal import EpicsSignalBase
 from pydm import exception
 from qtpy import QtCore, QtWidgets
+from typing import Optional, Union
 
 import lucid
 
@@ -45,7 +46,8 @@ def get_parser():
     parser.add_argument(
         'beamline',
         help='Specify the beamline name to compose the home screen.',
-        type=str
+        type=str,
+        nargs='+'
     )
     parser.add_argument(
         '--toolbar',
@@ -103,9 +105,9 @@ class HappiLoader(QtCore.QThread):
     def _load_from_happi(self, row_group_key, col_group_key):
         '''Fill with Data from Happi'''
         cli = lucid.utils.get_happi_client()
-        results = (cli.search(beamline=self.beamline,
-                              active=True)
-                   or [])
+        results = []
+        for line in self.beamline:
+            results += cli.search(beamline=line, active=True) 
 
         dev_groups = collections.defaultdict(list)
 
