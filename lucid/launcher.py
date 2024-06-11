@@ -13,7 +13,6 @@ import typhos.utils
 from ophyd.signal import EpicsSignalBase
 from pydm import exception
 from qtpy import QtCore, QtWidgets
-from typing import Optional, Union
 
 import lucid
 
@@ -107,7 +106,7 @@ class HappiLoader(QtCore.QThread):
         cli = lucid.utils.get_happi_client()
         results = []
         for line in self.beamline:
-            results += cli.search(beamline=line, active=True) 
+            results += cli.search(beamline=line, active=True)
 
         dev_groups = collections.defaultdict(list)
 
