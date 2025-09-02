@@ -124,7 +124,7 @@ def display_for_device(device, display_type=None):
     """Create a TyphosDeviceDisplay for a given device"""
     with no_device_lazy_load():
         logger.debug("Creating device display for %r", device)
-        display = TyphosDeviceDisplay.from_device(device)
+        display = TyphosDeviceDisplay.from_device(device, scroll_option="scrollbar")
         if display_type:
             display.display_type = display_type
     return display
