@@ -15,7 +15,9 @@ class Splash(QtWidgets.QDialog):
         self.setLayout(layout)
 
         logo_pixmap = QtGui.QPixmap(os.path.join(self._base_path, 'logo.png'))
-        logo_pixmap = logo_pixmap.scaled(400, 100, 1)
+        logo_pixmap = logo_pixmap.scaled(
+            400, 100, QtCore.Qt.KeepAspectRatio, QtCore.Qt.SmoothTransformation
+        )
 
         logo = QtWidgets.QLabel(self)
         logo.setPixmap(logo_pixmap)
