@@ -547,7 +547,7 @@ def _generate_icon(key):
     main = LucidMainWindow.get_instance()
     dpr = main.devicePixelRatioF()
 
-    pixmap = QtGui.QPixmap(size * dpr, size * dpr)
+    pixmap = QtGui.QPixmap(int(size * dpr), int(size * dpr))
     pixmap.setDevicePixelRatio(dpr)
     pixmap.fill(Qt.transparent)
 
