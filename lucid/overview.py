@@ -278,8 +278,8 @@ class IndicatorOverlay(QWidget):
         self.resize(self.grid.size())
 
         dpr = self.grid.devicePixelRatioF()
-        buffer = QtGui.QPixmap(self.grid.width() * dpr,
-                               self.grid.height() * dpr)
+        buffer = QtGui.QPixmap(int(self.grid.width() * dpr),
+                               int(self.grid.height() * dpr))
         buffer.setDevicePixelRatio(dpr)
 
         buffer.fill(Qt.transparent)
