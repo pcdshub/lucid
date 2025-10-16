@@ -1,0 +1,191 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lucid Grid Configuration &mdash; lucid 0.13.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=1019fba8"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Lucid Toolbar Configuration" href="toolbar.html" />
+    <link rel="prev" title="Lucid Launcher Options" href="launcher.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            lucid
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">User Documentation</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="launcher.html">Lucid Launcher Options</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Lucid Grid Configuration</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#which-devices-are-included">Which Devices are Included?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#how-are-the-devices-arranged-in-the-grid">How are the Devices Arranged in the Grid?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#limitations">Limitations</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="toolbar.html">Lucid Toolbar Configuration</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Troubleshooting</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="troubleshooting/remote_access.html">Remote Access</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">lucid</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Lucid Grid Configuration</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/grid.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="lucid-grid-configuration">
+<h1>Lucid Grid Configuration<a class="headerlink" href="#lucid-grid-configuration" title="Link to this heading"></a></h1>
+<p><code class="docutils literal notranslate"><span class="pre">lucid</span></code>’s main grid area is an auto-generated series of buttons and indicators,
+where each indicator represents a device
+loaded from a <code class="docutils literal notranslate"><span class="pre">happi</span></code> database.</p>
+<figure class="align-default">
+<a class="reference internal image-reference" href="_images/lucid_grid.png"><img alt="Lucid display with the grid highlighted." src="_images/lucid_grid.png" style="width: 522.5px; height: 415.0px;" />
+</a>
+</figure>
+<section id="which-devices-are-included">
+<h2>Which Devices are Included?<a class="headerlink" href="#which-devices-are-included" title="Link to this heading"></a></h2>
+<p>When <code class="docutils literal notranslate"><span class="pre">lucid</span></code> is invoked, the only required argument is the positional <code class="docutils literal notranslate"><span class="pre">beamline</span></code> argument.
+This argument is used as a <code class="docutils literal notranslate"><span class="pre">happi</span></code> search term to fill the grid.</p>
+<p>This is equivalent to the following search using the <code class="docutils literal notranslate"><span class="pre">happi</span></code> command line,
+assuming your beamline is named BEAMLINE:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>happi<span class="w"> </span>search<span class="w"> </span><span class="nv">beamline</span><span class="o">=</span>BEAMLINE<span class="w"> </span><span class="nv">active</span><span class="o">=</span>True
+</pre></div>
+</div>
+<p>All devices that match this search and load without errors will be included in the grid.
+All other devices will be excluded.
+The search is case-sensitive.</p>
+<p>Note that inactive devices are not included,
+and that this only targets happi entries that have a beamline associated with them at all.
+This requires the <code class="docutils literal notranslate"><span class="pre">happi</span></code> containers defined in <code class="docutils literal notranslate"><span class="pre">pcdsdevices</span></code>,
+which define the <code class="docutils literal notranslate"><span class="pre">beamline</span></code> field.</p>
+<p>Note: if you prefer not to load any devices, you can skip this step by passing
+a command-line parameter:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>lucid<span class="w"> </span>--skip_happi<span class="w"> </span>MY_BEAMLINE
+</pre></div>
+</div>
+</section>
+<section id="how-are-the-devices-arranged-in-the-grid">
+<h2>How are the Devices Arranged in the Grid?<a class="headerlink" href="#how-are-the-devices-arranged-in-the-grid" title="Link to this heading"></a></h2>
+<p>The grid is defined by the various metadata values found in the <code class="docutils literal notranslate"><span class="pre">happi</span></code> database.
+The default metadata keys in use are:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">location_group</span></code>, to select which column to put a device into</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">functional_group</span></code>, to select with row to put a device into</p></li>
+</ul>
+<p>That is to say, by default we expect the row headers on the left to be functional names like
+“imager” or “vacuum” and column headers on the top to be location names like “Section 01” or “Section 02”.</p>
+<p>You can change which metadata keys are used by passing the
+<code class="docutils literal notranslate"><span class="pre">--row_group_key</span></code> and <code class="docutils literal notranslate"><span class="pre">--col_group_key</span></code> command-line parameters
+to select the row grouping and column groupings respectively.</p>
+<p>Each unique string (case-sensitive) found in the group key metadata for the
+active devices will create an additional row or column in the grid
+with the corresponding header text.
+The rows and the columns will each be sorted in alphabetical order.</p>
+<p>Each device indicator will be added to a single square cell in the grid that
+corresponds with its metadata sorting.</p>
+<p>This provides the following features:</p>
+<ul class="simple">
+<li><p>An alarm indicator that represents the device’s worst alarm state,
+with mouseover text that will show more precise information</p></li>
+<li><p>The option to click the cell and select the device name to open the device’s
+<code class="docutils literal notranslate"><span class="pre">typhos</span></code> screen in the right-hand dock area</p></li>
+<li><p>The option to click the row or column header to select the device name for the
+same purpose as above, where the devices can be from any cell in the corresponding
+row or column.</p></li>
+<li><p>The ability to search for devices within the grid using the search bar,
+which will highlight their indicators in the grid view.</p></li>
+</ul>
+</section>
+<section id="limitations">
+<h2>Limitations<a class="headerlink" href="#limitations" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>There are currently no configuration options for row/column ordering or
+customization of the happi search used to accumulate devices.</p></li>
+<li><p>The only way to adjust the grid is to carefully manipulate the <code class="docutils literal notranslate"><span class="pre">happi</span></code> database.</p></li>
+<li><p>There are no options for changing the sizes of cells or the sizes of the alarm
+indicators held inside the cells.</p></li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="launcher.html" class="btn btn-neutral float-left" title="Lucid Launcher Options" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="toolbar.html" class="btn btn-neutral float-right" title="Lucid Toolbar Configuration" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2020, SLAC National Accelerator Laboratory.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
