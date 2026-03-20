@@ -12,7 +12,7 @@ from qtpy.QtGui import QHoverEvent
 from qtpy.QtWidgets import QApplication, QGridLayout, QMenu, QPushButton, QWidget
 from typhos.utils import reload_widget_stylesheet
 
-from .dock import LucidDock
+from .dock import LucidDock, LucidDockButton
 from .utils import SnakeLayout, display_for_device, indicator_for_device, suite_for_devices
 
 try:
@@ -359,6 +359,9 @@ class QuickAccessToolbar(QtWidgets.QWidget):
         elif tp == "display":
             btn = PyDMRelatedDisplayButton()
             btn.showIcon = False
+            btn.setText(text)
+        elif tp == "dock":
+            btn = LucidDockButton()
             btn.setText(text)
 
         for prop, val in config.items():

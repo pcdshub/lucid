@@ -2,9 +2,21 @@
 Dock widget definitions
 """
 
-from typing import ClassVar
+from typing import ClassVar, cast
 
-from qtpy.QtWidgets import QGridLayout, QPushButton, QSizePolicy, QTabWidget, QWidget
+from pydm.display import ScreenTarget, load_file
+from pydm.utilities import IconFont, find_file
+from pydm.utilities.macro import parse_macro_string
+from qtpy.QtCore import Qt
+from qtpy.QtGui import QCursor
+from qtpy.QtWidgets import QApplication, QGridLayout, QPushButton, QSizePolicy, QTabWidget, QWidget
+
+try:
+    from qtpy.QtCore import Property  # type: ignore
+except ImportError:
+    from qtpy.QtCore import pyqtProperty as Property  # type: ignore
+
+ifont = IconFont()
 
 
 class LucidDock(QWidget):
@@ -89,3 +101,45 @@ class LucidDock(QWidget):
         for display in list(self.detached_widgets):
             if not display.isVisible():
                 self.detached_widgets.remove(display)
+
+
+class LucidDockButton(QPushButton):
+    def __init__(self, parent: QWidget | None = None):
+        super().__init__(parent)
+        self._filename: str = ""
+        self._macro: str = ""
+        self.clicked.connect(self.open_in_dock)
+        self._icon = ifont.icon("anchor")
+        self.setCursor(QCursor(self._icon.pixmap(16, 16)))  # type: ignore
+
+    def open_in_dock(self):
+        fname = find_file(
+            self._filename,
+            raise_if_not_found=True,
+        )
+        macros = parse_macro_string(self._macro)
+
+        display = cast(QWidget, load_file(fname, macros=macros, target=ScreenTarget.DIALOG))
+
+        detached = bool(QApplication.keyboardModifiers() & Qt.ShiftModifier)
+        if detached:
+            LucidDock.open_in_new_window(title=display.windowTitle(), widget=display)
+        else:
+            new_tab = bool(QApplication.keyboardModifiers() & Qt.ControlModifier)
+            LucidDock.add_to_dock(title=display.windowTitle(), widget=display, new_tab=new_tab)
+
+    def readFilename(self) -> str:
+        return self._filename
+
+    def setFilename(self, val: str) -> None:
+        self._filename = val
+
+    filename = Property("QString", readFilename, setFilename)
+
+    def readMacro(self) -> str:
+        return self._macro
+
+    def setMacro(self, new_macro: str) -> None:
+        self._macro = new_macro
+
+    macros = Property("QString", readMacro, setMacro)
