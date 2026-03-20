@@ -3,20 +3,24 @@ import collections
 import logging
 import os
 import weakref
-from functools import partial
 
 import yaml
 from pydm.widgets import PyDMRelatedDisplayButton, PyDMShellCommand
 from qtpy import QtCore, QtGui, QtWidgets
-from qtpy.QtCore import Property, QEvent, QSize, Qt
+from qtpy.QtCore import QEvent, QSize, Qt
 from qtpy.QtGui import QHoverEvent
 from qtpy.QtWidgets import QGridLayout, QMenu, QPushButton, QWidget
 from typhos.utils import reload_widget_stylesheet
 
 import lucid
 
-from .utils import (SnakeLayout, display_for_device, indicator_for_device,
-                    suite_for_devices)
+from .dock import LucidDock
+from .utils import SnakeLayout, display_for_device, indicator_for_device, suite_for_devices
+
+try:
+    from qtpy.QtCore import Property # type: ignore  # noqa: I001
+except ImportError:
+    from qtpy.QtCore import pyqtProperty as Property # type: ignore  # noqa: I001
 
 logger = logging.getLogger(__name__)
 
@@ -24,6 +28,8 @@ logger = logging.getLogger(__name__)
 class BaseDeviceButton(QPushButton):
     """Base class for QPushButton to show devices"""
     _OPEN_ALL = "Open All"
+
+    devices: list
 
     def __init__(self, title, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -77,18 +83,21 @@ class BaseDeviceButton(QPushButton):
                 self.device_menu.addAction(device.name, show_device)
 
     def _show_all_wrapper(self):
-        return lucid.LucidMainWindow.in_dock(
-            self.show_all,
-            title=self.title,
-            active_slot=self._devices_shown,
-        )
+        def inner():
+            suite = self.show_all()
+            if suite is None:
+                return
+            LucidDock.get_instance().add_to_dock(title=self.title, widget=suite)
+        return inner
+
 
     def _show_device_wrapper(self, device):
-        return lucid.LucidMainWindow.in_dock(
-            partial(self.show_device, device),
-            title=device.name)
+        def inner():
+            suite = self.show_device(device)
+            LucidDock.get_instance().add_to_dock(title=device.name, widget=suite)
+        return inner
 
-    def eventFilter(self, obj, event):
+    def eventFilter(self, obj, event): # type: ignore
         """
         QWidget.eventFilter to be installed on child indicators
 
@@ -123,19 +132,19 @@ class IndicatorCell(BaseDeviceButton):
         self.setLayout(SnakeLayout(self.max_columns))
         self.layout().setSpacing(self.spacing)
         self.layout().setContentsMargins(*4 * [self.margin])
-        self._selecting_widgets = list()
+        self._selecting_widgets = []
         self.installEventFilter(self)
-        self.devices = list()
+        self.devices = []
 
     @property
     def matchable_names(self):
         """All names used for text searching"""
         return [self.title] + [device.name for device in self.devices]
 
-    @Property(bool)
-    def selected(self):
+    @Property(bool) # type: ignore
+    def selected(self) -> bool:
         """Whether the devices in this cell have been selected"""
-        return len(self._selecting_widgets)
+        return bool(len(self._selecting_widgets))
 
     def add_indicator(self, widget):
         """Add an indicator to the Panel"""
@@ -182,7 +191,7 @@ class IndicatorGroup(BaseDeviceButton):
         self.cells.append(cell)
 
     @property
-    def devices(self):
+    def devices(self) -> list: # type: ignore
         """All devices contained in the ``IndicatorGroup``"""
         return [device for cell in self.cells for device in cell.devices]
 
@@ -213,10 +222,11 @@ class IndicatorGrid(QWidget):
 
     def __init__(self, parent=None):
         super().__init__(parent=parent)
-        self.setLayout(QGridLayout())
-        self.layout().setSpacing(0)
-        self.layout().setSizeConstraint(QGridLayout.SetFixedSize)
-        self._groups = dict()
+        self.grid = QGridLayout()
+        self.setLayout(self.grid)
+        self.grid.setSpacing(0)
+        self.grid.setSizeConstraint(QGridLayout.SetFixedSize)
+        self._groups = {}
         self.setStyleSheet(
             '''\
 QWidget[selected="true"] {background-color: rgba(20, 140, 210, 150);}
@@ -241,13 +251,13 @@ QWidget[selected="true"] {background-color: rgba(20, 140, 210, 150);}
             # Add cell to group
             # Coordinate of group
             group = self._groups[group_name]
-            idx = self.layout().indexOf(group)
-            coords.append(self.layout().getItemPosition(idx)[i])
+            idx = self.grid.indexOf(group)
+            coords.append(self.grid.getItemPosition(idx)[i])
             if cell:
                 group.add_cell(cell)
         # Add cell to correct location in grid
         if cell:
-            self.layout().addWidget(cell, *coords, Qt.AlignTop)
+            self.grid.addWidget(cell, coords[0], coords[1], Qt.AlignTop)
 
     def _add_group(self, group, as_row):
         # Add to layout
@@ -256,10 +266,10 @@ QWidget[selected="true"] {background-color: rgba(20, 140, 210, 150);}
         self._groups[group.title] = group
         # Find the correct position
         if as_row:
-            (row, column) = (0, self.layout().columnCount())
+            (row, column) = (0, self.grid.columnCount())
         else:
-            (row, column) = (self.layout().rowCount(), 0)
-        self.layout().addWidget(group, row, column, Qt.AlignVCenter)
+            (row, column) = (self.grid.rowCount(), 0)
+        self.grid.addWidget(group, row, column, Qt.AlignVCenter)
 
 
 class IndicatorOverlay(QWidget):
@@ -274,7 +284,7 @@ class IndicatorOverlay(QWidget):
 
         self.cell_to_percentage = weakref.WeakKeyDictionary()
 
-    def paintEvent(self, ev):
+    def paintEvent(self, ev): # type: ignore
         self.resize(self.grid.size())
 
         dpr = self.grid.devicePixelRatioF()
@@ -287,7 +297,7 @@ class IndicatorOverlay(QWidget):
         painter = QtGui.QPainter()
 
         def cell_to_radius():
-            for name, group in self.grid._groups.items():
+            for _, group in self.grid._groups.items():
                 for cell in group.cells:
                     diameter = max((cell.width(), cell.height()))
                     radius = diameter / 2
@@ -319,7 +329,7 @@ class IndicatorOverlay(QWidget):
 
         draw_threshold = max_percent * 0.8
 
-        for cell, cell_rect, radius, percent in cell_to_radius():
+        for _, cell_rect, radius, percent in cell_to_radius():
             gradient = QtGui.QRadialGradient(cell_rect.center(), radius)
             if percent >= 0.95:
                 color = (0, 1, 0, 1.0)
@@ -338,7 +348,7 @@ class IndicatorOverlay(QWidget):
         painter.setPen(Qt.NoPen)
         painter.setBrush(Qt.transparent)
 
-        for cell, cell_rect, radius, percent in cell_to_radius():
+        for _, cell_rect, _, percent in cell_to_radius():
             margin = max(((1.0 - percent) * (pen_size / 2),
                           5))
             inner_ellipse = cell_rect.marginsRemoved(
@@ -367,9 +377,9 @@ class IndicatorGridWithOverlay(IndicatorGrid):
             )
             self.frame.layout().addItem(vertical_spacer)
 
-            quick_toolbar = lucid.overview.QuickAccessToolbar(self.frame)
-            quick_toolbar.toolsFile = toolbar_file
-            self.frame.layout().addWidget(quick_toolbar)
+            self.quick_toolbar = lucid.overview.QuickAccessToolbar(self.frame)
+            self.quick_toolbar.set_tools_file(toolbar_file)
+            self.frame.layout().addWidget(self.quick_toolbar)
         self.overlay = IndicatorOverlay(self.frame, self)
         self.overlay.setVisible(False)
         self.stackUnder(self.overlay)
@@ -403,16 +413,11 @@ class QuickAccessToolbar(QtWidgets.QWidget):
         self._default_config = {'cols': 4}
         self._setup_ui()
 
-    @Property(str)
-    def toolsFile(self):
-        return self._tools_file
-
-    @toolsFile.setter
-    def toolsFile(self, file):
+    def set_tools_file(self, file):
         if not file:
             return
         if isinstance(file, (str, bytes, os.PathLike)):
-            with open(self._tools_file) as tf:
+            with open(file) as tf:
                 self._tools = yaml.full_load(tf)
         else:
             self._tools = yaml.full_load(file)
@@ -428,6 +433,8 @@ class QuickAccessToolbar(QtWidgets.QWidget):
         main_layout.addWidget(self.tab)
 
     def _assemble_tabs(self):
+        if self._tools is None:
+            return
         self.tab.clear()
         for tab_name, tab_params in self._tools.items():
             page = QtWidgets.QWidget()

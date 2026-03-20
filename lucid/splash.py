@@ -14,10 +14,8 @@ class Splash(QtWidgets.QDialog):
         layout = QtWidgets.QVBoxLayout()
         self.setLayout(layout)
 
-        logo_pixmap = QtGui.QPixmap(os.path.join(self._base_path, 'logo.png'))
-        logo_pixmap = logo_pixmap.scaled(
-            400, 100, QtCore.Qt.KeepAspectRatio, QtCore.Qt.SmoothTransformation
-        )
+        logo_pixmap = QtGui.QPixmap(os.path.join(self._base_path, "logo.png"))
+        logo_pixmap = logo_pixmap.scaled(400, 100, QtCore.Qt.KeepAspectRatio, QtCore.Qt.SmoothTransformation)
 
         logo = QtWidgets.QLabel(self)
         logo.setPixmap(logo_pixmap)
@@ -26,7 +24,7 @@ class Splash(QtWidgets.QDialog):
         self.status_display = QtWidgets.QLabel()
         tout = typhos.utils.TyphosLoading.LOADING_TIMEOUT_MS
         # No Timeout!
-        typhos.utils.TyphosLoading.LOADING_TIMEOUT_MS = -1
+        typhos.utils.TyphosLoading.LOADING_TIMEOUT_MS = -1  # type: ignore
         loading = typhos.utils.TyphosLoading(self)
         typhos.utils.TyphosLoading.LOADING_TIMEOUT_MS = tout
 
@@ -38,4 +36,6 @@ class Splash(QtWidgets.QDialog):
 
     def update_status(self, msg):
         self.status_display.setText(f"Loading: {msg}")
-        QtWidgets.QApplication.instance().processEvents()
+        app = QtWidgets.QApplication.instance()
+        if app is not None:
+            app.processEvents()
