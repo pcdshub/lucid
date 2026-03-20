@@ -1,32 +1,31 @@
 """Overview of the Experimental Area"""
+
 import collections
 import logging
 import os
-import weakref
 
 import yaml
 from pydm.widgets import PyDMRelatedDisplayButton, PyDMShellCommand
-from qtpy import QtCore, QtGui, QtWidgets
+from qtpy import QtCore, QtWidgets
 from qtpy.QtCore import QEvent, QSize, Qt
 from qtpy.QtGui import QHoverEvent
 from qtpy.QtWidgets import QGridLayout, QMenu, QPushButton, QWidget
 from typhos.utils import reload_widget_stylesheet
 
-import lucid
-
 from .dock import LucidDock
 from .utils import SnakeLayout, display_for_device, indicator_for_device, suite_for_devices
 
 try:
-    from qtpy.QtCore import Property # type: ignore  # noqa: I001
+    from qtpy.QtCore import Property  # type: ignore  # noqa: I001
 except ImportError:
-    from qtpy.QtCore import pyqtProperty as Property # type: ignore  # noqa: I001
+    from qtpy.QtCore import pyqtProperty as Property  # type: ignore  # noqa: I001
 
 logger = logging.getLogger(__name__)
 
 
 class BaseDeviceButton(QPushButton):
     """Base class for QPushButton to show devices"""
+
     _OPEN_ALL = "Open All"
 
     devices: list
@@ -69,8 +68,7 @@ class BaseDeviceButton(QPushButton):
 
     def _menu_shown(self):
         # Current menu options
-        menu_devices = [action.text()
-                        for action in self.device_menu.actions()]
+        menu_devices = [action.text() for action in self.device_menu.actions()]
         if self._OPEN_ALL not in menu_devices:
             show_all_devices = self._show_all_wrapper()
             self.device_menu.addAction(self._OPEN_ALL, show_all_devices)
@@ -88,16 +86,17 @@ class BaseDeviceButton(QPushButton):
             if suite is None:
                 return
             LucidDock.get_instance().add_to_dock(title=self.title, widget=suite)
-        return inner
 
+        return inner
 
     def _show_device_wrapper(self, device):
         def inner():
             suite = self.show_device(device)
             LucidDock.get_instance().add_to_dock(title=device.name, widget=suite)
+
         return inner
 
-    def eventFilter(self, obj, event): # type: ignore
+    def eventFilter(self, obj, event):  # type: ignore
         """
         QWidget.eventFilter to be installed on child indicators
 
@@ -120,6 +119,7 @@ class BaseDeviceButton(QPushButton):
 
 class IndicatorCell(BaseDeviceButton):
     """Single Cell of Indicator Lights in the Overview Grid"""
+
     max_columns = 5
     icon_size = 12
     spacing = 1
@@ -128,7 +128,7 @@ class IndicatorCell(BaseDeviceButton):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # Disable borders on the widget unless a hover occurs
-        self.setStyleSheet('QPushButton:!hover {border: None}')
+        self.setStyleSheet("QPushButton:!hover {border: None}")
         self.setLayout(SnakeLayout(self.max_columns))
         self.layout().setSpacing(self.spacing)
         self.layout().setContentsMargins(*4 * [self.margin])
@@ -141,7 +141,7 @@ class IndicatorCell(BaseDeviceButton):
         """All names used for text searching"""
         return [self.title] + [device.name for device in self.devices]
 
-    @Property(bool) # type: ignore
+    @Property(bool)  # type: ignore
     def selected(self) -> bool:
         """Whether the devices in this cell have been selected"""
         return bool(len(self._selecting_widgets))
@@ -160,9 +160,7 @@ class IndicatorCell(BaseDeviceButton):
 
     def sizeHint(self):
         size_per_icon = self.icon_size + self.spacing
-        return QSize(self.max_columns * size_per_icon
-                     + self.spacing + 2 * self.margin,
-                     36)
+        return QSize(self.max_columns * size_per_icon + self.spacing + 2 * self.margin, 36)
 
     def _devices_shown(self, shown, selector=None):
         """Callback when corresponding ``TyphosSuite`` is accessed"""
@@ -191,17 +189,14 @@ class IndicatorGroup(BaseDeviceButton):
         self.cells.append(cell)
 
     @property
-    def devices(self) -> list: # type: ignore
+    def devices(self) -> list:  # type: ignore
         """All devices contained in the ``IndicatorGroup``"""
         return [device for cell in self.cells for device in cell.devices]
 
     @property
     def device_to_indicator(self):
         """Dictionary of Device to IndicatorCell"""
-        return {device: cell
-                for cell in self.cells
-                for device in cell.devices
-                }
+        return {device: cell for cell in self.cells for device in cell.devices}
 
     def eventFilter(self, obj, event):
         """Share QHoverEvents with all cells in the group"""
@@ -228,18 +223,19 @@ class IndicatorGrid(QWidget):
         self.grid.setSizeConstraint(QGridLayout.SetFixedSize)
         self._groups = {}
         self.setStyleSheet(
-            '''\
+            """\
 QWidget[selected="true"] {background-color: rgba(20, 140, 210, 150);}
-            ''')
+            """
+        )
 
     @property
     def groups(self):
-        'A dictionary of name to IndicatorGroup'
+        "A dictionary of name to IndicatorGroup"
         return dict(self._groups)
 
     def add_devices(self, devices, system=None, stand=None):
         # Create cell
-        cell = IndicatorCell(title=f'{stand} {system}')
+        cell = IndicatorCell(title=f"{stand} {system}")
         for device in devices:
             cell.add_device(device)
         # Add to proper location in grid
@@ -261,8 +257,7 @@ QWidget[selected="true"] {background-color: rgba(20, 140, 210, 150);}
 
     def _add_group(self, group, as_row):
         # Add to layout
-        group = IndicatorGroup(title=group,
-                               orientation='row' if as_row else 'column')
+        group = IndicatorGroup(title=group, orientation="row" if as_row else "column")
         self._groups[group.title] = group
         # Find the correct position
         if as_row:
@@ -271,126 +266,13 @@ QWidget[selected="true"] {background-color: rgba(20, 140, 210, 150);}
             (row, column) = (self.grid.rowCount(), 0)
         self.grid.addWidget(group, row, column, Qt.AlignVCenter)
 
-
-class IndicatorOverlay(QWidget):
-    def __init__(self, parent, grid):
-        super().__init__(parent)
-
-        self.grid = grid
-        self.setAttribute(Qt.WA_NoSystemBackground, True)
-        self.setAttribute(Qt.WA_TransparentForMouseEvents, True)
-        self.setAttribute(Qt.WA_TranslucentBackground, True)
-        self.setWindowFlags(self.windowFlags() | Qt.WindowStaysOnTopHint)
-
-        self.cell_to_percentage = weakref.WeakKeyDictionary()
-
-    def paintEvent(self, ev): # type: ignore
-        self.resize(self.grid.size())
-
-        dpr = self.grid.devicePixelRatioF()
-        buffer = QtGui.QPixmap(int(self.grid.width() * dpr),
-                               int(self.grid.height() * dpr))
-        buffer.setDevicePixelRatio(dpr)
-
-        buffer.fill(Qt.transparent)
-
-        painter = QtGui.QPainter()
-
-        def cell_to_radius():
-            for _, group in self.grid._groups.items():
-                for cell in group.cells:
-                    diameter = max((cell.width(), cell.height()))
-                    radius = diameter / 2
-
-                    cell_rect = cell.rect()
-                    cell_rect.moveTopLeft(cell.pos())
-                    center_pos = cell_rect.center()
-
-                    cx = center_pos.x() - radius
-                    cy = center_pos.y() - radius
-                    cell_rect = QtCore.QRectF(cx, cy, diameter, diameter)
-                    percent = self.cell_to_percentage.get(cell, 0.0)
-                    if percent > draw_threshold:
-                        percent = ((percent - draw_threshold) /
-                                   (1 - draw_threshold))
-                        yield cell, cell_rect, radius, percent
-
-        painter.begin(buffer)
-        painter.setRenderHint(painter.Antialiasing)
-
-        painter.setBackgroundMode(Qt.TransparentMode)
-        painter.fillRect(buffer.rect(), QtGui.QColor(0, 0, 0, 127))
-
-        pen_size = 40
-        try:
-            max_percent = max(self.cell_to_percentage.values())
-        except ValueError:
-            max_percent = 0.0
-
-        draw_threshold = max_percent * 0.8
-
-        for _, cell_rect, radius, percent in cell_to_radius():
-            gradient = QtGui.QRadialGradient(cell_rect.center(), radius)
-            if percent >= 0.95:
-                color = (0, 1, 0, 1.0)
-            else:
-                color = (1, 1, 1, percent)
-
-            gradient.setColorAt(0.7, QtGui.QColor.fromRgbF(*color))
-            gradient.setColorAt(1, QtGui.QColor.fromRgbF(0, 0, 0, 0))
-
-            brush = QtGui.QBrush(gradient)
-            pen = QtGui.QPen(brush, pen_size)
-            painter.setPen(pen)
-            painter.drawEllipse(cell_rect)
-
-        painter.setCompositionMode(painter.CompositionMode_Clear)
-        painter.setPen(Qt.NoPen)
-        painter.setBrush(Qt.transparent)
-
-        for _, cell_rect, _, percent in cell_to_radius():
-            margin = max(((1.0 - percent) * (pen_size / 2),
-                          5))
-            inner_ellipse = cell_rect.marginsRemoved(
-                QtCore.QMarginsF(margin, margin, margin, margin))
-            painter.drawEllipse(inner_ellipse)
-
-        painter.end()
-
-        painter.begin(self)
-        painter.setCompositionMode(painter.CompositionMode_SourceOver)
-        painter.drawPixmap(self.rect(), buffer, buffer.rect())
-        painter.end()
-
-
-class IndicatorGridWithOverlay(IndicatorGrid):
-    def __init__(self, parent=None, toolbar_file=None):
-        super().__init__(parent=None)
-        self.frame = QtWidgets.QFrame(parent)
-        self.frame.setLayout(QtWidgets.QVBoxLayout())
-        self.frame.layout().addWidget(self)
-
-        if toolbar_file is not None:
-            vertical_spacer = QtWidgets.QSpacerItem(
-                10, 20, QtWidgets.QSizePolicy.Minimum,
-                QtWidgets.QSizePolicy.MinimumExpanding
-            )
-            self.frame.layout().addItem(vertical_spacer)
-
-            self.quick_toolbar = lucid.overview.QuickAccessToolbar(self.frame)
-            self.quick_toolbar.set_tools_file(toolbar_file)
-            self.frame.layout().addWidget(self.quick_toolbar)
-        self.overlay = IndicatorOverlay(self.frame, self)
-        self.overlay.setVisible(False)
-        self.stackUnder(self.overlay)
-
     def add_from_dict(self, devices=None):
         rows = set()
         cols = set()
         if devices is None:
             return
         for e in devices:
-            r, c = e.split('|')
+            r, c = e.split("|")
             rows.add(r)
             cols.add(c)
 
@@ -406,11 +288,12 @@ class IndicatorGridWithOverlay(IndicatorGrid):
 
 class QuickAccessToolbar(QtWidgets.QWidget):
     """Tab Widget with tabs containing buttons defined via a yaml file"""
+
     def __init__(self, parent=None):
         super().__init__(parent=parent)
 
         self._tools = None
-        self._default_config = {'cols': 4}
+        self._default_config = {"cols": 4}
         self._setup_ui()
 
     def set_tools_file(self, file):
@@ -424,8 +307,7 @@ class QuickAccessToolbar(QtWidgets.QWidget):
         self._assemble_tabs()
 
     def _setup_ui(self):
-        self.setSizePolicy(QtWidgets.QSizePolicy.Preferred,
-                           QtWidgets.QSizePolicy.Preferred)
+        self.setSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Preferred)
 
         main_layout = QtWidgets.QVBoxLayout()
         self.setLayout(main_layout)
@@ -440,15 +322,14 @@ class QuickAccessToolbar(QtWidgets.QWidget):
             page = QtWidgets.QWidget()
 
             config = dict(self._default_config)
-            config.update(tab_params.get('config', {}))
+            config.update(tab_params.get("config", {}))
 
-            cols = config.get('cols', 4)
+            cols = config.get("cols", 4)
             page.setLayout(SnakeLayout(cols))
 
-            buttons = tab_params.get('buttons', {})
+            buttons = tab_params.get("buttons", {})
             for button_text, button_config in buttons.items():
-                button_widget = self._button_factory(button_text,
-                                                     button_config)
+                button_widget = self._button_factory(button_text, button_config)
                 page.layout().addWidget(button_widget)
 
             def min_scroll_size_hint(*args, **kwargs):
@@ -461,13 +342,13 @@ class QuickAccessToolbar(QtWidgets.QWidget):
             self.tab.addTab(scroll_area, tab_name)
 
     def _button_factory(self, text, config):
-        tp = config.pop('type')
+        tp = config.pop("type")
         btn = QPushButton()
-        if tp == 'shell':
+        if tp == "shell":
             btn = PyDMShellCommand()
             btn.showIcon = False
             btn.setText(text)
-        elif tp == 'display':
+        elif tp == "display":
             btn = PyDMRelatedDisplayButton()
             btn.showIcon = False
             btn.setText(text)
@@ -476,7 +357,6 @@ class QuickAccessToolbar(QtWidgets.QWidget):
             try:
                 setattr(btn, prop, val)
             except Exception as ex:
-                logger.error(f'Failed to set property {prop} with '
-                             f'value {val} for {tp}: {ex}')
+                logger.error(f"Failed to set property {prop} with value {val} for {tp}: {ex}")
 
         return btn
