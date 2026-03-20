@@ -5,8 +5,9 @@ import logging
 import pathlib
 import random
 import signal
+import warnings
 
-import happi  # noqa
+# import happi  # noqa
 import pcdsutils.log
 import typhos
 import typhos.utils
@@ -194,6 +195,7 @@ def launch(
 
     # Install exception hook handler with dialog popup
     exception.install(use_default_handler=False)
+
     # Use custom exception handler
     def handle_error(exc_info):
         _, exc_value, _ = exc_info
@@ -203,6 +205,8 @@ def launch(
         exception.raise_to_operator(exc_value)
 
     exception.ExceptionDispatcher().newException.connect(handle_error)
+
+    warnings.simplefilter("ignore", UserWarning)
 
     splash.update_status(f"Loading {beamline} devices")
 
@@ -214,6 +218,7 @@ def launch(
         loader = HappiLoader(beamline=beamline, group_keys=(row_group_key, col_group_key), callbacks=cbs)
 
     loader.finished.connect(splash.accept)
+    loader.finished.connect(window.finalize_window_settings)
     loader.finished.connect(window.show)
     loader.start()
 

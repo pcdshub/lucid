@@ -15,9 +15,7 @@ class LucidDock(QWidget):
         super().__init__(parent)
 
         self.tab_widget = QTabWidget()
-        self.tab_widget.setTabsClosable(True)
         self.tab_widget.setMovable(True)
-        self.tab_widget.setTabBarAutoHide(True)
         self.tab_widget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
         self.attach_button = QPushButton()
@@ -33,11 +31,18 @@ class LucidDock(QWidget):
         self.setLayout(self.grid_layout)
 
     @classmethod
-    def get_instance(cls) -> "LucidDock":
-        return cls._instance
+    def add_to_dock(cls, title: str, widget: QWidget, new_tab: bool = False):
+        if not cls._instance.isVisible():
+            return cls.open_in_new_window(title=title, widget=widget)
+        if new_tab:
+            print(f"Placeholder: would add {title}, {widget} to dock in a new tab")
+        else:
+            print(f"Placeholder: would add {title}, {widget} to dock, overriding the current tab")
 
-    def add_to_dock(self, title: str, widget: QWidget, new_tab: bool = False):
-        print(f"Placeholder: would add {title}, {widget} to dock")
+    @classmethod
+    def detach_from_dock(cls):
+        print("Placeholder: would detach current tab from dock")
 
-    def detach_from_dock(self):
-        print("Placeholder: would detach from dock")
+    @classmethod
+    def open_in_new_window(cls, title: str, widget: QWidget):
+        print(f"Placeholder: would open {title}, {widget} in new window")

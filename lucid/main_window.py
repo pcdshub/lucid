@@ -36,10 +36,6 @@ class LucidMainWindow(QMainWindow):
 
     def setup_ui(self):
         self.setWindowTitle(f"LUCID - {self.beamline}")
-        # Laptop Size
-        self.setMinimumSize(1536, 765)
-        # Hutch Computer Size
-        self.setMaximumSize(2400, 1020)
         self.main_widget = QWidget()
         self.grid = IndicatorGrid()
         self.vlayout = QVBoxLayout()
@@ -49,10 +45,10 @@ class LucidMainWindow(QMainWindow):
             self.vlayout.addItem(vertical_spacer)
             self.quick_toolbar = QuickAccessToolbar()
             self.quick_toolbar.set_tools_file(self.toolbar)
-            self.quick_toolbar.setFixedWidth(1500)
+            self.quick_toolbar.setMaximumWidth(1500)
             self.vlayout.addWidget(self.quick_toolbar)
         self.dock = LucidDock()
-        self.dock.setFixedHeight(1000)
+        # self.dock.setFixedHeight(1000)
         self.dock.setFixedWidth(850)
         self.hlayout = QHBoxLayout()
         self.hlayout.addLayout(self.vlayout)
@@ -60,13 +56,29 @@ class LucidMainWindow(QMainWindow):
         self.main_widget.setLayout(self.hlayout)
         self.setCentralWidget(self.main_widget)
 
+        self.width_threshold = 2200
+
     def resizeEvent(self, event: QResizeEvent) -> None:  # type: ignore
         """
         Show the dock when there is room for the dock, hide it otherwise
         """
-        new_size = event.size()
-        if new_size.height() < 1000 or new_size.width() < 2200:
+        new_width = event.size().width()
+        if new_width < self.width_threshold:
             self.dock.hide()
         else:
             self.dock.show()
         return super().resizeEvent(event)
+
+    def finalize_window_settings(self):
+        # self.setWindowFlags(Qt.Window)
+        # Dynamic sizing based on what was loaded
+        grid_hint = self.grid.sizeHint()
+        gridw = grid_hint.width()
+        gridh = grid_hint.height()
+        tabs_hint = self.quick_toolbar.sizeHint()
+        tabw = tabs_hint.width()
+        tabh = tabs_hint.height()
+        self.width_threshold = gridw + self.dock.width()
+        minw = max(gridw, tabw) + 10
+        minh = gridh + tabh
+        self.setMinimumSize(minw, minh)

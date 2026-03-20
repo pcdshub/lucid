@@ -85,14 +85,14 @@ class BaseDeviceButton(QPushButton):
             suite = self.show_all()
             if suite is None:
                 return
-            LucidDock.get_instance().add_to_dock(title=self.title, widget=suite)
+            LucidDock.add_to_dock(title=self.title, widget=suite)
 
         return inner
 
     def _show_device_wrapper(self, device):
         def inner():
             suite = self.show_device(device)
-            LucidDock.get_instance().add_to_dock(title=device.name, widget=suite)
+            LucidDock.add_to_dock(title=device.name, widget=suite)
 
         return inner
 
