@@ -40,10 +40,15 @@ class LucidDock(QWidget):
         self.detach_button.setText("Detach from dock")
         self.detach_button.clicked.connect(self.detach_from_dock)
 
+        self.close_button = QPushButton()
+        self.close_button.setText("Close Tab")
+        self.close_button.clicked.connect(self.close_tab)
+
         self.grid_layout = QGridLayout()
-        self.grid_layout.addWidget(self.tab_widget, 0, 0, 1, 4)
-        self.grid_layout.addWidget(self.attach_button, 1, 2)
-        self.grid_layout.addWidget(self.detach_button, 1, 3)
+        self.grid_layout.addWidget(self.tab_widget, 0, 0, 1, 6)
+        self.grid_layout.addWidget(self.attach_button, 1, 3)
+        self.grid_layout.addWidget(self.detach_button, 1, 4)
+        self.grid_layout.addWidget(self.close_button, 1, 5)
         self.setLayout(self.grid_layout)
 
     @classmethod
@@ -106,6 +111,9 @@ class LucidDock(QWidget):
         for display in list(self.detached_widgets):
             if not display.isVisible():
                 self.detached_widgets.remove(display)
+
+    def close_tab(self):
+        self.tab_widget.removeTab(self.tab_widget.currentIndex())
 
 
 class LucidDockButton(QPushButton):
