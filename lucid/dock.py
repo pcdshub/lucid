@@ -51,9 +51,14 @@ class LucidDock(QWidget):
         if not cls._instance.isVisible():
             return cls.open_in_new_window(title=title, widget=widget)
         self = cls._instance
+        idx = None
         if not new_tab and self.tab_widget.count() > 0:
-            self.tab_widget.removeTab(self.tab_widget.currentIndex())
-        idx = self.tab_widget.addTab(widget, title)
+            idx = self.tab_widget.currentIndex()
+            self.tab_widget.removeTab(idx)
+        if idx is None:
+            idx = self.tab_widget.addTab(widget, title)
+        else:
+            self.tab_widget.insertTab(idx, widget, title)
         self.tab_widget.setCurrentIndex(idx)
 
     @classmethod
