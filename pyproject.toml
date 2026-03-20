@@ -10,7 +10,6 @@ keywords = []
 name = "lucid"
 requires-python = ">=3.12"
 dependencies = [
-    "fuzzywuzzy>=0.18.0",
     "happi>=3.0.1",
     "ophyd>=1.11.0",
     "pcdsutils>=0.14.0",
