@@ -9,7 +9,16 @@ from pydm.utilities import IconFont, find_file
 from pydm.utilities.macro import parse_macro_string
 from qtpy.QtCore import Qt
 from qtpy.QtGui import QCursor
-from qtpy.QtWidgets import QApplication, QGridLayout, QPushButton, QSizePolicy, QTabWidget, QWidget
+from qtpy.QtWidgets import (
+    QApplication,
+    QHBoxLayout,
+    QPushButton,
+    QSizePolicy,
+    QTabWidget,
+    QToolButton,
+    QVBoxLayout,
+    QWidget,
+)
 
 try:
     from qtpy.QtCore import Property  # type: ignore
@@ -31,25 +40,31 @@ class LucidDock(QWidget):
         self.tab_widget = QTabWidget()
         self.tab_widget.setMovable(True)
         self.tab_widget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.tab_widget.currentChanged.connect(self.show_correct_tab_buttons)
 
-        self.attach_button = QPushButton()
-        self.attach_button.setText("Attach to dock")
+        self.attach_button = QToolButton()
+        self.attach_button.setIcon(ifont.icon("arrow-down"))  # type: ignore
         self.attach_button.clicked.connect(self.reattach_to_dock)
+        self.attach_button.setEnabled(False)
+        self.tab_widget.setCornerWidget(self.attach_button, Qt.Corner.TopRightCorner)
+        tab_bar = self.tab_widget.tabBar()
+        tab_bar.setMinimumHeight(20)
+        self.attach_button.setMinimumHeight(20)
 
-        self.detach_button = QPushButton()
-        self.detach_button.setText("Detach from dock")
-        self.detach_button.clicked.connect(self.detach_from_dock)
+        self.vlayout = QVBoxLayout()
+        self.vlayout.addWidget(self.tab_widget)
+        self.setLayout(self.vlayout)
 
-        self.close_button = QPushButton()
-        self.close_button.setText("Close Tab")
-        self.close_button.clicked.connect(self.close_tab)
-
-        self.grid_layout = QGridLayout()
-        self.grid_layout.addWidget(self.tab_widget, 0, 0, 1, 6)
-        self.grid_layout.addWidget(self.attach_button, 1, 3)
-        self.grid_layout.addWidget(self.detach_button, 1, 4)
-        self.grid_layout.addWidget(self.close_button, 1, 5)
-        self.setLayout(self.grid_layout)
+    def show_correct_tab_buttons(self, new_idx: int):
+        tab_bar = self.tab_widget.tabBar()
+        for idx in range(self.tab_widget.count()):
+            button = tab_bar.tabButton(idx, tab_bar.ButtonPosition.RightSide)
+            if button is None:
+                continue
+            if idx == new_idx:
+                button.show()
+            else:
+                button.hide()
 
     @classmethod
     def add_to_dock(cls, title: str, widget: QWidget, new_tab: bool = False):
@@ -64,6 +79,24 @@ class LucidDock(QWidget):
             idx = self.tab_widget.addTab(widget, title)
         else:
             self.tab_widget.insertTab(idx, widget, title)
+
+        button_row = QWidget()
+
+        detach_button = QToolButton()
+        detach_button.setIcon(ifont.icon("arrow-up"))  # type: ignore
+        detach_button.clicked.connect(self.detach_from_dock)
+        close_button = QToolButton()
+        close_button.setIcon(ifont.icon("window-close"))  # type: ignore
+        close_button.clicked.connect(self.close_tab)
+
+        hlayout = QHBoxLayout()
+        hlayout.setContentsMargins(3, 0, 0, 0)
+        hlayout.addWidget(detach_button)
+        hlayout.addWidget(close_button)
+        button_row.setLayout(hlayout)
+
+        tab_bar = self.tab_widget.tabBar()
+        tab_bar.setTabButton(idx, tab_bar.ButtonPosition.RightSide, button_row)
         self.tab_widget.setCurrentIndex(idx)
 
     @classmethod
@@ -82,6 +115,7 @@ class LucidDock(QWidget):
         widget.setParent(None)  # type: ignore
         widget.setWindowTitle(title)
         widget.show()
+        self.update_attach_enabled()
 
     @classmethod
     def reattach_to_dock(cls, widget: QWidget | None = None):
@@ -106,11 +140,16 @@ class LucidDock(QWidget):
         self.add_to_dock(title=widget.windowTitle(), widget=widget, new_tab=True)
         if widget in self.detached_widgets:
             self.detached_widgets.remove(widget)
+        self.update_attach_enabled()
 
     def clean_detached_widgets(self):
         for display in list(self.detached_widgets):
             if not display.isVisible():
                 self.detached_widgets.remove(display)
+        self.update_attach_enabled()
+
+    def update_attach_enabled(self):
+        self.attach_button.setEnabled(bool(self.detached_widgets))
 
     def close_tab(self):
         self.tab_widget.removeTab(self.tab_widget.currentIndex())
