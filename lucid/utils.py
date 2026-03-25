@@ -13,7 +13,7 @@ from pydm.widgets import PyDMDrawingCircle
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QApplication, QGridLayout
 from typhos import TyphosDeviceDisplay, TyphosSuite
-from typhos.utils import no_device_lazy_load
+from typhos.utils import apply_standard_stylesheets, no_device_lazy_load
 
 try:
     from typhos.alarm import TyphosAlarmCircle
@@ -125,6 +125,7 @@ def display_for_device(device, display_type=None):
     with no_device_lazy_load():
         logger.debug("Creating device display for %r", device)
         display = TyphosDeviceDisplay.from_device(device, scroll_option="scrollbar")
+        apply_standard_stylesheets(widget=display)
         if display_type:
             display.display_type = display_type
     return display
@@ -136,6 +137,7 @@ def suite_for_devices(devices, *, parent=None, **kwargs):
         suite = TyphosSuite(parent=parent, **kwargs)
         for device in devices:
             suite.add_device(device)
+        apply_standard_stylesheets(widget=suite)
     return suite
 
 

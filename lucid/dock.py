@@ -8,6 +8,7 @@ from typing import ClassVar, cast
 from pydm.display import ScreenTarget, clear_compiled_ui_file_cache, load_file
 from pydm.utilities import IconFont, find_file
 from pydm.utilities.macro import parse_macro_string
+from pydm.utilities.stylesheet import merge_widget_stylesheet
 from qtpy.QtCore import Qt
 from qtpy.QtGui import QCursor
 from qtpy.QtWidgets import (
@@ -196,6 +197,7 @@ class LucidDockButton(QPushButton):
                 clear_compiled_ui_file_cache()
                 self.cached_widget.close()
             display = cast(QWidget, load_file(fname, macros=macros, target=ScreenTarget.DIALOG))
+            merge_widget_stylesheet(widget=display)
             self.cached_ui_text = ui_text
             self.cached_widget = display
         else:
