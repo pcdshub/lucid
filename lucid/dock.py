@@ -2,6 +2,7 @@
 Dock widget definitions
 """
 
+from functools import partial
 from typing import ClassVar, cast
 
 from pydm.display import ScreenTarget, load_file
@@ -12,6 +13,7 @@ from qtpy.QtGui import QCursor
 from qtpy.QtWidgets import (
     QApplication,
     QHBoxLayout,
+    QMenu,
     QPushButton,
     QSizePolicy,
     QTabWidget,
@@ -44,7 +46,7 @@ class LucidDock(QWidget):
 
         self.attach_button = QToolButton()
         self.attach_button.setIcon(ifont.icon("arrow-down"))  # type: ignore
-        self.attach_button.clicked.connect(self.reattach_to_dock)
+        self.attach_button.clicked.connect(self.reattach_user_choice)
         self.attach_button.setEnabled(False)
         self.tab_widget.setCornerWidget(self.attach_button, Qt.Corner.TopRightCorner)
         tab_bar = self.tab_widget.tabBar()
@@ -118,29 +120,33 @@ class LucidDock(QWidget):
         self.update_attach_enabled()
 
     @classmethod
-    def reattach_to_dock(cls, widget: QWidget | None = None):
+    def reattach_user_choice(cls):
         self = cls._instance
         self.clean_detached_widgets()
         if not self.detached_widgets:
             return
-        # Some slots send things like ints or bools into the arg
-        if not isinstance(widget, QWidget):
-            if len(self.detached_widgets) == 1:
-                widget = self.detached_widgets[0]
-            else:
-                our_pos = self.mapToGlobal(self.pos())
-                widget = self.detached_widgets[0]
-                nearest_sqdist = 1000000000000000
-                for dwig in self.detached_widgets:
-                    dpos = dwig.mapToGlobal(dwig.pos())
-                    sqdist = (our_pos.x() - dpos.x()) ** 2 + (our_pos.y() - dpos.y()) ** 2
-                    if sqdist < nearest_sqdist:
-                        nearest_sqdist = sqdist
-                        widget = dwig
+        elif len(self.detached_widgets) == 1:
+            widget = self.detached_widgets[0]
+            self.attach_to_dock(widget)
+        else:
+            self.show_attach_menu()
+
+    @classmethod
+    def attach_to_dock(cls, widget: QWidget):
+        self = cls._instance
         self.add_to_dock(title=widget.windowTitle(), widget=widget, new_tab=True)
         if widget in self.detached_widgets:
             self.detached_widgets.remove(widget)
-        self.update_attach_enabled()
+        self.clean_detached_widgets()
+
+    def show_attach_menu(self) -> QMenu:
+        self.clean_detached_widgets()
+        menu = QMenu(self.attach_button)
+        for widget in self.detached_widgets:
+            action = menu.addAction(widget.windowTitle())
+            action.triggered.connect(partial(self.attach_to_dock, widget))
+        menu.popup(QCursor().pos())
+        return menu
 
     def clean_detached_widgets(self):
         for display in list(self.detached_widgets):
