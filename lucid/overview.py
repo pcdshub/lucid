@@ -9,7 +9,7 @@ from pydm.widgets import PyDMRelatedDisplayButton, PyDMShellCommand
 from qtpy import QtCore, QtWidgets
 from qtpy.QtCore import QEvent, QSize, Qt
 from qtpy.QtGui import QHoverEvent
-from qtpy.QtWidgets import QApplication, QGridLayout, QMenu, QPushButton, QWidget
+from qtpy.QtWidgets import QGridLayout, QMenu, QPushButton, QWidget
 from typhos.utils import reload_widget_stylesheet
 
 from .dock import LucidDock, LucidDockButton
@@ -85,24 +85,16 @@ class BaseDeviceButton(QPushButton):
             suite = self.show_all()
             if suite is None:
                 return
-            self.open_in_dock(suite)
+            LucidDock.add_to_dock_user_choice(title=self.title, widget=suite)
 
         return inner
 
     def _show_device_wrapper(self, device):
         def inner():
             suite = self.show_device(device)
-            self.open_in_dock(suite)
+            LucidDock.add_to_dock_user_choice(title=device.name, widget=suite)
 
         return inner
-
-    def open_in_dock(self, widget: QWidget):
-        detached = bool(QApplication.keyboardModifiers() & Qt.ShiftModifier)
-        if detached:
-            LucidDock.open_in_new_window(title=self.title, widget=widget)
-        else:
-            new_tab = bool(QApplication.keyboardModifiers() & Qt.ControlModifier)
-            LucidDock.add_to_dock(title=self.title, widget=widget, new_tab=new_tab)
 
     def eventFilter(self, obj, event):  # type: ignore
         """

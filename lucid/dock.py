@@ -69,6 +69,15 @@ class LucidDock(QWidget):
                 button.hide()
 
     @classmethod
+    def add_to_dock_user_choice(cls, title: str, widget: QWidget):
+        detached = bool(QApplication.keyboardModifiers() & Qt.ShiftModifier)
+        if detached:
+            cls.open_in_new_window(title=title, widget=widget)
+        else:
+            new_tab = bool(QApplication.keyboardModifiers() & Qt.ControlModifier)
+            cls.add_to_dock(title=title, widget=widget, new_tab=new_tab)
+
+    @classmethod
     def add_to_dock(cls, title: str, widget: QWidget, new_tab: bool = False):
         if not cls._instance.isVisible():
             return cls.open_in_new_window(title=title, widget=widget)
@@ -127,12 +136,12 @@ class LucidDock(QWidget):
             return
         elif len(self.detached_widgets) == 1:
             widget = self.detached_widgets[0]
-            self.attach_to_dock(widget)
+            self.reattach_to_dock(widget)
         else:
             self.show_attach_menu()
 
     @classmethod
-    def attach_to_dock(cls, widget: QWidget):
+    def reattach_to_dock(cls, widget: QWidget):
         self = cls._instance
         self.add_to_dock(title=widget.windowTitle(), widget=widget, new_tab=True)
         if widget in self.detached_widgets:
@@ -144,7 +153,7 @@ class LucidDock(QWidget):
         menu = QMenu(self.attach_button)
         for widget in self.detached_widgets:
             action = menu.addAction(widget.windowTitle())
-            action.triggered.connect(partial(self.attach_to_dock, widget))
+            action.triggered.connect(partial(self.reattach_to_dock, widget))
         menu.popup(QCursor().pos())
         return menu
 
@@ -179,12 +188,7 @@ class LucidDockButton(QPushButton):
 
         display = cast(QWidget, load_file(fname, macros=macros, target=ScreenTarget.DIALOG))
 
-        detached = bool(QApplication.keyboardModifiers() & Qt.ShiftModifier)
-        if detached:
-            LucidDock.open_in_new_window(title=display.windowTitle(), widget=display)
-        else:
-            new_tab = bool(QApplication.keyboardModifiers() & Qt.ControlModifier)
-            LucidDock.add_to_dock(title=display.windowTitle(), widget=display, new_tab=new_tab)
+        LucidDock.add_to_dock_user_choice(title=display.windowTitle(), widget=display)
 
     def readFilename(self) -> str:
         return self._filename
