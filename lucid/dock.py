@@ -5,7 +5,7 @@ Dock widget definitions
 from functools import partial
 from typing import ClassVar, cast
 
-from pydm.display import ScreenTarget, load_file
+from pydm.display import ScreenTarget, clear_compiled_ui_file_cache, load_file
 from pydm.utilities import IconFont, find_file
 from pydm.utilities.macro import parse_macro_string
 from qtpy.QtCore import Qt
@@ -178,15 +178,28 @@ class LucidDockButton(QPushButton):
         self.clicked.connect(self.open_in_dock)
         self._icon = ifont.icon("anchor")
         self.setCursor(QCursor(self._icon.pixmap(16, 16)))  # type: ignore
+        self.cached_ui_text = ""
+        self.cached_widget: QWidget | None = None
 
     def open_in_dock(self):
         fname = find_file(
             self._filename,
             raise_if_not_found=True,
         )
+        fname = cast(str, fname)
         macros = parse_macro_string(self._macro)
+        with open(fname, "r") as fd:
+            ui_text = fd.read()
 
-        display = cast(QWidget, load_file(fname, macros=macros, target=ScreenTarget.DIALOG))
+        if ui_text != self.cached_ui_text or self.cached_widget is None:
+            if self.cached_widget is not None:
+                clear_compiled_ui_file_cache()
+                self.cached_widget.close()
+            display = cast(QWidget, load_file(fname, macros=macros, target=ScreenTarget.DIALOG))
+            self.cached_ui_text = ui_text
+            self.cached_widget = display
+        else:
+            display = self.cached_widget
 
         LucidDock.add_to_dock_user_choice(title=display.windowTitle(), widget=display)
 
