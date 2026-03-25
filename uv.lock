@@ -439,6 +439,7 @@ dependencies = [
 [package.optional-dependencies]
 dev = [
     { name = "pcdsdevices" },
+    { name = "pcdswidgets" },
 ]
 doc = [
     { name = "sphinx" },
@@ -457,6 +458,7 @@ requires-dist = [
     { name = "ophyd", specifier = ">=1.11.0" },
     { name = "pcdsdevices", marker = "extra == 'dev'", specifier = ">=10.3.0" },
     { name = "pcdsutils", specifier = ">=0.14.0" },
+    { name = "pcdswidgets", marker = "extra == 'dev'", specifier = ">=0.10.0" },
     { name = "pydm", specifier = ">=1.28.3" },
     { name = "pyqt5", specifier = ">=5" },
     { name = "pytest", marker = "extra == 'test'", specifier = ">=9.0.2" },
@@ -859,6 +861,20 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/1d/0b/01b717b89317058551d5061015cefc8fea41d419327c48b234b878f8c28b/pcdsutils-0.14.2.tar.gz", hash = "sha256:10572df8ebf26608a0d27fbc0db2839990f243051295665d3cf324625aaa0406", size = 62668, upload-time = "2025-08-21T17:53:58.245Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/15/13/dfd93864e3e16c991b82a75737ba5439bb1d49b674b303ff1f371be13590/pcdsutils-0.14.2-py3-none-any.whl", hash = "sha256:997b699c0399de48a6d8a6d2ac36c95f5162dca0db1ffd26cd96e320daaaf916", size = 55739, upload-time = "2025-08-21T17:53:57.318Z" },
+]
+
+[[package]]
+name = "pcdswidgets"
+version = "0.10.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pydm" },
+    { name = "pyqt5" },
+    { name = "qtpy" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/33/dc/7863eec7677bc218a1d057802d6c1ba0cc4dcf8288fb08c3e4acb98bebaf/pcdswidgets-0.10.0.tar.gz", hash = "sha256:b6ffdc6c88a635d5be5474a3e7880c77e1cd20f128e7b30770d1191107d3472e", size = 80554, upload-time = "2025-07-30T18:07:26.004Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/84/ef/16bc8ea4181bf65374bc49d7a8cd46d1362fb524d950bd9891ca96612248/pcdswidgets-0.10.0-py3-none-any.whl", hash = "sha256:42e011a938c5bc2bcbef96747487ca62b5eb33ec6d96c03c8efdee97a6b805f6", size = 45122, upload-time = "2025-07-30T18:07:24.818Z" },
 ]
 
 [[package]]
