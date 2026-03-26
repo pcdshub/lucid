@@ -5,9 +5,9 @@ from qtpy.QtWidgets import QWidget
 from lucid.overview import IndicatorCell
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture(scope="function")
 def cell(qtbot):
-    cell = IndicatorCell(title='MFX DG2')
+    cell = IndicatorCell(title="MFX DG2")
     qtbot.addWidget(cell)
     return cell
 
@@ -15,12 +15,11 @@ def cell(qtbot):
 def test_base_device_button_menu(cell):
     device_count = 12
     for i in range(device_count):
-        motor = SynAxis(name=f'motor_{i}')
+        motor = SynAxis(name=f"motor_{i}")
         cell.add_device(motor)
     cell._menu_shown()
     for device in cell.devices:
-        assert device.name in [action.text()
-                               for action in cell.device_menu.actions()]
+        assert device.name in [action.text() for action in cell.device_menu.actions()]
 
 
 def test_base_device_button_show_device(cell):
@@ -54,7 +53,7 @@ def test_base_device_button_show_all_repeated(cell):
 def test_indicator_cell_add_device(cell):
     device_count = 12
     for i in range(device_count):
-        motor = SynAxis(name=f'motor_{i}')
+        motor = SynAxis(name=f"motor_{i}")
         cell.add_device(motor)
     assert len(cell.devices) == 12
 
