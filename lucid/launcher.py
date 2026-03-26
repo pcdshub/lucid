@@ -7,7 +7,6 @@ import random
 import signal
 import warnings
 
-# import happi  # noqa
 import pcdsutils.log
 import typhos
 import typhos.utils
