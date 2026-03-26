@@ -26,7 +26,7 @@ Options and Limitations
 - Each tab can have an arbitrary number of columns.
 - The columns are filled from left to right, then from top to bottom.
 - Only ``LucidDockButton``, ``PyDMShellCommand`` and ``PyDMRelatedDisplayButton`` widgets are supported.
-- Any available pyqt property or general python attribute can be specified on either
+- Any available pyqt property or general python attribute can be specified on any
   of these button types.
 
 Guidelines
