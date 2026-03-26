@@ -111,3 +111,6 @@ ENV/
 
 # setuptools_scm
 lucid/_version.py
+
+# vscode
+.vscode
