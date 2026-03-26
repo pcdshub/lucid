@@ -38,6 +38,9 @@ class LucidMainWindow(QMainWindow):
         self.setWindowTitle(f"LUCID - {self.beamline}")
         self.main_widget = QWidget()
         self.grid = IndicatorGrid()
+        self.dock = LucidDock()
+        self.dock.setFixedWidth(850)
+
         self.vlayout = QVBoxLayout()
         self.vlayout.addWidget(self.grid)
         if self.toolbar is not None:
@@ -47,9 +50,10 @@ class LucidMainWindow(QMainWindow):
             self.quick_toolbar.set_tools_file(self.toolbar)
             self.quick_toolbar.setMaximumWidth(1500)
             self.vlayout.addWidget(self.quick_toolbar)
-        self.dock = LucidDock()
-        # self.dock.setFixedHeight(1000)
-        self.dock.setFixedWidth(850)
+            if self.quick_toolbar.default_dock_button is not None:
+                default_docked = self.quick_toolbar.default_dock_button.build_widget()
+                self.dock.add_to_dock(title=default_docked.windowTitle(), widget=default_docked)
+
         self.hlayout = QHBoxLayout()
         self.hlayout.addLayout(self.vlayout)
         self.hlayout.addWidget(self.dock)

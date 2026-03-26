@@ -71,8 +71,7 @@ class LucidDock(QWidget):
 
     @classmethod
     def add_to_dock_user_choice(cls, title: str, widget: QWidget):
-        detached = bool(QApplication.keyboardModifiers() & Qt.ShiftModifier)
-        if detached:
+        if bool(QApplication.keyboardModifiers() & Qt.ShiftModifier) or not cls._instance.isVisible():
             cls.open_in_new_window(title=title, widget=widget)
         else:
             new_tab = bool(QApplication.keyboardModifiers() & Qt.ControlModifier)
@@ -80,8 +79,6 @@ class LucidDock(QWidget):
 
     @classmethod
     def add_to_dock(cls, title: str, widget: QWidget, new_tab: bool = False):
-        if not cls._instance.isVisible():
-            return cls.open_in_new_window(title=title, widget=widget)
         self = cls._instance
         idx = None
         if not new_tab and self.tab_widget.count() > 0:
@@ -182,7 +179,7 @@ class LucidDockButton(QPushButton):
         self.cached_ui_text = ""
         self.cached_widget: QWidget | None = None
 
-    def open_in_dock(self):
+    def build_widget(self) -> QWidget:
         fname = find_file(
             self._filename,
             raise_if_not_found=True,
@@ -202,7 +199,10 @@ class LucidDockButton(QPushButton):
             self.cached_widget = display
         else:
             display = self.cached_widget
+        return display
 
+    def open_in_dock(self):
+        display = self.build_widget()
         LucidDock.add_to_dock_user_choice(title=display.windowTitle(), widget=display)
 
     def readFilename(self) -> str:

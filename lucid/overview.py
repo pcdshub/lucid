@@ -294,6 +294,7 @@ class QuickAccessToolbar(QtWidgets.QWidget):
 
         self._tools = None
         self._default_config = {"cols": 4}
+        self.default_dock_button = None
         self._setup_ui()
 
     def set_tools_file(self, file):
@@ -355,6 +356,8 @@ class QuickAccessToolbar(QtWidgets.QWidget):
         elif tp == "dock":
             btn = LucidDockButton()
             btn.setText(text)
+            if self.default_dock_button is None or config.pop("default", False):
+                self.default_dock_button = btn
 
         for prop, val in config.items():
             try:
