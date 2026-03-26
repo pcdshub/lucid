@@ -9,7 +9,7 @@ from pydm.display import ScreenTarget, clear_compiled_ui_file_cache, load_file
 from pydm.utilities import IconFont, find_file
 from pydm.utilities.macro import parse_macro_string
 from pydm.utilities.stylesheet import merge_widget_stylesheet
-from qtpy.QtCore import Qt
+from qtpy.QtCore import QPoint, Qt
 from qtpy.QtGui import QCursor
 from qtpy.QtWidgets import (
     QHBoxLayout,
@@ -198,10 +198,16 @@ class LucidDock(QWidget):
         """
         self = cls._instance
         self.clean_detached_widgets()
-        self.detached_widgets.append(widget)
+        if widget not in self.detached_widgets:
+            self.detached_widgets.append(widget)
+        widget.setParent(self)
         widget.setParent(None)  # type: ignore
         widget.setWindowTitle(title)
+        cursor_pos = QCursor().pos()
+        left_of_cursor = QPoint(cursor_pos.x() - 10, cursor_pos.y())
+        widget.move(left_of_cursor)
         widget.show()
+        widget.activateWindow()
         self.update_attach_enabled()
 
     @classmethod
@@ -266,6 +272,7 @@ class LucidDock(QWidget):
         for display in list(self.detached_widgets):
             if not display.isVisible():
                 self.detached_widgets.remove(display)
+        self.detached_widgets = list(set(self.detached_widgets))
         self.update_attach_enabled()
 
     def update_attach_enabled(self):
