@@ -23,9 +23,12 @@ class LucidMainWindow(QMainWindow):
 
     Parameters
     ----------
-    toolbar: str
+    beamline : str
+        The name of the beamline that this home screen is for
+    toolbar : str, optional
         Path to toolbar file
-    parent: optional
+    parent : QWidget, optional
+        Standard qt parent argument
     """
 
     def __init__(self, beamline: str, toolbar: str | io.StringIO | None, parent: QWidget | None = None):
@@ -35,6 +38,9 @@ class LucidMainWindow(QMainWindow):
         self.setup_ui()
 
     def setup_ui(self):
+        """
+        Create all the widgets that will be used in the screen
+        """
         self.setWindowTitle(f"LUCID - {self.beamline}")
         self.main_widget = QWidget()
         self.grid = IndicatorGrid()
@@ -74,8 +80,9 @@ class LucidMainWindow(QMainWindow):
         return super().resizeEvent(event)
 
     def finalize_window_settings(self):
-        # self.setWindowFlags(Qt.Window)
-        # Dynamic sizing based on what was loaded
+        """
+        Setup some dynamic sizing parameters based on what was loaded in the previous steps
+        """
         grid_hint = self.grid.sizeHint()
         gridw = grid_hint.width()
         gridh = grid_hint.height()
