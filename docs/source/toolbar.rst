@@ -25,16 +25,22 @@ Options and Limitations
 - The user can specify an arbitrary number of tabs.
 - Each tab can have an arbitrary number of columns.
 - The columns are filled from left to right, then from top to bottom.
-- Only ``PyDMShellCommand`` and ``PyDMRelatedDisplayButton`` widgets are supported.
+- Only ``LucidDockButton``, ``PyDMShellCommand`` and ``PyDMRelatedDisplayButton`` widgets are supported.
 - Any available pyqt property or general python attribute can be specified on either
   of these button types.
 
 Guidelines
 ----------
 
-- The related display option (``display``) should be used whenever it is possible to do so,
-  because the screen will open more quickly compared to a shell script, which will need to
-  initialize an entire new python shell with new imports.
+- The dock (``dock``) and related display (``display``) options open windows more quickly than the
+  shell commend (``shell``) option and should be used whenever possible.
+  A pydm screen in a shell script would need to initialize an entire new python shell with new imports,
+  and may even have other setup steps, leading to large delays.
+- The dock option (``dock``) should be used for any screen that fits nicely in the dock- that is,
+  any screen that isn't wide. This gives the user maximum flexibility for how to use the screen.
+- The related display option (``display``) should be used for larger screens that don't fit into the dock.
+- The shell command (``shell``) option should be reserved for cases where it is strictly required,
+  such as for running non-PyDM applications.
 
 File Format
 -----------
@@ -72,10 +78,25 @@ LUCID will iterate through these dictionaries and create buttons,
 arranging them from left to right across each column before moving to the next row.
 
 The button config dictionary has one special key: ``type``.
-The ``type`` key can either be ``shell`` to create a ``PyDMShellCommand`` button,
-or it can be ``display`` to create a ``PyDMRelatedDisplayButton``.
+The ``type`` key can be one of ``dock`` to create a ``LucidDockButton``,
+``shell`` to create a ``PyDMShellCommand`` button,
+or ``display`` to create a ``PyDMRelatedDisplayButton``.
 If ``type`` is omitted, or is not one of these options,
 an inactive ``QPushButton`` will be created.
+
+For the dock widget, there is an additional optional ``default`` key that can be
+used to pick which widget should be opened automatically in the dock when lucid is started.
+This would look something like:
+
+.. code-block:: yaml
+
+        Default In Dock:
+          type: dock
+          filename: /path/to/my/docked/file.ui
+          default: true
+
+If no dock button has the default key set to True, we'll pick the first dock button in the config file.
+If multiple dock buttons have the default key set to True, we'll pick the first of these.
 
 All other keys in the config dictionary should be mappings from qt property names
 to each property's desired value.
@@ -89,6 +110,10 @@ and another with button text "Run Neat Script."
 .. code-block:: yaml
 
     buttons:
+      Docked PyDM Display:
+        type: dock
+        filename: /path/to/my/ui/file.ui
+        macro: "{'PREFIX': 'DOCKED'}"
       Cool PyDM Display:
         type: display
         filenames:
