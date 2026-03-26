@@ -309,3 +309,13 @@ def centralized_logging_enabled() -> bool:
     """Returns True if centralized logging should be enabled."""
     fqdn = get_fully_qualified_domain_name()
     return any(fqdn.endswith(domain) for domain in LOG_DOMAINS)
+
+
+def ctrl_pressed() -> bool:
+    """Returns True if ctrl key is pressed."""
+    return bool(QApplication.keyboardModifiers() & Qt.ControlModifier)
+
+
+def shift_pressed() -> bool:
+    """Returns True if shift key is pressed."""
+    return bool(QApplication.keyboardModifiers() & Qt.ShiftModifier)

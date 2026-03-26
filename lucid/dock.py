@@ -12,7 +12,6 @@ from pydm.utilities.stylesheet import merge_widget_stylesheet
 from qtpy.QtCore import Qt
 from qtpy.QtGui import QCursor
 from qtpy.QtWidgets import (
-    QApplication,
     QHBoxLayout,
     QMenu,
     QPushButton,
@@ -27,6 +26,8 @@ try:
     from qtpy.QtCore import Property  # type: ignore
 except ImportError:
     from qtpy.QtCore import pyqtProperty as Property  # type: ignore
+
+from .utils import ctrl_pressed, shift_pressed
 
 ifont = IconFont()
 
@@ -117,10 +118,10 @@ class LucidDock(QWidget):
         widget : QWidget
             The widget to open in the dock
         """
-        if bool(QApplication.keyboardModifiers() & Qt.ShiftModifier) or not cls._instance.isVisible():
+        if shift_pressed() or not cls._instance.isVisible():
             cls.open_in_new_window(title=title, widget=widget)
         else:
-            new_tab = bool(QApplication.keyboardModifiers() & Qt.ControlModifier)
+            new_tab = ctrl_pressed()
             cls.add_to_dock(title=title, widget=widget, new_tab=new_tab)
 
     @classmethod
@@ -220,7 +221,7 @@ class LucidDock(QWidget):
             return
         elif len(self.detached_widgets) == 1:
             widget = self.detached_widgets[0]
-            self.reattach_to_dock(widget)
+            self.reattach_to_dock(widget=widget)
         else:
             self.show_attach_menu()
 

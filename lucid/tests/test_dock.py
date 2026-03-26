@@ -1,0 +1,264 @@
+from pathlib import Path
+from unittest.mock import Mock
+
+import pytest
+from pytestqt.qtbot import QtBot
+from qtpy.QtWidgets import QWidget
+
+import lucid.dock
+from lucid.dock import LucidDock, LucidDockButton
+
+
+@pytest.fixture(scope="function")
+def lucid_dock(qtbot: QtBot) -> LucidDock:
+    dock = LucidDock()
+    dock.show()
+    qtbot.addWidget(dock)
+    return dock
+
+
+@pytest.fixture(scope="function")
+def dock_button(qtbot: QtBot) -> LucidDockButton:
+    button = LucidDockButton()
+    qtbot.addWidget(button)
+    return button
+
+
+def test_add_to_dock_user_choice(lucid_dock: LucidDock, monkeypatch: pytest.MonkeyPatch, qtbot: QtBot):
+    # Mock our own methods to check if they got called
+    add_to_dock_mock = Mock()
+    open_in_new_window_mock = Mock()
+    monkeypatch.setattr(LucidDock, "add_to_dock", add_to_dock_mock)
+    monkeypatch.setattr(LucidDock, "open_in_new_window", open_in_new_window_mock)
+
+    def reset_mocks():
+        add_to_dock_mock.reset_mock()
+        open_in_new_window_mock.reset_mock()
+
+    title = "title"
+    widget = QWidget()
+    qtbot.addWidget(widget)
+
+    def add_to_dock():
+        LucidDock.add_to_dock_user_choice(title=title, widget=widget)
+
+    # Standard: open in dock
+    reset_mocks()
+    add_to_dock()
+    add_to_dock_mock.assert_called_once_with(title=title, widget=widget, new_tab=False)
+    open_in_new_window_mock.assert_not_called()
+
+    # Dock hidden: open in new window
+    reset_mocks()
+    lucid_dock.hide()
+    add_to_dock()
+    add_to_dock_mock.assert_not_called()
+    open_in_new_window_mock.assert_called_once_with(title=title, widget=widget)
+    lucid_dock.show()
+
+    # Ctrl pressed: open in dock in a new tab
+    monkeypatch.setattr(lucid.dock, "ctrl_pressed", lambda: True)
+    monkeypatch.setattr(lucid.dock, "shift_pressed", lambda: False)
+    reset_mocks()
+    add_to_dock()
+    add_to_dock_mock.assert_called_once_with(title=title, widget=widget, new_tab=True)
+    open_in_new_window_mock.assert_not_called()
+
+    # Shift pressed: open in new window
+    monkeypatch.setattr(lucid.dock, "ctrl_pressed", lambda: False)
+    monkeypatch.setattr(lucid.dock, "shift_pressed", lambda: True)
+    reset_mocks()
+    add_to_dock()
+    add_to_dock_mock.assert_not_called()
+    open_in_new_window_mock.assert_called_once_with(title=title, widget=widget)
+
+
+def test_add_to_dock(lucid_dock: LucidDock, qtbot: QtBot):
+    widget1 = QWidget()
+    qtbot.add_widget(widget1)
+    widget2 = QWidget()
+    qtbot.add_widget(widget2)
+
+    LucidDock.add_to_dock(title="", widget=widget1)
+    assert lucid_dock.tab_widget.currentWidget() is widget1
+    assert lucid_dock.tab_widget.count() == 1
+
+    LucidDock.add_to_dock(title="", widget=widget2)
+    assert lucid_dock.tab_widget.currentWidget() is widget2
+    assert lucid_dock.tab_widget.count() == 1
+
+    LucidDock.add_to_dock(title="", widget=widget1, new_tab=True)
+    assert lucid_dock.tab_widget.currentWidget() is widget1
+    assert lucid_dock.tab_widget.count() == 2
+
+
+def test_detach_from_dock(lucid_dock: LucidDock, qtbot: QtBot):
+    widget1 = QWidget()
+    qtbot.add_widget(widget1)
+
+    LucidDock.add_to_dock(title="", widget=widget1)
+    LucidDock.detach_from_dock()
+
+    assert lucid_dock.tab_widget.currentWidget() is None
+    assert lucid_dock.tab_widget.count() == 0
+
+    assert widget1.parent() is None
+    assert widget1.isVisible()
+    assert widget1 in lucid_dock.detached_widgets
+
+
+def test_open_in_new_window(lucid_dock: LucidDock, qtbot: QtBot):
+    widget1 = QWidget()
+    qtbot.add_widget(widget1)
+
+    LucidDock.open_in_new_window(title="", widget=widget1)
+
+    assert lucid_dock.tab_widget.currentWidget() is None
+    assert lucid_dock.tab_widget.count() == 0
+
+    assert widget1.parent() is None
+    assert widget1.isVisible()
+    assert widget1 in lucid_dock.detached_widgets
+
+
+def test_reattach_user_choice(lucid_dock: LucidDock, monkeypatch: pytest.MonkeyPatch, qtbot: QtBot):
+    # Mock our own methods to check if they got called
+    reattach_to_dock_mock = Mock()
+    show_attach_menu_mock = Mock()
+    monkeypatch.setattr(LucidDock, "reattach_to_dock", reattach_to_dock_mock)
+    monkeypatch.setattr(LucidDock, "show_attach_menu", show_attach_menu_mock)
+
+    def reset_mocks():
+        reattach_to_dock_mock.reset_mock()
+        show_attach_menu_mock.reset_mock()
+
+    reset_mocks()
+    LucidDock.reattach_user_choice()
+    reattach_to_dock_mock.assert_not_called()
+    show_attach_menu_mock.assert_not_called()
+
+    widget1 = QWidget()
+    qtbot.add_widget(widget1)
+
+    LucidDock.open_in_new_window(title="", widget=widget1)
+    reset_mocks()
+    LucidDock.reattach_user_choice()
+    reattach_to_dock_mock.assert_called_once_with(widget=widget1)
+    show_attach_menu_mock.assert_not_called()
+
+    widget2 = QWidget()
+    qtbot.add_widget(widget2)
+
+    LucidDock.open_in_new_window(title="", widget=widget2)
+    reset_mocks()
+    LucidDock.reattach_user_choice()
+    reattach_to_dock_mock.assert_not_called()
+    show_attach_menu_mock.assert_called_once_with()
+
+
+def test_reattach_to_dock(lucid_dock: LucidDock, qtbot: QtBot):
+    widget1 = QWidget()
+    qtbot.add_widget(widget1)
+
+    LucidDock.open_in_new_window(title="", widget=widget1)
+    LucidDock.reattach_to_dock(widget=widget1)
+
+    assert widget1 not in lucid_dock.detached_widgets
+    assert lucid_dock.tab_widget.currentWidget() is widget1
+    assert lucid_dock.tab_widget.count() == 1
+
+    widget2 = QWidget()
+    qtbot.add_widget(widget2)
+
+    LucidDock.open_in_new_window(title="", widget=widget2)
+    LucidDock.reattach_to_dock(widget=widget2)
+
+    assert widget2 not in lucid_dock.detached_widgets
+    assert lucid_dock.tab_widget.currentWidget() is widget2
+    assert lucid_dock.tab_widget.count() == 2
+
+
+def test_show_attach_menu(lucid_dock: LucidDock, qtbot: QtBot):
+    widgets = [QWidget() for _ in range(3)]
+    for num, wd in enumerate(widgets):
+        qtbot.add_widget(wd)
+        LucidDock.open_in_new_window(title=f"{num}", widget=wd)
+        assert wd in lucid_dock.detached_widgets
+
+    menu = lucid_dock.show_attach_menu()
+    for action in menu.actions():
+        action.trigger()
+        this_widget = widgets[int(action.text())]
+        qtbot.wait_signal(action.triggered)
+        assert this_widget not in lucid_dock.detached_widgets
+        assert lucid_dock.tab_widget.currentWidget() is this_widget
+
+    assert lucid_dock.tab_widget.count() == 3
+
+
+def test_clean_detached_widgets(lucid_dock: LucidDock, qtbot: QtBot):
+    widget1 = QWidget()
+    qtbot.add_widget(widget1)
+
+    LucidDock.open_in_new_window(title="", widget=widget1)
+    assert widget1 in lucid_dock.detached_widgets
+
+    widget1.close()
+
+    def not_vis():
+        assert not widget1.isVisible()
+
+    qtbot.wait_until(not_vis)
+
+    lucid_dock.clean_detached_widgets()
+    assert not lucid_dock.detached_widgets
+
+
+def test_not_clean_minimized_widgets(lucid_dock: LucidDock, qtbot: QtBot):
+    widget1 = QWidget()
+    qtbot.add_widget(widget1)
+
+    LucidDock.open_in_new_window(title="", widget=widget1)
+    assert widget1 in lucid_dock.detached_widgets
+
+    widget1.showMinimized()
+
+    def is_minim():
+        assert widget1.isMinimized()
+
+    qtbot.wait_until(is_minim)
+
+    lucid_dock.clean_detached_widgets()
+    assert widget1 in lucid_dock.detached_widgets
+
+
+def test_build_widget(dock_button: LucidDockButton):
+    dock_button.setFilename("lucid/tests/dock1.ui")
+    widget1 = dock_button.build_widget()
+    assert widget1.windowTitle() == "DOCK1"
+    widget2 = dock_button.build_widget()
+    assert widget1 is widget2
+
+
+def test_build_widget_ui_edited(dock_button: LucidDockButton, tmp_path: Path):
+    local_ui = Path(__file__).parent / "dock1.ui"
+    temp_ui = tmp_path / "dock1.ui"
+
+    with open(local_ui, "r") as fd:
+        original_text = fd.read()
+
+    with open(temp_ui, "w") as fd:
+        fd.write(original_text)
+
+    dock_button.setFilename(str(temp_ui))
+    widget1 = dock_button.build_widget()
+    assert widget1.windowTitle() == "DOCK1"
+
+    new_text = original_text.replace("DOCK1", "NEW_EDIT")
+
+    with open(temp_ui, "w") as fd:
+        fd.write(new_text)
+
+    widget2 = dock_button.build_widget()
+    assert widget1 is not widget2
+    assert widget2.windowTitle() == "NEW_EDIT"

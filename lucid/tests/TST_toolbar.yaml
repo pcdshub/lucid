@@ -1,0 +1,13 @@
+
+Tab1:
+  config:
+    cols: 4
+
+  buttons:
+    DOCK1:
+        type: dock
+        filename: lucid/tests/dock1.ui
+    DOCK2:
+        type: dock
+        filename: lucid/tests/dock2.ui
+        default: true
