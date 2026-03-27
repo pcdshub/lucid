@@ -14,6 +14,7 @@ from qtpy.QtGui import QCursor
 from qtpy.QtWidgets import (
     QHBoxLayout,
     QMenu,
+    QMessageBox,
     QPushButton,
     QSizePolicy,
     QTabWidget,
@@ -30,6 +31,24 @@ except ImportError:
 from .utils import ctrl_pressed, shift_pressed
 
 ifont = IconFont()
+
+DOCK_CONTROLS = """
+This dock can hold any dockable PyDM or Typhos screen.
+
+Buttons that have the anchor mouseover cursor are dockable.
+All Typhos screens from the grid are dockable.
+
+Click on a dockable button to replace the current tab.
+
+Ctrl + click to open the screen in a new tab.
+Shift + click to open the screen in a new window.
+
+Click the up arrow to bring a tab into a new window.
+Click the down arrow to bring a window into a new tab.
+
+Screens that are already open will be moved instead of opened again,
+unless they have been modified.
+"""
 
 
 class LucidDock(QWidget):
@@ -68,18 +87,56 @@ class LucidDock(QWidget):
         self.tab_widget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.tab_widget.currentChanged.connect(self.show_correct_tab_buttons)
 
+        self.corner_widget = QWidget()
+        self.corner_layout = QHBoxLayout()
+        self.corner_widget.setLayout(self.corner_layout)
+        self.corner_layout.setContentsMargins(0, 0, 0, 0)
+
         self.attach_button = QToolButton()
         self.attach_button.setIcon(ifont.icon("arrow-down"))  # type: ignore
         self.attach_button.clicked.connect(self.reattach_user_choice)
         self.attach_button.setEnabled(False)
-        self.tab_widget.setCornerWidget(self.attach_button, Qt.Corner.TopRightCorner)
-        tab_bar = self.tab_widget.tabBar()
-        tab_bar.setMinimumHeight(20)
-        self.attach_button.setMinimumHeight(20)
+
+        self.help_button = QToolButton()
+        self.help_button.setIcon(ifont.icon("question"))  # type: ignore
+        self.help_button.clicked.connect(self.show_help)
+        self.help_button.setToolTip(DOCK_CONTROLS)
+        self.help_dialog = None
+
+        self.corner_layout.addWidget(self.attach_button)
+        self.corner_layout.addWidget(self.help_button)
+
+        self.tab_widget.setCornerWidget(self.corner_widget, Qt.Corner.TopRightCorner)
+
+        # This makes it so the attach button doesn't disappear when the dock is empty
+        self.corner_widget.setMinimumHeight(20)
 
         self.vlayout = QVBoxLayout()
         self.vlayout.addWidget(self.tab_widget)
         self.setLayout(self.vlayout)
+
+    def show_help(self):
+        """
+        Show dock controls in a pop-up dialog
+        """
+        dialog = self._get_help_dialog()
+        dialog.setParent(self)
+        dialog.setParent(None)  # type: ignore
+        dialog.move(QCursor().pos())
+        dialog.show()
+
+    def _get_help_dialog(self) -> QMessageBox:
+        """
+        Build the dialog used in show_help
+        """
+        if self.help_dialog is not None:
+            return self.help_dialog
+        self.help_dialog = QMessageBox()
+        self.help_dialog.setWindowTitle("Dock controls")
+        self.help_dialog.setText(DOCK_CONTROLS)
+        self.help_dialog.setStandardButtons(QMessageBox.Ok)
+        self.help_dialog.setModal(False)
+        return self.help_dialog
 
     def show_correct_tab_buttons(self, new_idx: int):
         """
