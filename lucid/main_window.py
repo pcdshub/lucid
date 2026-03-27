@@ -2,8 +2,9 @@ import io
 import logging
 import pathlib
 
+from qtpy.QtCore import Qt
 from qtpy.QtGui import QResizeEvent
-from qtpy.QtWidgets import QHBoxLayout, QMainWindow, QSizePolicy, QSpacerItem, QVBoxLayout, QWidget
+from qtpy.QtWidgets import QHBoxLayout, QLabel, QMainWindow, QSizePolicy, QSpacerItem, QTabWidget, QVBoxLayout, QWidget
 
 from .dock import LucidDock
 from .overview import IndicatorGrid, QuickAccessToolbar
@@ -47,26 +48,42 @@ class LucidMainWindow(QMainWindow):
         self.dock = LucidDock()
         self.dock.setFixedWidth(850)
 
-        self.vlayout = QVBoxLayout()
-        self.vlayout.addWidget(self.grid)
+        self.dummy_tabs = QTabWidget()
+        self.dock_vis_label = QLabel()
+        self.dock_vis_label.setAlignment(Qt.AlignCenter)
+        self.dummy_tabs.addTab(self.dock_vis_label, "")
+        self.dummy_tabs.setEnabled(False)
+        self.dummy_tabs.hide()
+
+        self.grid_hlayout = QHBoxLayout()
+        self.grid_hlayout.setContentsMargins(0, 0, 0, 0)
+        self.grid_hlayout.addWidget(self.grid)
+        self.grid_hlayout.addWidget(self.dummy_tabs)
+        self.grid_hlayout.setAlignment(self.grid, Qt.AlignLeft)
+
+        self.left_vlayout = QVBoxLayout()
+        self.left_vlayout.setContentsMargins(0, 0, 0, 0)
+        self.left_vlayout.addLayout(self.grid_hlayout)
         if self.toolbar is not None:
             vertical_spacer = QSpacerItem(10, 20, QSizePolicy.Minimum, QSizePolicy.MinimumExpanding)
-            self.vlayout.addItem(vertical_spacer)
+            self.left_vlayout.addItem(vertical_spacer)
             self.quick_toolbar = QuickAccessToolbar()
             self.quick_toolbar.set_tools_file(self.toolbar)
-            self.quick_toolbar.setMaximumWidth(1500)
-            self.vlayout.addWidget(self.quick_toolbar)
+            self.left_vlayout.addWidget(self.quick_toolbar)
             if self.quick_toolbar.default_dock_button is not None:
                 default_docked = self.quick_toolbar.default_dock_button.build_widget()
                 self.dock.add_to_dock(title=default_docked.windowTitle(), widget=default_docked)
 
-        self.hlayout = QHBoxLayout()
-        self.hlayout.addLayout(self.vlayout)
-        self.hlayout.addWidget(self.dock)
-        self.main_widget.setLayout(self.hlayout)
+        self.outer_hlayout = QHBoxLayout()
+        self.outer_hlayout.setContentsMargins(3, 3, 3, 3)
+        self.outer_hlayout.setSpacing(0)
+        self.outer_hlayout.addLayout(self.left_vlayout)
+        self.outer_hlayout.addWidget(self.dock)
+        self.main_widget.setLayout(self.outer_hlayout)
         self.setCentralWidget(self.main_widget)
 
         self.width_threshold = 2200
+        self.min_placeholder_space = 300
 
     def resizeEvent(self, event: QResizeEvent) -> None:  # type: ignore
         """
@@ -75,8 +92,16 @@ class LucidMainWindow(QMainWindow):
         new_width = event.size().width()
         if new_width < self.width_threshold:
             self.dock.hide()
+            if new_width > self.min_placeholder_space:
+                self.dock_vis_label.setText(
+                    f"Small window mode: dock hidden\n(needs to be {self.width_threshold - new_width}px wider)"
+                )
+                self.dummy_tabs.show()
+            else:
+                self.dummy_tabs.hide()
         else:
             self.dock.show()
+            self.dummy_tabs.hide()
         return super().resizeEvent(event)
 
     def finalize_window_settings(self):
@@ -89,7 +114,8 @@ class LucidMainWindow(QMainWindow):
         tabs_hint = self.quick_toolbar.sizeHint()
         tabw = tabs_hint.width()
         tabh = tabs_hint.height()
-        self.width_threshold = gridw + self.dock.width()
+        self.width_threshold = gridw + self.dock.width() - 20
         minw = max(gridw, tabw) + 10
         minh = gridh + tabh
         self.setMinimumSize(minw, minh)
+        self.min_placeholder_space = gridw + 210
