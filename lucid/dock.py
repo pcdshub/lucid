@@ -430,9 +430,9 @@ class LucidDockButton(QPushButton):
         display = self.build_widget()
         LucidDock.add_to_dock_user_choice(title=display.windowTitle(), widget=display)
 
-    def contextMenuEvent(self, a0: QContextMenuEvent) -> None:
+    def contextMenuEvent(self, event: QContextMenuEvent) -> None:  # type: ignore
         display = self.build_widget()
-        LucidDock.show_add_to_dock_user_menu(title=display.windowTitle(), widget=display, event=a0)
+        LucidDock.show_add_to_dock_user_menu(title=display.windowTitle(), widget=display, event=event)
 
     def readFilename(self) -> str:
         return self._filename
