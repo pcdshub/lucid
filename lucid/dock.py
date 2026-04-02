@@ -225,6 +225,11 @@ class LucidDock(QWidget):
         tab_bar.setTabButton(idx, tab_bar.ButtonPosition.RightSide, button_row)
         self.tab_widget.setCurrentIndex(idx)
 
+        try:
+            self.detached_widgets.remove(widget)
+        except ValueError:
+            ...
+
     @classmethod
     def detach_from_dock(cls):
         """
