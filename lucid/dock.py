@@ -10,7 +10,7 @@ from pydm.utilities import IconFont, find_file
 from pydm.utilities.macro import parse_macro_string
 from pydm.utilities.stylesheet import merge_widget_stylesheet
 from qtpy.QtCore import QPoint, Qt
-from qtpy.QtGui import QCursor
+from qtpy.QtGui import QContextMenuEvent, QCursor
 from qtpy.QtWidgets import (
     QHBoxLayout,
     QMenu,
@@ -165,7 +165,7 @@ class LucidDock(QWidget):
         """
         The main way other code should add widgets to the dock.
 
-        This checks the user's keypresses and opens the widget in the current tab (default),
+        This checks the user's modifier keys and opens the widget in the current tab (default),
         a new tab (ctrl), or a new window (shift, or invisible dock) as appropriate.
 
         Parameters
@@ -180,6 +180,30 @@ class LucidDock(QWidget):
         else:
             new_tab = ctrl_pressed()
             cls.add_to_dock(title=title, widget=widget, new_tab=new_tab)
+
+    @classmethod
+    def show_add_to_dock_user_menu(cls, title: str, widget: QWidget, event: QContextMenuEvent):
+        """
+        The other main way to add widgets to the dock, with a multiple choice menu.
+
+        Rather than using modifier keys like add_to_dock_user_choice, this creates
+        a compact menu with each variant as an option.
+
+        Parameters
+        ----------
+        title : str
+            The title of the tab and/or window
+        widget : QWidget
+            The widget to open in the dock
+        """
+        menu = QMenu()
+        replace_tab_action = menu.addAction("Replace Current Tab")
+        replace_tab_action.triggered.connect(partial(cls.add_to_dock, title=title, widget=widget, new_tab=False))
+        new_tab_action = menu.addAction("Open in New Tab")
+        new_tab_action.triggered.connect(partial(cls.add_to_dock, title=title, widget=widget, new_tab=True))
+        new_window_action = menu.addAction("Open in New Window")
+        new_window_action.triggered.connect(partial(cls.open_in_new_window, title=title, widget=widget))
+        menu.exec_(event.globalPos())
 
     @classmethod
     def add_to_dock(cls, title: str, widget: QWidget, new_tab: bool = False):
@@ -311,7 +335,7 @@ class LucidDock(QWidget):
             self.detached_widgets.remove(widget)
         self.clean_detached_widgets()
 
-    def show_attach_menu(self) -> QMenu:
+    def show_attach_menu(self):
         """
         Creates a menu at the cursor position that can be used to reattach one tracked widget to the dock.
 
@@ -322,8 +346,7 @@ class LucidDock(QWidget):
         for widget in self.detached_widgets:
             action = menu.addAction(widget.windowTitle())
             action.triggered.connect(partial(self.reattach_to_dock, widget))
-        menu.popup(QCursor().pos())
-        return menu
+        menu.exec_(QCursor().pos())
 
     def clean_detached_widgets(self):
         """
@@ -392,6 +415,7 @@ class LucidDockButton(QPushButton):
                 clear_compiled_ui_file_cache()
                 self.cached_widget.close()
             display = cast(QWidget, load_file(fname, macros=macros, target=ScreenTarget.DIALOG))
+            display.hide()
             merge_widget_stylesheet(widget=display)
             self.cached_ui_text = ui_text
             self.cached_widget = display
@@ -405,6 +429,10 @@ class LucidDockButton(QPushButton):
         """
         display = self.build_widget()
         LucidDock.add_to_dock_user_choice(title=display.windowTitle(), widget=display)
+
+    def contextMenuEvent(self, a0: QContextMenuEvent) -> None:
+        display = self.build_widget()
+        LucidDock.show_add_to_dock_user_menu(title=display.windowTitle(), widget=display, event=a0)
 
     def readFilename(self) -> str:
         return self._filename
