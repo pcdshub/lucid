@@ -2,6 +2,10 @@ version = 1
 revision = 3
 requires-python = ">=3.12"
 
+[options]
+exclude-newer = "2026-03-26T17:46:51.430440256Z"
+exclude-newer-span = "P7D"
+
 [[package]]
 name = "alabaster"
 version = "1.0.0"
@@ -471,7 +475,7 @@ requires-dist = [
     { name = "sphinxcontrib-jquery", marker = "extra == 'doc'", specifier = ">=4.1" },
     { name = "typhos", specifier = ">=4.2.1" },
 ]
-provides-extras = ["test", "doc", "dev"]
+provides-extras = ["dev", "doc", "test"]
 
 [[package]]
 name = "lxml"
