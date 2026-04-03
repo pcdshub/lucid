@@ -179,6 +179,7 @@ class IndicatorCell(BaseDeviceButton):
     def add_device(self, device):
         """Add a device to the IndicatorCell"""
         indicator = indicator_for_device(device)
+        indicator.setContextMenuPolicy(Qt.NoContextMenu)
         self.devices.append(device)
         self.add_indicator(indicator)
 
