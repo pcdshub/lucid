@@ -133,6 +133,8 @@ class QMenuWithClickableSubmenu(QMenu):
     def mouseReleaseEvent(self, event: QMouseEvent) -> None:  # type: ignore
         if event.button() == Qt.LeftButton:
             action = self.actionAt(event.pos())
+            if action is None:
+                return super().mouseReleaseEvent(event)
             action.menu().defaultAction().trigger()
             self.close()
         else:
