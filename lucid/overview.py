@@ -130,15 +130,15 @@ class QMenuWithClickableSubmenu(QMenu):
     QMenu, but we can click our submenus to do their default actions.
     """
 
-    def mouseReleaseEvent(self, event: QMouseEvent) -> None:  # type: ignore
+    def mousePressEvent(self, event: QMouseEvent) -> None:  # type: ignore
         if event.button() == Qt.LeftButton:
             action = self.actionAt(event.pos())
             if action is None:
-                return super().mouseReleaseEvent(event)
+                return super().mousePressEvent(event)
             action.menu().defaultAction().trigger()
             self.close()
         else:
-            return super().mouseReleaseEvent(event)
+            return super().mousePressEvent(event)
 
 
 class IndicatorCell(BaseDeviceButton):
