@@ -175,7 +175,7 @@ class LucidDock(QWidget):
         widget : DeferredWidget
             The widget to use, or a callable to produce the widget right before it is needed.
         title : str
-            The title of the tab and/or window
+            The title of the tab and/or window.
             If omitted we'll use the widget's windowTitle
         """
         if shift_pressed() or not cls._instance.isVisible():
@@ -199,7 +199,7 @@ class LucidDock(QWidget):
         widget : DeferredWidget
             The widget to use, or a callable to produce the widget right before it is needed.
         title : str, optional
-            The title of the tab and/or window
+            The title of the tab and/or window.
             If omitted we'll use the widget's windowTitle
         pos : QPoint, optional
             The position to open the menu at.
@@ -233,7 +233,7 @@ class LucidDock(QWidget):
         widget : DeferredWidget
             The widget to use, or a callable to produce the widget right before it is needed.
         title : str, optional
-            The title of the tab and/or window
+            The title of the tab and/or window.
             If omitted we'll use the widget's windowTitle
         new_tab : bool, optional
             If True, opens a new tab for the widget. If False, overwrites the current open tab.
