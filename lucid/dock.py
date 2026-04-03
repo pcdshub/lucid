@@ -250,6 +250,9 @@ class LucidDock(QWidget):
         if not title:
             title = widget.windowTitle()
 
+        # Some typhos screens crash (segfault) when added to the tabs if not shown first (???)
+        widget.show()
+
         if idx is None:
             idx = self.tab_widget.addTab(widget, title)
         else:
