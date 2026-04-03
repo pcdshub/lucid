@@ -3,7 +3,7 @@ Dock widget definitions
 """
 
 from functools import partial
-from typing import ClassVar, cast
+from typing import Callable, ClassVar, cast
 
 from pydm.display import ScreenTarget, clear_compiled_ui_file_cache, load_file
 from pydm.utilities import IconFont, find_file
@@ -31,6 +31,8 @@ except ImportError:
 from .utils import ctrl_pressed, shift_pressed
 
 ifont = IconFont()
+
+DeferredWidget = QWidget | Callable[[], QWidget]
 
 DOCK_CONTROLS = """
 This dock can hold any dockable PyDM or Typhos screen.
@@ -161,7 +163,7 @@ class LucidDock(QWidget):
                 button.hide()
 
     @classmethod
-    def add_to_dock_user_choice(cls, title: str, widget: QWidget):
+    def add_to_dock_user_choice(cls, widget: DeferredWidget, title: str = ""):
         """
         The main way other code should add widgets to the dock.
 
@@ -170,19 +172,20 @@ class LucidDock(QWidget):
 
         Parameters
         ----------
+        widget : DeferredWidget
+            The widget to use, or a callable to produce the widget right before it is needed.
         title : str
             The title of the tab and/or window
-        widget : QWidget
-            The widget to open in the dock
+            If omitted we'll use the widget's windowTitle
         """
         if shift_pressed() or not cls._instance.isVisible():
-            cls.open_in_new_window(title=title, widget=widget)
+            cls.open_in_new_window(widget=widget, title=title)
         else:
             new_tab = ctrl_pressed()
-            cls.add_to_dock(title=title, widget=widget, new_tab=new_tab)
+            cls.add_to_dock(widget=widget, title=title, new_tab=new_tab)
 
     @classmethod
-    def show_add_to_dock_user_menu(cls, title: str, widget: QWidget, event: QContextMenuEvent):
+    def add_to_dock_user_menu(cls, widget: DeferredWidget, title: str = "", pos: QPoint | None = None) -> QMenu:
         """
         The other main way to add widgets to the dock, with a multiple choice menu.
 
@@ -191,31 +194,42 @@ class LucidDock(QWidget):
 
         Parameters
         ----------
-        title : str
+        widget : DeferredWidget
+            The widget to use, or a callable to produce the widget right before it is needed.
+        title : str, optional
             The title of the tab and/or window
-        widget : QWidget
-            The widget to open in the dock
+            If omitted we'll use the widget's windowTitle
+        pos : QPoint, optional
+            The position to open the menu at.
+            If omitted, we won't open the menu.
+
+        Returns
+        -------
+        menu : QMenu
         """
         menu = QMenu()
         replace_tab_action = menu.addAction("Replace Current Tab")
-        replace_tab_action.triggered.connect(partial(cls.add_to_dock, title=title, widget=widget, new_tab=False))
+        replace_tab_action.triggered.connect(partial(cls.add_to_dock, widget=widget, title=title, new_tab=False))
         new_tab_action = menu.addAction("Open in New Tab")
-        new_tab_action.triggered.connect(partial(cls.add_to_dock, title=title, widget=widget, new_tab=True))
+        new_tab_action.triggered.connect(partial(cls.add_to_dock, widget=widget, title=title, new_tab=True))
         new_window_action = menu.addAction("Open in New Window")
-        new_window_action.triggered.connect(partial(cls.open_in_new_window, title=title, widget=widget))
-        menu.exec_(event.globalPos())
+        new_window_action.triggered.connect(partial(cls.open_in_new_window, widget=widget, title=title))
+        if pos is not None:
+            menu.exec_(pos)
+        return menu
 
     @classmethod
-    def add_to_dock(cls, title: str, widget: QWidget, new_tab: bool = False):
+    def add_to_dock(cls, widget: DeferredWidget, title: str = "", new_tab: bool = False):
         """
         Adds a widget to the tabbed docking area.
 
         Parameters
         ----------
-        title : str
-            The title of the tab
-        widget : QWidget
-            The widget to open in the dock
+        widget : DeferredWidget
+            The widget to use, or a callable to produce the widget right before it is needed.
+        title : str, optional
+            The title of the tab and/or window
+            If omitted we'll use the widget's windowTitle
         new_tab : bool, optional
             If True, opens a new tab for the widget. If False, overwrites the current open tab.
             Defaults to False.
@@ -225,6 +239,12 @@ class LucidDock(QWidget):
         if not new_tab and self.tab_widget.count() > 0:
             idx = self.tab_widget.currentIndex()
             self.tab_widget.removeTab(idx)
+
+        if not isinstance(widget, QWidget):
+            widget = widget()
+        if not title:
+            title = widget.windowTitle()
+
         if idx is None:
             idx = self.tab_widget.addTab(widget, title)
         else:
@@ -265,10 +285,10 @@ class LucidDock(QWidget):
         if self.tab_widget.count() <= 0:
             return
         widget = self.tab_widget.currentWidget()
-        self.open_in_new_window(self.tab_widget.tabText(self.tab_widget.currentIndex()), widget)
+        self.open_in_new_window(widget=widget, title=self.tab_widget.tabText(self.tab_widget.currentIndex()))
 
     @classmethod
-    def open_in_new_window(cls, title: str, widget: QWidget):
+    def open_in_new_window(cls, widget: DeferredWidget, title: str = ""):
         """
         Moves a widget into a floating window and let it be tracked by the dock.
 
@@ -277,13 +297,20 @@ class LucidDock(QWidget):
 
         Parameters
         ----------
-        title : str
-            The title of the window
-        widget : QWidget
-            The widget to open in the window
+        widget : DeferredWidget
+            The widget to use, or a callable to produce the widget right before it is needed.
+        title : str, optional
+            The title of the tab and/or window
+            If omitted we'll use the widget's windowTitle
         """
         self = cls._instance
         self.clean_detached_widgets()
+
+        if not isinstance(widget, QWidget):
+            widget = widget()
+        if not title:
+            title = widget.windowTitle()
+
         if widget not in self.detached_widgets:
             self.detached_widgets.append(widget)
         widget.setParent(self)
@@ -296,8 +323,7 @@ class LucidDock(QWidget):
         widget.activateWindow()
         self.update_attach_enabled()
 
-    @classmethod
-    def reattach_user_choice(cls):
+    def reattach_user_choice(self):
         """
         Lets the user select a widget to return to the dock in a new tab.
 
@@ -307,7 +333,6 @@ class LucidDock(QWidget):
 
         The window title will be preserved and placed in the tab's text field.
         """
-        self = cls._instance
         self.clean_detached_widgets()
         if not self.detached_widgets:
             return
@@ -317,8 +342,7 @@ class LucidDock(QWidget):
         else:
             self.show_attach_menu()
 
-    @classmethod
-    def reattach_to_dock(cls, widget: QWidget):
+    def reattach_to_dock(self, widget: QWidget):
         """
         Reattaches a specific widget to the dock in a new tab.
 
@@ -329,7 +353,6 @@ class LucidDock(QWidget):
         widget : QWidget
             The widget to return to the dock
         """
-        self = cls._instance
         self.add_to_dock(title=widget.windowTitle(), widget=widget, new_tab=True)
         if widget in self.detached_widgets:
             self.detached_widgets.remove(widget)
@@ -425,14 +448,15 @@ class LucidDockButton(QPushButton):
 
     def open_in_dock(self):
         """
-        Place the widget defined by this button into the dock.
+        Place the widget defined by this button into the dock based on the key modifiers.
         """
-        display = self.build_widget()
-        LucidDock.add_to_dock_user_choice(title=display.windowTitle(), widget=display)
+        LucidDock.add_to_dock_user_choice(widget=self.build_widget)
 
     def contextMenuEvent(self, event: QContextMenuEvent) -> None:  # type: ignore
-        display = self.build_widget()
-        LucidDock.show_add_to_dock_user_menu(title=display.windowTitle(), widget=display, event=event)
+        """
+        On right-click, open a menu to decide where the widget should go.
+        """
+        LucidDock.add_to_dock_user_menu(widget=self.build_widget, pos=event.globalPos())
 
     def readFilename(self) -> str:
         return self._filename
