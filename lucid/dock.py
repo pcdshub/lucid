@@ -185,7 +185,9 @@ class LucidDock(QWidget):
             cls.add_to_dock(widget=widget, title=title, new_tab=new_tab)
 
     @classmethod
-    def add_to_dock_user_menu(cls, widget: DeferredWidget, title: str = "", pos: QPoint | None = None) -> QMenu:
+    def add_to_dock_user_menu(
+        cls, widget: DeferredWidget, title: str = "", pos: QPoint | None = None, menu: QMenu | None = None
+    ) -> QMenu:
         """
         The other main way to add widgets to the dock, with a multiple choice menu.
 
@@ -202,12 +204,15 @@ class LucidDock(QWidget):
         pos : QPoint, optional
             The position to open the menu at.
             If omitted, we won't open the menu.
+        menu : QMenu, optional
+            If provided, we'll add actions to this menu rather than create a new menu.
 
         Returns
         -------
         menu : QMenu
         """
-        menu = QMenu()
+        if menu is None:
+            menu = QMenu()
         replace_tab_action = menu.addAction("Replace Current Tab")
         replace_tab_action.triggered.connect(partial(cls.add_to_dock, widget=widget, title=title, new_tab=False))
         new_tab_action = menu.addAction("Open in New Tab")

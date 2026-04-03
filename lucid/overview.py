@@ -3,12 +3,13 @@
 import collections
 import logging
 import os
+from typing import Callable, cast
 
 import yaml
 from pydm.widgets import PyDMRelatedDisplayButton, PyDMShellCommand
 from qtpy import QtCore, QtWidgets
 from qtpy.QtCore import QEvent, QSize, Qt
-from qtpy.QtGui import QHoverEvent
+from qtpy.QtGui import QHoverEvent, QMouseEvent
 from qtpy.QtWidgets import QGridLayout, QMenu, QPushButton, QWidget
 from typhos.utils import reload_widget_stylesheet
 
@@ -34,11 +35,11 @@ class BaseDeviceButton(QPushButton):
         super().__init__(*args, **kwargs)
         self.title = title
         # References for created screens
-        self._device_displays = {}
+        self._device_displays: dict[str, QWidget] = {}
         self._suite = None
         # Setup Menu
         self.setContextMenuPolicy(Qt.PreventContextMenu)
-        self.device_menu = QMenu()
+        self.device_menu = QMenuWithClickableSubmenu()
         self.device_menu.aboutToShow.connect(self._menu_shown)
 
     def show_device(self, device):
@@ -49,8 +50,6 @@ class BaseDeviceButton(QPushButton):
         return self._device_displays[device.name]
 
     def show_all(self):
-        if len(self.devices) == 0:
-            return None
         """Create a widget for contained devices"""
         if not self._suite:
             self._suite = suite_for_devices(self.devices, parent=self, pin=True)
@@ -71,28 +70,30 @@ class BaseDeviceButton(QPushButton):
         menu_devices = [action.text() for action in self.device_menu.actions()]
         if self._OPEN_ALL not in menu_devices:
             show_all_devices = self._show_all_wrapper()
-            self.device_menu.addAction(self._OPEN_ALL, show_all_devices)
+            self._add_to_menu(widget_func=show_all_devices, text=self._OPEN_ALL)
             self.device_menu.addSeparator()
         # Add devices
         for device in self.devices:
             if device.name not in menu_devices:
                 # Add to device menu
                 show_device = self._show_device_wrapper(device)
-                self.device_menu.addAction(device.name, show_device)
+                self._add_to_menu(widget_func=show_device, text=device.name)
+
+    def _add_to_menu(self, widget_func: Callable[[], QWidget], text: str):
+        sub_menu = self.device_menu.addMenu(text)
+        LucidDock.add_to_dock_user_menu(widget=widget_func, title=text, menu=sub_menu)
+        sub_menu.setDefaultAction(sub_menu.actions()[0])
+        self.device_menu.addMenu(sub_menu)
 
     def _show_all_wrapper(self):
         def inner():
-            suite = self.show_all()
-            if suite is None:
-                return
-            LucidDock.add_to_dock_user_choice(title=self.title, widget=suite)
+            return self.show_all()
 
         return inner
 
     def _show_device_wrapper(self, device):
         def inner():
-            suite = self.show_device(device)
-            LucidDock.add_to_dock_user_choice(title=device.name, widget=suite)
+            return self.show_device(device)
 
         return inner
 
@@ -105,16 +106,37 @@ class BaseDeviceButton(QPushButton):
         """
         # Filter child widgets events to show context menu
         if event.type() == QEvent.MouseButtonPress:
-            if event.button() == Qt.RightButton:
-                self._show_all_wrapper()()
-                return True
-            elif event.button() == Qt.LeftButton:
-                if len(self.devices) == 1:
-                    self._show_device_wrapper(self.devices[0])()
-                else:
-                    self.device_menu.exec_(self.mapToGlobal(event.pos()))
+            event = cast(QMouseEvent, event)
+            if len(self.devices) == 0:
+                # Important: don't do anything when there are no devices
+                return False
+            elif len(self.devices) == 1:
+                device = self.devices[0]
+                deferred_widget = self._show_device_wrapper(self.devices[0])
+                if event.button() == Qt.LeftButton:
+                    LucidDock.add_to_dock_user_choice(widget=deferred_widget, title=device.name)
+                    return True
+                elif event.button() == Qt.RightButton:
+                    LucidDock.add_to_dock_user_menu(widget=deferred_widget, title=device.name, pos=event.globalPos())
+                    return True
+            elif event.button() in (Qt.LeftButton, Qt.RightButton):
+                self.device_menu.exec_(event.globalPos())
                 return True
         return False
+
+
+class QMenuWithClickableSubmenu(QMenu):
+    """
+    QMenu, but we can click our submenus to do their default actions.
+    """
+
+    def mouseReleaseEvent(self, event: QMouseEvent) -> None:  # type: ignore
+        if event.button() == Qt.LeftButton:
+            action = self.actionAt(event.pos())
+            action.menu().defaultAction().trigger()
+            self.close()
+        else:
+            return super().mouseReleaseEvent(event)
 
 
 class IndicatorCell(BaseDeviceButton):
@@ -198,7 +220,7 @@ class IndicatorGroup(BaseDeviceButton):
         """Dictionary of Device to IndicatorCell"""
         return {device: cell for cell in self.cells for device in cell.devices}
 
-    def eventFilter(self, obj, event):
+    def eventFilter(self, obj, event):  # type: ignore
         """Share QHoverEvents with all cells in the group"""
         if isinstance(event, QHoverEvent):
             for cell in self.cells:
