@@ -46,7 +46,8 @@ class LucidMainWindow(QMainWindow):
         self.main_widget = QWidget()
         self.grid = IndicatorGrid()
         self.dock = LucidDock()
-        self.dock.setFixedWidth(850)
+        self.dock.set_fixed_dock_width(850)
+        self.dock.grid_changed.connect(self.fixed_grid_selected)
 
         self.dummy_tabs = QTabWidget()
         self.dock_vis_label = QLabel()
@@ -119,3 +120,14 @@ class LucidMainWindow(QMainWindow):
         minh = gridh + tabh
         self.setMinimumSize(minw, minh)
         self.min_placeholder_space = gridw + 210
+
+    def fixed_grid_selected(self):
+        """
+        Once the user picks an NxN grid size, we need to adjust our sizing.
+        """
+        good_width = self.grid.sizeHint().width() + self.dock.width() + 5
+        # Ensure the dock can be seen immediately
+        self.setMinimumWidth(good_width)
+        # Resize down if we're excessively big
+        if self.width() > good_width + 200:
+            self.resize(good_width, self.height())

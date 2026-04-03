@@ -24,7 +24,7 @@ def dock_button(qtbot: QtBot) -> LucidDockButton:
     return button
 
 
-def test_add_to_dock_user_choice(lucid_dock: LucidDock, monkeypatch: pytest.MonkeyPatch, qtbot: QtBot):
+def test_add_to_dock_user_keybinds(lucid_dock: LucidDock, monkeypatch: pytest.MonkeyPatch, qtbot: QtBot):
     # Mock our own methods to check if they got called
     add_to_dock_mock = Mock()
     open_in_new_window_mock = Mock()
@@ -40,7 +40,7 @@ def test_add_to_dock_user_choice(lucid_dock: LucidDock, monkeypatch: pytest.Monk
     qtbot.addWidget(widget)
 
     def add_to_dock():
-        LucidDock.add_to_dock_user_choice(title=title, widget=widget)
+        LucidDock.add_to_dock_user_keybinds(title=title, widget=widget)
 
     # Standard: open in dock
     reset_mocks()

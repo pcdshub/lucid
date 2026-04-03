@@ -114,7 +114,7 @@ class BaseDeviceButton(QPushButton):
                 device = self.devices[0]
                 deferred_widget = self._show_device_wrapper(self.devices[0])
                 if event.button() == Qt.LeftButton:
-                    LucidDock.add_to_dock_user_choice(widget=deferred_widget, title=device.name)
+                    LucidDock.add_to_dock_user_keybinds(widget=deferred_widget, title=device.name)
                     return True
                 elif event.button() == Qt.RightButton:
                     LucidDock.add_to_dock_user_menu(widget=deferred_widget, title=device.name, pos=event.globalPos())
