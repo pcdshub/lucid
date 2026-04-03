@@ -463,10 +463,10 @@ class LucidDock(QWidget):
         if not self.detached_widgets:
             return
         elif len(self.detached_widgets) == 1:
-            widget = self.detached_widgets.pop()
+            widget = list(self.detached_widgets)[0]
             self.reattach_to_dock(widget=widget, tab_widget=tab_widget)
         else:
-            self.show_attach_menu(tab_widget=tab_widget)
+            self.show_attach_menu(tab_widget=tab_widget, pos=QCursor().pos())
 
     def reattach_to_dock(self, widget: QWidget, tab_widget: QTabWidget):
         """
@@ -487,9 +487,9 @@ class LucidDock(QWidget):
             ...
         self.clean_detached_widgets()
 
-    def show_attach_menu(self, tab_widget: QTabWidget):
+    def show_attach_menu(self, tab_widget: QTabWidget, pos: QPoint | None = None) -> QMenu:
         """
-        Creates a menu at the cursor position that can be used to reattach one tracked widget to the dock.
+        Creates a menu that can be used to reattach one tracked widget to the dock.
 
         The window title will be preserved and placed in the tab's text field.
         """
@@ -498,7 +498,9 @@ class LucidDock(QWidget):
         for widget in self.detached_widgets:
             action = menu.addAction(widget.windowTitle())
             action.triggered.connect(partial(self.reattach_to_dock, widget, tab_widget))
-        menu.exec_(QCursor().pos())
+        if pos is not None:
+            menu.exec_(pos)
+        return menu
 
     def clean_detached_widgets(self):
         """

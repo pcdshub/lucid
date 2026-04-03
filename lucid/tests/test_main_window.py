@@ -34,4 +34,4 @@ def test_dock_visibility(main_window: LucidMainWindow, qtbot: QtBot):
 
 
 def test_default_dock_widget(main_window: LucidMainWindow):
-    assert main_window.dock.tab_widget.currentWidget().windowTitle() == "DOCK2"
+    assert main_window.dock.tab_widgets[0][0].currentWidget().windowTitle() == "DOCK2"

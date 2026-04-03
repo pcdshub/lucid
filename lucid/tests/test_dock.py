@@ -3,6 +3,7 @@ from unittest.mock import Mock
 
 import pytest
 from pytestqt.qtbot import QtBot
+from qtpy.QtGui import QCursor
 from qtpy.QtWidgets import QWidget
 
 import lucid.dock
@@ -79,28 +80,32 @@ def test_add_to_dock(lucid_dock: LucidDock, qtbot: QtBot):
     widget2 = QWidget()
     qtbot.add_widget(widget2)
 
+    tab_widget = lucid_dock.tab_widgets[0][0]
+
     LucidDock.add_to_dock(title="", widget=widget1)
-    assert lucid_dock.tab_widget.currentWidget() is widget1
-    assert lucid_dock.tab_widget.count() == 1
+    assert tab_widget.currentWidget() is widget1
+    assert tab_widget.count() == 1
 
     LucidDock.add_to_dock(title="", widget=widget2)
-    assert lucid_dock.tab_widget.currentWidget() is widget2
-    assert lucid_dock.tab_widget.count() == 1
+    assert tab_widget.currentWidget() is widget2
+    assert tab_widget.count() == 1
 
     LucidDock.add_to_dock(title="", widget=widget1, new_tab=True)
-    assert lucid_dock.tab_widget.currentWidget() is widget1
-    assert lucid_dock.tab_widget.count() == 2
+    assert tab_widget.currentWidget() is widget1
+    assert tab_widget.count() == 2
 
 
 def test_detach_from_dock(lucid_dock: LucidDock, qtbot: QtBot):
     widget1 = QWidget()
     qtbot.add_widget(widget1)
 
-    LucidDock.add_to_dock(title="", widget=widget1)
-    LucidDock.detach_from_dock()
+    tab_widget = lucid_dock.tab_widgets[0][0]
 
-    assert lucid_dock.tab_widget.currentWidget() is None
-    assert lucid_dock.tab_widget.count() == 0
+    lucid_dock.add_to_dock(title="", widget=widget1)
+    lucid_dock.detach_from_dock(tab_widget=tab_widget)
+
+    assert tab_widget.currentWidget() is None
+    assert tab_widget.count() == 0
 
     assert widget1.parent() is None
     assert widget1.isVisible()
@@ -113,8 +118,10 @@ def test_open_in_new_window(lucid_dock: LucidDock, qtbot: QtBot):
 
     LucidDock.open_in_new_window(title="", widget=widget1)
 
-    assert lucid_dock.tab_widget.currentWidget() is None
-    assert lucid_dock.tab_widget.count() == 0
+    tab_widget = lucid_dock.tab_widgets[0][0]
+
+    assert tab_widget.currentWidget() is None
+    assert tab_widget.count() == 0
 
     assert widget1.parent() is None
     assert widget1.isVisible()
@@ -128,12 +135,14 @@ def test_reattach_user_choice(lucid_dock: LucidDock, monkeypatch: pytest.MonkeyP
     monkeypatch.setattr(LucidDock, "reattach_to_dock", reattach_to_dock_mock)
     monkeypatch.setattr(LucidDock, "show_attach_menu", show_attach_menu_mock)
 
+    tab_widget = lucid_dock.tab_widgets[0][0]
+
     def reset_mocks():
         reattach_to_dock_mock.reset_mock()
         show_attach_menu_mock.reset_mock()
 
     reset_mocks()
-    LucidDock.reattach_user_choice()
+    lucid_dock.reattach_user_choice(tab_widget=tab_widget)
     reattach_to_dock_mock.assert_not_called()
     show_attach_menu_mock.assert_not_called()
 
@@ -142,8 +151,8 @@ def test_reattach_user_choice(lucid_dock: LucidDock, monkeypatch: pytest.MonkeyP
 
     LucidDock.open_in_new_window(title="", widget=widget1)
     reset_mocks()
-    LucidDock.reattach_user_choice()
-    reattach_to_dock_mock.assert_called_once_with(widget=widget1)
+    lucid_dock.reattach_user_choice(tab_widget=tab_widget)
+    reattach_to_dock_mock.assert_called_once_with(widget=widget1, tab_widget=tab_widget)
     show_attach_menu_mock.assert_not_called()
 
     widget2 = QWidget()
@@ -151,49 +160,53 @@ def test_reattach_user_choice(lucid_dock: LucidDock, monkeypatch: pytest.MonkeyP
 
     LucidDock.open_in_new_window(title="", widget=widget2)
     reset_mocks()
-    LucidDock.reattach_user_choice()
+    lucid_dock.reattach_user_choice(tab_widget=tab_widget)
     reattach_to_dock_mock.assert_not_called()
-    show_attach_menu_mock.assert_called_once_with()
+    show_attach_menu_mock.assert_called_once_with(tab_widget=tab_widget, pos=QCursor().pos())
 
 
 def test_reattach_to_dock(lucid_dock: LucidDock, qtbot: QtBot):
     widget1 = QWidget()
     qtbot.add_widget(widget1)
 
+    tab_widget = lucid_dock.tab_widgets[0][0]
+
     LucidDock.open_in_new_window(title="", widget=widget1)
-    LucidDock.reattach_to_dock(widget=widget1)
+    lucid_dock.reattach_to_dock(widget=widget1, tab_widget=tab_widget)
 
     assert widget1 not in lucid_dock.detached_widgets
-    assert lucid_dock.tab_widget.currentWidget() is widget1
-    assert lucid_dock.tab_widget.count() == 1
+    assert tab_widget.currentWidget() is widget1
+    assert tab_widget.count() == 1
 
     widget2 = QWidget()
     qtbot.add_widget(widget2)
 
     LucidDock.open_in_new_window(title="", widget=widget2)
-    LucidDock.reattach_to_dock(widget=widget2)
+    lucid_dock.reattach_to_dock(widget=widget2, tab_widget=tab_widget)
 
     assert widget2 not in lucid_dock.detached_widgets
-    assert lucid_dock.tab_widget.currentWidget() is widget2
-    assert lucid_dock.tab_widget.count() == 2
+    assert tab_widget.currentWidget() is widget2
+    assert tab_widget.count() == 2
 
 
 def test_show_attach_menu(lucid_dock: LucidDock, qtbot: QtBot):
+    tab_widget = lucid_dock.tab_widgets[0][0]
+
     widgets = [QWidget() for _ in range(3)]
     for num, wd in enumerate(widgets):
         qtbot.add_widget(wd)
         LucidDock.open_in_new_window(title=f"{num}", widget=wd)
         assert wd in lucid_dock.detached_widgets
 
-    menu = lucid_dock.show_attach_menu()
+    menu = lucid_dock.show_attach_menu(tab_widget=tab_widget)
     for action in menu.actions():
         action.trigger()
         this_widget = widgets[int(action.text())]
         qtbot.wait_signal(action.triggered)
         assert this_widget not in lucid_dock.detached_widgets
-        assert lucid_dock.tab_widget.currentWidget() is this_widget
+        assert tab_widget.currentWidget() is this_widget
 
-    assert lucid_dock.tab_widget.count() == 3
+    assert tab_widget.count() == 3
 
 
 def test_clean_detached_widgets(lucid_dock: LucidDock, qtbot: QtBot):
