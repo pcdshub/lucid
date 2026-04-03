@@ -323,7 +323,7 @@ class LucidDock(QWidget):
         else:
             replace_tab_action = menu.addAction("Replace Current Tab")
         replace_tab_action.triggered.connect(partial(cls.add_to_dock, widget=widget, title=title, new_tab=False))
-        new_tab_action = menu.addAction("Ooen in New Tab")
+        new_tab_action = menu.addAction("Open in New Tab")
         new_tab_action.triggered.connect(partial(cls.add_to_dock, widget=widget, title=title, new_tab=True))
         new_window_action = menu.addAction("Open in New Window")
         new_window_action.triggered.connect(partial(cls.open_in_new_window, widget=widget, title=title))
