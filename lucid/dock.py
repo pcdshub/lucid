@@ -528,7 +528,10 @@ class LucidDock(QWidget):
 
         Closed windows are not eligible to be reattached to the dock.
         """
-        for display in list(self.detached_widgets) + list(self.attached_widgets):
+        for display in list(self.attached_widgets):
+            if not display.isVisible():
+                self.attached_widgets.remove(display)
+        for display in list(self.detached_widgets):
             if not display.isVisible():
                 self.detached_widgets.remove(display)
         self.update_attach_enabled()

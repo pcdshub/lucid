@@ -275,3 +275,41 @@ def test_build_widget_ui_edited(dock_button: LucidDockButton, tmp_path: Path):
     widget2 = dock_button.build_widget()
     assert widget1 is not widget2
     assert widget2.windowTitle() == "NEW_EDIT"
+
+
+def test_multidock(lucid_dock: LucidDock, qtbot: QtBot):
+    widgets = [QWidget() for _ in range(7)]
+    for widget in widgets:
+        qtbot.add_widget(widget)
+
+    lucid_dock.dock_columns_spinbox.setValue(3)
+    lucid_dock.dock_rows_spinbox.setValue(2)
+    lucid_dock.apply_settings()
+
+    # 6 docks, we should fill them in order and then replace the first one
+    lucid_dock.add_to_dock(widgets[0], "")
+    assert lucid_dock.tab_widgets[0][0].currentWidget() is widgets[0]
+    lucid_dock.add_to_dock(widgets[1], "")
+    assert lucid_dock.tab_widgets[0][1].currentWidget() is widgets[1]
+    lucid_dock.add_to_dock(widgets[2], "")
+    assert lucid_dock.tab_widgets[0][2].currentWidget() is widgets[2]
+    lucid_dock.add_to_dock(widgets[3], "")
+    assert lucid_dock.tab_widgets[1][0].currentWidget() is widgets[3]
+    lucid_dock.add_to_dock(widgets[4], "")
+    assert lucid_dock.tab_widgets[1][1].currentWidget() is widgets[4]
+    lucid_dock.add_to_dock(widgets[5], "")
+    assert lucid_dock.tab_widgets[1][2].currentWidget() is widgets[5]
+    lucid_dock.add_to_dock(widgets[6], "")
+    assert lucid_dock.tab_widgets[0][0].currentWidget() is widgets[6]
+
+    # We should be able to move a widget from dock 2 to dock 4
+    assert widgets[1] in lucid_dock.attached_widgets
+    assert widgets[1] not in lucid_dock.detached_widgets
+    lucid_dock.detach_from_dock(lucid_dock.tab_widgets[0][1])
+    assert widgets[1] not in lucid_dock.attached_widgets
+    assert widgets[1] in lucid_dock.detached_widgets
+    assert lucid_dock.tab_widgets[0][1].currentWidget() is not widgets[1]
+    lucid_dock.reattach_to_dock(widgets[1], lucid_dock.tab_widgets[1][1])
+    assert widgets[1] in lucid_dock.attached_widgets
+    assert widgets[1] not in lucid_dock.detached_widgets
+    assert lucid_dock.tab_widgets[1][1].currentWidget() is widgets[1]
