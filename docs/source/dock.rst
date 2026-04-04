@@ -31,10 +31,13 @@ Choosing where a Screen Opens
 By default, when you open a dockable display it will replace the current active tab.
 One exception to this is when your display is too small to render the dock: in this case, the dockable display will open in a floating window instead.
 
-The user can choose different behavior by using the ctrl and shift modifier keys:
+The user can choose different behavior in two ways:
 
-- Pressing ctrl will cause the display to open in a new tab in the dock
-- Pressing shift will cause the display to open in a floating window
+1. By right-clicking the button and selecting a different option
+2. By using the ctrl and shift modifier keys:
+
+  - Pressing ctrl will cause the display to open in a new tab in the dock
+  - Pressing shift will cause the display to open in a floating window
 
 Note that being in a dockable floating window is different from being in a related display floating window because you will be able to attach this window to the dock later.
 
@@ -52,6 +55,20 @@ If there is only one detached widget, that widget will be reattached immediately
 Otherwise, the user will be presented with a menu that contains the window titles of all the detached widgets.
 
 The reattach button will disable itself when there are no tracked floating windows that can be reattached.
+
+
+Multidocking
+------------
+
+Lucid will open with one dock area, but you can open more in a grid.
+
+You can do this by clicking on the anchor button and selecting a different number of rows and columns,
+then clicking "Apply."
+
+When there are multiple docks open, widgets will automatically open up in the first available dock,
+counting left to right and then top to bottom. If all docks are full, widgets will open in the first dock.
+
+At any time you can attach widgets to any of the other docks using their respective attach buttons.
 
 
 Default Display

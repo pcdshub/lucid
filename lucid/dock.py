@@ -104,7 +104,7 @@ class LucidDock(QWidget):
         self.fixed_dock_width = 850
         self.dock_cols = 1
 
-        self.attach_buttons = []
+        self.attach_buttons: list[QToolButton] = []
 
         self.settings_button = QToolButton()
         self.settings_button.setIcon(ifont.icon("anchor"))  # type: ignore
@@ -125,6 +125,14 @@ class LucidDock(QWidget):
 
     @classmethod
     def set_fixed_dock_width(cls, width: int):
+        """
+        Choose the width of the individual tab widgets that make up the LucidDock widget.
+
+        Parameters
+        ----------
+        width : int
+            The width of the tab areas in pixels.
+        """
         self = cls._instance
         self.fixed_dock_width = width
         for tab_row in self.tab_widgets:
@@ -133,6 +141,15 @@ class LucidDock(QWidget):
         self.setFixedWidth((width + 9) * self.dock_cols)
 
     def _create_subdock(self, settings_button: QToolButton | None = None) -> QTabWidget:
+        """
+        Create a QTabWiget suitable for use as one of the tab docks.
+
+        Parameters
+        ----------
+        settings_button : QToolButton, optional
+            A settings button to add to the corner in addition to the attach button.
+            This is currently used to add the dock settings button to the first dock.
+        """
         tab_widget = QTabWidget()
         tab_widget.setMovable(True)
         tab_widget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
@@ -247,7 +264,9 @@ class LucidDock(QWidget):
 
     def get_open_tab_widget(self) -> QTabWidget:
         """
-        Return the first tab widget that is empty and visible, or the first tab widget.
+        Returns the first tab widget that is empty and visible.
+
+        If no tab widget is empty and visible, returns the first tab widget.
         """
         for tab_row in self.tab_widgets:
             for tab_inst in tab_row:
@@ -257,7 +276,7 @@ class LucidDock(QWidget):
 
     def has_empty_tab(self) -> bool:
         """
-        Return True if any tab is empty as visible.
+        Returns True if any tab is empty as visible.
         """
         for tab_row in self.tab_widgets:
             for tab_inst in tab_row:
@@ -303,12 +322,13 @@ class LucidDock(QWidget):
             The widget to use, or a callable to produce the widget right before it is needed.
         title : str, optional
             The title of the tab and/or window.
-            If omitted we'll use the widget's windowTitle
+            If omitted we'll use the widget's windowTitle.
         pos : QPoint, optional
             The position to open the menu at.
             If omitted, we won't open the menu.
         menu : QMenu, optional
             If provided, we'll add actions to this menu rather than create a new menu.
+            This is used to include these menus as submenus of other menus.
 
         Returns
         -------
@@ -344,7 +364,7 @@ class LucidDock(QWidget):
             The widget to use, or a callable to produce the widget right before it is needed.
         title : str, optional
             The title of the tab and/or window.
-            If omitted we'll use the widget's windowTitle
+            If omitted we'll use the widget's windowTitle.
         new_tab : bool, optional
             If True, opens a new tab for the widget. If False, overwrites the current open tab.
             Defaults to False.
@@ -423,8 +443,8 @@ class LucidDock(QWidget):
         widget : DeferredWidget
             The widget to use, or a callable to produce the widget right before it is needed.
         title : str, optional
-            The title of the tab and/or window
-            If omitted we'll use the widget's windowTitle
+            The title of the tab and/or window.
+            If omitted we'll use the widget's windowTitle.
         """
         self = cls._instance
         self.clean_detached_widgets()
@@ -504,11 +524,11 @@ class LucidDock(QWidget):
 
     def clean_detached_widgets(self):
         """
-        Prunes the list of tracked widgets to remove any windows that the user has closed.
+        Prunes the lists of tracked widgets to remove any windows that the user has closed.
 
         Closed windows are not eligible to be reattached to the dock.
         """
-        for display in list(self.detached_widgets):
+        for display in list(self.detached_widgets) + list(self.attached_widgets):
             if not display.isVisible():
                 self.detached_widgets.remove(display)
         self.update_attach_enabled()
