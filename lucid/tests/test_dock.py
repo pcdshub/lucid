@@ -303,13 +303,10 @@ def test_multidock(lucid_dock: LucidDock, qtbot: QtBot):
     assert lucid_dock.tab_widgets[0][0].currentWidget() is widgets[6]
 
     # We should be able to move a widget from dock 2 to dock 4
-    assert widgets[1] in lucid_dock.attached_widgets
     assert widgets[1] not in lucid_dock.detached_widgets
     lucid_dock.detach_from_dock(lucid_dock.tab_widgets[0][1])
-    assert widgets[1] not in lucid_dock.attached_widgets
     assert widgets[1] in lucid_dock.detached_widgets
     assert lucid_dock.tab_widgets[0][1].currentWidget() is not widgets[1]
     lucid_dock.reattach_to_dock(widgets[1], lucid_dock.tab_widgets[1][1])
-    assert widgets[1] in lucid_dock.attached_widgets
     assert widgets[1] not in lucid_dock.detached_widgets
     assert lucid_dock.tab_widgets[1][1].currentWidget() is widgets[1]

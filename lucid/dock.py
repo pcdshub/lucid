@@ -98,7 +98,6 @@ class LucidDock(QWidget):
         super().__init__(parent)
 
         self.tab_widgets: list[list[QTabWidget]] = [[]]
-        self.attached_widgets: set[QWidget] = set()
         self.detached_widgets: set[QWidget] = set()
 
         self.fixed_dock_width = 850
@@ -413,7 +412,6 @@ class LucidDock(QWidget):
         tab_bar.setTabButton(idx, tab_bar.ButtonPosition.RightSide, button_row)
         tab_widget.setCurrentIndex(idx)
 
-        self.attached_widgets.add(widget)
         try:
             self.detached_widgets.remove(widget)
         except KeyError:
@@ -454,10 +452,6 @@ class LucidDock(QWidget):
         if not title:
             title = widget.windowTitle()
 
-        try:
-            self.attached_widgets.remove(widget)
-        except KeyError:
-            ...
         self.detached_widgets.add(widget)
         widget.setParent(self)
         widget.setParent(None)  # type: ignore
@@ -500,7 +494,6 @@ class LucidDock(QWidget):
             The widget to return to the dock
         """
         self.add_to_dock(title=widget.windowTitle(), widget=widget, new_tab=True, tab_widget=tab_widget)
-        self.attached_widgets.add(widget)
         try:
             self.detached_widgets.remove(widget)
         except KeyError:
@@ -528,9 +521,6 @@ class LucidDock(QWidget):
 
         Closed windows are not eligible to be reattached to the dock.
         """
-        for display in list(self.attached_widgets):
-            if not display.isVisible():
-                self.attached_widgets.remove(display)
         for display in list(self.detached_widgets):
             if not display.isVisible():
                 self.detached_widgets.remove(display)
