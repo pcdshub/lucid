@@ -10,6 +10,7 @@ LCLS User Control and Interface Design
     launcher.rst
     grid.rst
     toolbar.rst
+    dock.rst
 
 .. toctree::
     :maxdepth: 2

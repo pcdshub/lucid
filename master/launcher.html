@@ -6,16 +6,16 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Lucid Launcher Options &mdash; lucid 0.12.1.dev6+g308a337bc documentation</title>
+  <title>Lucid Launcher Options &mdash; lucid 0.13.1.dev51+g2bcbe1daa documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
-      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
 
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=d37fd9d4"></script>
-      <script src="_static/doctools.js?v=9bcbadda"></script>
-      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="_static/documentation_options.js?v=97f78b7f"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -51,6 +51,7 @@
 </li>
 <li class="toctree-l1"><a class="reference internal" href="grid.html">Lucid Grid Configuration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="toolbar.html">Lucid Toolbar Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dock.html">Lucid Dock Controls</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Troubleshooting</span></p>
 <ul>
@@ -87,8 +88,7 @@
 </p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">usage</span><span class="p">:</span> <span class="n">lucid</span> <span class="p">[</span><span class="o">-</span><span class="n">h</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">version</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">toolbar</span> <span class="n">TOOLBAR</span><span class="p">]</span>
              <span class="p">[</span><span class="o">--</span><span class="n">row_group_key</span> <span class="n">ROW_GROUP_KEY</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">col_group_key</span> <span class="n">COL_GROUP_KEY</span><span class="p">]</span>
-             <span class="p">[</span><span class="o">--</span><span class="n">log_level</span> <span class="p">{</span><span class="n">DEBUG</span><span class="p">,</span><span class="n">INFO</span><span class="p">,</span><span class="n">WARNING</span><span class="p">,</span><span class="n">ERROR</span><span class="p">,</span><span class="n">CRITICAL</span><span class="p">}]</span> <span class="p">[</span><span class="o">--</span><span class="n">dark</span><span class="p">]</span>
-             <span class="p">[</span><span class="o">--</span><span class="n">skip_happi</span><span class="p">]</span>
+             <span class="p">[</span><span class="o">--</span><span class="n">log_level</span> <span class="p">{</span><span class="n">DEBUG</span><span class="p">,</span><span class="n">INFO</span><span class="p">,</span><span class="n">WARNING</span><span class="p">,</span><span class="n">ERROR</span><span class="p">,</span><span class="n">CRITICAL</span><span class="p">}]</span> <span class="p">[</span><span class="o">--</span><span class="n">skip_happi</span><span class="p">]</span>
              <span class="n">beamline</span> <span class="p">[</span><span class="n">beamline</span> <span class="o">...</span><span class="p">]</span>
 </pre></div>
 </div>
@@ -121,10 +121,6 @@
 <dd><p>Possible choices: DEBUG, INFO, WARNING, ERROR, CRITICAL</p>
 <p>Configure level of log display</p>
 <p>Default: <code class="docutils literal notranslate"><span class="pre">'INFO'</span></code></p>
-</dd>
-<dt><kbd>--dark</kbd></dt>
-<dd><p>Use dark Stylesheet</p>
-<p>Default: <code class="docutils literal notranslate"><span class="pre">False</span></code></p>
 </dd>
 <dt><kbd>--skip_happi</kbd></dt>
 <dd><p>Skip loading entries from happi</p>

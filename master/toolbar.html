@@ -6,20 +6,20 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Lucid Toolbar Configuration &mdash; lucid 0.12.1.dev6+g308a337bc documentation</title>
+  <title>Lucid Toolbar Configuration &mdash; lucid 0.13.1.dev51+g2bcbe1daa documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
-      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
 
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=d37fd9d4"></script>
-      <script src="_static/doctools.js?v=9bcbadda"></script>
-      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="_static/documentation_options.js?v=97f78b7f"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Remote Access" href="troubleshooting/remote_access.html" />
+    <link rel="next" title="Lucid Dock Controls" href="dock.html" />
     <link rel="prev" title="Lucid Grid Configuration" href="grid.html" /> 
 </head>
 
@@ -54,6 +54,7 @@
 <li class="toctree-l2"><a class="reference internal" href="#examples">Examples</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="dock.html">Lucid Dock Controls</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Troubleshooting</span></p>
 <ul>
@@ -91,7 +92,7 @@ the tabs that are displayed below the device grid.
 These tabs can be configured to hold buttons
 that open other screens.</p>
 <figure class="align-default">
-<a class="reference internal image-reference" href="_images/lucid_toolbar.png"><img alt="Lucid display with the toolbar highlighted." src="_images/lucid_toolbar.png" style="width: 522.5px; height: 412.5px;" />
+<a class="reference internal image-reference" href="_images/lucid_toolbar.png"><img alt="Lucid display with the toolbar highlighted." height="412" src="_images/lucid_toolbar.png" width="522" />
 </a>
 </figure>
 <section id="invocation">
@@ -107,17 +108,23 @@ that open other screens.</p>
 <li><p>The user can specify an arbitrary number of tabs.</p></li>
 <li><p>Each tab can have an arbitrary number of columns.</p></li>
 <li><p>The columns are filled from left to right, then from top to bottom.</p></li>
-<li><p>Only <code class="docutils literal notranslate"><span class="pre">PyDMShellCommand</span></code> and <code class="docutils literal notranslate"><span class="pre">PyDMRelatedDisplayButton</span></code> widgets are supported.</p></li>
-<li><p>Any available pyqt property or general python attribute can be specified on either
+<li><p>Only <code class="docutils literal notranslate"><span class="pre">LucidDockButton</span></code>, <code class="docutils literal notranslate"><span class="pre">PyDMShellCommand</span></code> and <code class="docutils literal notranslate"><span class="pre">PyDMRelatedDisplayButton</span></code> widgets are supported.</p></li>
+<li><p>Any available pyqt property or general python attribute can be specified on any
 of these button types.</p></li>
 </ul>
 </section>
 <section id="guidelines">
 <h2>Guidelines<a class="headerlink" href="#guidelines" title="Link to this heading"></a></h2>
 <ul class="simple">
-<li><p>The related display option (<code class="docutils literal notranslate"><span class="pre">display</span></code>) should be used whenever it is possible to do so,
-because the screen will open more quickly compared to a shell script, which will need to
-initialize an entire new python shell with new imports.</p></li>
+<li><p>The dock (<code class="docutils literal notranslate"><span class="pre">dock</span></code>) and related display (<code class="docutils literal notranslate"><span class="pre">display</span></code>) options open windows more quickly than the
+shell commend (<code class="docutils literal notranslate"><span class="pre">shell</span></code>) option and should be used whenever possible.
+A pydm screen in a shell script would need to initialize an entire new python shell with new imports,
+and may even have other setup steps, leading to large delays.</p></li>
+<li><p>The dock option (<code class="docutils literal notranslate"><span class="pre">dock</span></code>) should be used for any screen that fits nicely in the dock- that is,
+any screen that isn’t wide. This gives the user maximum flexibility for how to use the screen.</p></li>
+<li><p>The related display option (<code class="docutils literal notranslate"><span class="pre">display</span></code>) should be used for larger screens that don’t fit into the dock.</p></li>
+<li><p>The shell command (<code class="docutils literal notranslate"><span class="pre">shell</span></code>) option should be reserved for cases where it is strictly required,
+such as for running non-PyDM applications.</p></li>
 </ul>
 </section>
 <section id="file-format">
@@ -149,10 +156,22 @@ button text to a button config dictionary, in order.
 LUCID will iterate through these dictionaries and create buttons,
 arranging them from left to right across each column before moving to the next row.</p>
 <p>The button config dictionary has one special key: <code class="docutils literal notranslate"><span class="pre">type</span></code>.
-The <code class="docutils literal notranslate"><span class="pre">type</span></code> key can either be <code class="docutils literal notranslate"><span class="pre">shell</span></code> to create a <code class="docutils literal notranslate"><span class="pre">PyDMShellCommand</span></code> button,
-or it can be <code class="docutils literal notranslate"><span class="pre">display</span></code> to create a <code class="docutils literal notranslate"><span class="pre">PyDMRelatedDisplayButton</span></code>.
+The <code class="docutils literal notranslate"><span class="pre">type</span></code> key can be one of <code class="docutils literal notranslate"><span class="pre">dock</span></code> to create a <code class="docutils literal notranslate"><span class="pre">LucidDockButton</span></code>,
+<code class="docutils literal notranslate"><span class="pre">shell</span></code> to create a <code class="docutils literal notranslate"><span class="pre">PyDMShellCommand</span></code> button,
+or <code class="docutils literal notranslate"><span class="pre">display</span></code> to create a <code class="docutils literal notranslate"><span class="pre">PyDMRelatedDisplayButton</span></code>.
 If <code class="docutils literal notranslate"><span class="pre">type</span></code> is omitted, or is not one of these options,
 an inactive <code class="docutils literal notranslate"><span class="pre">QPushButton</span></code> will be created.</p>
+<p>For the dock widget, there is an additional optional <code class="docutils literal notranslate"><span class="pre">default</span></code> key that can be
+used to pick which widget should be opened automatically in the dock when lucid is started.
+This would look something like:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">Default In Dock</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">dock</span>
+<span class="w">  </span><span class="nt">filename</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/path/to/my/docked/file.ui</span>
+<span class="w">  </span><span class="nt">default</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+</pre></div>
+</div>
+<p>If no dock button has the default key set to True, we’ll pick the first dock button in the config file.
+If multiple dock buttons have the default key set to True, we’ll pick the first of these.</p>
 <p>All other keys in the config dictionary should be mappings from qt property names
 to each property’s desired value.
 This is forward-compatible with any new properties that may be implemented in the future
@@ -161,6 +180,10 @@ for these button types.</p>
 useful properties. This will create two buttons, one with button text “Cool PyDM Display”
 and another with button text “Run Neat Script.”</p>
 <div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">buttons</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">Docked PyDM Display</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">dock</span>
+<span class="w">    </span><span class="nt">filename</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/path/to/my/ui/file.ui</span>
+<span class="w">    </span><span class="nt">macro</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;{&#39;PREFIX&#39;:</span><span class="nv"> </span><span class="s">&#39;DOCKED&#39;}&quot;</span>
 <span class="w">  </span><span class="nt">Cool PyDM Display</span><span class="p">:</span>
 <span class="w">    </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">display</span>
 <span class="w">    </span><span class="nt">filenames</span><span class="p">:</span>
@@ -189,7 +212,7 @@ These are all good examples for how to set these files up.</p>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
         <a href="grid.html" class="btn btn-neutral float-left" title="Lucid Grid Configuration" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="troubleshooting/remote_access.html" class="btn btn-neutral float-right" title="Remote Access" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="dock.html" class="btn btn-neutral float-right" title="Lucid Dock Controls" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>
