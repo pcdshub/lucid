@@ -108,3 +108,9 @@ ENV/
 
 # mypy
 .mypy_cache/
+
+# setuptools_scm
+lucid/_version.py
+
+# vscode
+.vscode

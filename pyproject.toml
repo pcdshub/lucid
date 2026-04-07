@@ -3,12 +3,22 @@ build-backend = "setuptools.build_meta"
 requires = [ "setuptools>=45", "setuptools_scm[toml]>=6.2",]
 
 [project]
-classifiers = [ "Development Status :: 2 - Pre-Alpha", "Natural Language :: English", "Programming Language :: Python :: 3",]
+classifiers = [ "Development Status :: 5 - Production/Stable", "Natural Language :: English", "Programming Language :: Python :: 3",]
 description = "LCLS User Controls and Inteface Design"
-dynamic = [ "version", "readme", "dependencies", "optional-dependencies", "optional-dependencies",]
+dynamic = [ "version", "readme",]
 keywords = []
 name = "lucid"
-requires-python = ">=3.9"
+requires-python = ">=3.12"
+dependencies = [
+    "happi>=3.0.1",
+    "ophyd>=1.11.0",
+    "pcdsutils>=0.14.0",
+    "pydm>=1.28.3",
+    "pyqt5>=5",
+    "pyyaml>=6.0.3",
+    "qtpy>=2.4.3",
+    "typhos>=4.2.1",
+]
 
 [[project.authors]]
 name = "SLAC National Accelerator Laboratory"
@@ -23,6 +33,22 @@ file = "LICENSE.md"
 [project.gui-scripts]
 lucid = "lucid.launcher:main"
 
+[project.optional-dependencies]
+dev = [
+    "pcdsdevices>=10.3.0",
+    "pcdswidgets>=0.10.0",
+]
+doc = [
+    "sphinx>=9.1.0",
+    "sphinx-argparse>=0.5.2",
+    "sphinx-rtd-theme>=3.1.0",
+    "sphinxcontrib-jquery>=4.1",
+]
+test = [
+    "pytest>=9.0.2",
+    "pytest-qt>=4.5.0",
+]
+
 [tool.setuptools_scm]
 write_to = "lucid/_version.py"
 
@@ -35,11 +61,18 @@ namespaces = false
 file = "README.md"
 content-type = "text/markdown"
 
-[tool.setuptools.dynamic.dependencies]
-file = [ "requirements.txt",]
+[tool.ruff]
+line-length = 120
+exclude = [".git", "__pycache__", "build", "dist", "*/_version.py"]
 
-[tool.setuptools.dynamic.optional-dependencies.test]
-file = "dev-requirements.txt"
+[tool.ruff.lint]
+select = ["C", "E", "F", "W", "B", "I"]
 
-[tool.setuptools.dynamic.optional-dependencies.doc]
-file = "docs-requirements.txt"
+[tool.ruff.lint.pydocstyle]
+convention = "numpy"
+
+[tool.pyright.defineConstant]
+PYQT5 = true
+PYSIDE2 = false
+PYQT6 = false
+PYSIDE6 = false

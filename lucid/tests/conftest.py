@@ -1,10 +1,12 @@
 import pytest
+from pytestqt.qtbot import QtBot
 
-from lucid import LucidMainWindow
+from lucid.dock import LucidDock
 
 
-@pytest.fixture(scope='function')
-def main_window(qtbot):
-    main_window = LucidMainWindow()
-    qtbot.addWidget(main_window)
-    return main_window
+@pytest.fixture(scope="function")
+def lucid_dock(qtbot: QtBot) -> LucidDock:
+    dock = LucidDock()
+    dock.show()
+    qtbot.addWidget(dock)
+    return dock

@@ -29,16 +29,14 @@ requirements:
   - wheel
   run:
   - python >=3.9
-  - fuzzywuzzy
+  - happi
   - ophyd
   - pcdsutils >=0.14.0
   - pydm
   - pyqt =5
-  - pyqtads >=4
   - pyyaml
   - qtpy
   - typhos
-  - happi
 
 test:
   commands:
