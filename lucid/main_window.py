@@ -85,6 +85,7 @@ class LucidMainWindow(QMainWindow):
 
         self.width_threshold = 2200
         self.min_placeholder_space = 300
+        self.original_min_width = 100
 
     def resizeEvent(self, event: QResizeEvent) -> None:  # type: ignore
         """
@@ -120,14 +121,19 @@ class LucidMainWindow(QMainWindow):
         minh = gridh + tabh
         self.setMinimumSize(minw, minh)
         self.min_placeholder_space = gridw + 210
+        self.original_min_width = minw
 
     def fixed_grid_selected(self):
         """
         Once the user picks an NxN grid size, we need to adjust our sizing.
         """
         good_width = self.grid.sizeHint().width() + self.dock.width() + 5
-        # Ensure the dock can be seen immediately
-        self.setMinimumWidth(good_width)
+        if self.dock.dock_cols == 1:
+            # Allow returning to tiny hidden dock mode
+            self.setMinimumWidth(self.original_min_width)
+        else:
+            # Ensure the dock can be seen immediately
+            self.setMinimumWidth(good_width)
         # Resize down if we're excessively big
         if self.width() > good_width + 200:
             self.resize(good_width, self.height())
