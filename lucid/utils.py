@@ -120,14 +120,22 @@ else:
         return circle
 
 
+device_display_cache = {}
+
+
 def display_for_device(device, display_type=None):
     """Create a TyphosDeviceDisplay for a given device"""
+    try:
+        return device_display_cache[device]
+    except KeyError:
+        ...
     with no_device_lazy_load():
         logger.debug("Creating device display for %r", device)
         display = TyphosDeviceDisplay.from_device(device, scroll_option="scrollbar")
         apply_standard_stylesheets(widget=display)
         if display_type:
             display.display_type = display_type
+    device_display_cache[device] = display
     return display
 
 
