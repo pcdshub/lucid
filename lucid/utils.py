@@ -12,7 +12,7 @@ import pcdsutils.log
 from pydm.widgets import PyDMDrawingCircle
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QApplication, QGridLayout
-from typhos import TyphosDeviceDisplay, TyphosSuite
+from typhos import TyphosDeviceDisplay
 from typhos.utils import apply_standard_stylesheets, no_device_lazy_load
 
 try:
@@ -129,16 +129,6 @@ def display_for_device(device, display_type=None):
         if display_type:
             display.display_type = display_type
     return display
-
-
-def suite_for_devices(devices, *, parent=None, **kwargs):
-    """Create a TyphosSuite to display multiple devices"""
-    with no_device_lazy_load():
-        suite = TyphosSuite(parent=parent, **kwargs)
-        for device in devices:
-            suite.add_device(device)
-        apply_standard_stylesheets(widget=suite)
-    return suite
 
 
 _HAPPI_CLIENT = None

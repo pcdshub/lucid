@@ -14,7 +14,7 @@ from qtpy.QtWidgets import QGridLayout, QMenu, QPushButton, QWidget
 from typhos.utils import reload_widget_stylesheet
 
 from .dock import LucidDock, LucidDockButton
-from .utils import SnakeLayout, display_for_device, indicator_for_device, suite_for_devices
+from .utils import SnakeLayout, display_for_device, indicator_for_device
 
 try:
     from qtpy.QtCore import Property  # type: ignore  # noqa: I001
@@ -51,15 +51,11 @@ class BaseDeviceButton(QPushButton):
 
     def show_all(self):
         """Create a widget for contained devices"""
-        if not self._suite:
-            self._suite = suite_for_devices(self.devices, parent=self, pin=True)
-        else:
-            # Check that any devices that have been added since our last show
-            # request have been added to the TyphosSuite
-            for device in self.devices:
-                if device not in self._suite.devices:
-                    self._suite.add_device(device)
-        return self._suite
+        return [self.show_device(device=device) for device in self.devices]
+
+    def get_all_titles(self):
+        """Get the titles of each window, e.g. the name of each device."""
+        return [device.name for device in self.devices]
 
     def _devices_shown(self, shown):
         """Implemeted by subclass"""
@@ -69,8 +65,13 @@ class BaseDeviceButton(QPushButton):
         # Current menu options
         menu_devices = [action.text() for action in self.device_menu.actions()]
         if self._OPEN_ALL not in menu_devices:
-            show_all_devices = self._show_all_wrapper()
-            self._add_to_menu(widget_func=show_all_devices, text=self._OPEN_ALL)
+            sub_menu = self.device_menu.addMenu(self._OPEN_ALL)
+            LucidDock.add_many_to_dock_user_menu(
+                widget_list=self.show_all,
+                title_list=self.get_all_titles,
+                menu=sub_menu,
+            )
+            self.device_menu.addMenu(sub_menu)
             self.device_menu.addSeparator()
         # Add devices
         for device in self.devices:
@@ -84,12 +85,6 @@ class BaseDeviceButton(QPushButton):
         LucidDock.add_to_dock_user_menu(widget=widget_func, title=text, menu=sub_menu)
         sub_menu.setDefaultAction(sub_menu.actions()[0])
         self.device_menu.addMenu(sub_menu)
-
-    def _show_all_wrapper(self):
-        def inner():
-            return self.show_all()
-
-        return inner
 
     def _show_device_wrapper(self, device):
         def inner():
@@ -135,7 +130,10 @@ class QMenuWithClickableSubmenu(QMenu):
             action = self.actionAt(event.pos())
             if action is None:
                 return super().mousePressEvent(event)
-            action.menu().defaultAction().trigger()
+            submenu_default_action = action.menu().defaultAction()
+            if submenu_default_action is None:
+                return super().mousePressEvent(event)
+            submenu_default_action.trigger()
             self.close()
         else:
             return super().mousePressEvent(event)

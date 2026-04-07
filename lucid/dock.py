@@ -40,8 +40,6 @@ from .utils import ctrl_pressed, shift_pressed
 
 ifont = IconFont()
 
-DeferredWidget = QWidget | Callable[[], QWidget]
-
 DOCK_CONTROLS = """
 This dock can hold any dockable PyDM or Typhos screen.
 
@@ -61,6 +59,31 @@ Click the down arrow to bring a window into a new tab.
 Screens that are already open will be moved instead of opened again,
 unless their source files have been modified.
 """
+
+
+DeferredWidget = QWidget | Callable[[], QWidget]
+DeferredWidgetList = list[QWidget] | Callable[[], list[QWidget]]
+DeferredTitleList = list[str] | Callable[[], list[str]]
+
+
+def unpack_deferred_widget(widget: DeferredWidget, title: str = "") -> tuple[QWidget, str]:
+    if not isinstance(widget, QWidget):
+        widget = widget()
+    if not title:
+        title = widget.windowTitle()
+    return widget, title
+
+
+def unpack_deferred_widget_list(
+    widget_list: DeferredWidgetList, title_list: DeferredTitleList | None
+) -> tuple[list[QWidget], list[str]]:
+    if not isinstance(widget_list, list):
+        widget_list = widget_list()
+    if title_list is None:
+        title_list = [widget.windowTitle() for widget in widget_list]
+    if not isinstance(title_list, list):
+        title_list = title_list()
+    return widget_list, title_list
 
 
 class LucidDock(QWidget):
@@ -351,6 +374,52 @@ class LucidDock(QWidget):
         return menu
 
     @classmethod
+    def add_many_to_dock_user_menu(
+        cls,
+        widget_list: DeferredWidgetList,
+        title_list: DeferredTitleList | None = None,
+        pos: QPoint | None = None,
+        menu: QMenu | None = None,
+    ) -> QMenu:
+        """
+        The third main way to add widgets to the dock, with a menu and multiple widgets at once.
+
+        This creates a compact menu where we can either open every widget in a new tab or every widget
+        in a new window.
+
+        Parameters
+        ----------
+        widget_list : DeferredWidgetList
+            The widgets to use, or a callable to produce the widgets right before they are needed.
+        title_list : DeferredWidgetList, optional
+            The title of each tab and/or window, or a callable to produce the titles right before they are needed.
+            If omitted we'll use each widget's windowTitle.
+        pos : QPoint, optional
+            The position to open the menu at.
+            If omitted, we won't open the menu.
+        menu : QMenu, optional
+            If provided, we'll add actions to this menu rather than create a new menu.
+            This is used to include these menus as submenus of other menus.
+
+        Returns
+        -------
+        menu : QMenu
+        """
+        self = cls._instance
+        if menu is None:
+            menu = QMenu()
+        self.clean_detached_widgets()
+        new_tab_action = menu.addAction("Open Each in New Tab")
+        new_tab_action.triggered.connect(partial(self.add_to_dock_many, widget_list=widget_list, title_list=title_list))
+        new_window_action = menu.addAction("Open Each in New Window")
+        new_window_action.triggered.connect(
+            partial(self.open_in_new_window_many, widget_list=widget_list, title_list=title_list)
+        )
+        if pos is not None:
+            menu.exec_(pos)
+        return menu
+
+    @classmethod
     def add_to_dock(
         cls, widget: DeferredWidget, title: str = "", new_tab: bool = False, tab_widget: QTabWidget | None = None
     ):
@@ -380,10 +449,7 @@ class LucidDock(QWidget):
             idx = tab_widget.currentIndex()
             tab_widget.removeTab(idx)
 
-        if not isinstance(widget, QWidget):
-            widget = widget()
-        if not title:
-            title = widget.windowTitle()
+        widget, title = unpack_deferred_widget(widget=widget, title=title)
 
         # Some typhos screens crash (segfault) when added to the tabs if not shown first (???)
         widget.show()
@@ -417,6 +483,25 @@ class LucidDock(QWidget):
         except KeyError:
             ...
 
+    @classmethod
+    def add_to_dock_many(cls, widget_list: DeferredWidgetList, title_list: DeferredTitleList | None = None):
+        """
+        Add many widgets to the docking area in new tabs all at once.
+
+        Used in add_many_to_dock_user_menu.
+
+        Parameters
+        ----------
+        widget_list : DeferredWidgetList
+            The widgets to use, or a callable to produce the widgets right before they are needed.
+        title_list : DeferredWidgetList, optional
+            The title of each tab, or a callable to produce the titles right before they are needed.
+            If omitted we'll use each widget's windowTitle.
+        """
+        widget_list, title_list = unpack_deferred_widget_list(widget_list=widget_list, title_list=title_list)
+        for widget, title in zip(widget_list, title_list, strict=True):
+            cls.add_to_dock(widget=widget, title=title, new_tab=True)
+
     def detach_from_dock(self, tab_widget: QTabWidget):
         """
         Moves the widget from the currently opened tab into a floating window.
@@ -447,10 +532,7 @@ class LucidDock(QWidget):
         self = cls._instance
         self.clean_detached_widgets()
 
-        if not isinstance(widget, QWidget):
-            widget = widget()
-        if not title:
-            title = widget.windowTitle()
+        widget, title = unpack_deferred_widget(widget=widget, title=title)
 
         self.detached_widgets.add(widget)
         widget.setParent(self)
@@ -462,6 +544,25 @@ class LucidDock(QWidget):
         widget.show()
         widget.activateWindow()
         self.update_attach_enabled()
+
+    @classmethod
+    def open_in_new_window_many(cls, widget_list: DeferredWidgetList, title_list: DeferredTitleList | None = None):
+        """
+        Open many widgets in detached dock mode dialogs all at once.
+
+        Used in add_many_to_dock_user_menu.
+
+        Parameters
+        ----------
+        widget_list : DeferredWidgetList
+            The widgets to use, or a callable to produce the widgets right before they are needed.
+        title_list : DeferredWidgetList, optional
+            The title of each window, or a callable to produce the titles right before they are needed.
+            If omitted we'll use each widget's windowTitle.
+        """
+        widget_list, title_list = unpack_deferred_widget_list(widget_list=widget_list, title_list=title_list)
+        for widget, title in zip(widget_list, title_list, strict=True):
+            cls.open_in_new_window(widget=widget, title=title)
 
     def reattach_user_choice(self, tab_widget: QTabWidget):
         """
