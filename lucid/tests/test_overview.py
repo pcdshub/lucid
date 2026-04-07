@@ -1,5 +1,5 @@
 import pytest
-from ophyd.sim import SynAxis, motor
+from ophyd.sim import SynAxis, motor  # type: ignore
 from qtpy.QtWidgets import QWidget
 
 from lucid.overview import IndicatorCell
@@ -12,7 +12,7 @@ def cell(qtbot):
     return cell
 
 
-def test_base_device_button_menu(cell):
+def test_base_device_button_menu(cell, lucid_dock):
     device_count = 12
     for i in range(device_count):
         motor = SynAxis(name=f"motor_{i}")
@@ -38,16 +38,16 @@ def test_base_device_button_show_device_repeated(cell, qtbot):
 
 def test_base_device_button_show_all(cell):
     cell.devices = [motor]
-    suite = cell.show_all()
-    assert suite.devices == [motor]
+    screens = cell.show_all()
+    assert [sc.devices[0] for sc in screens] == [motor]
 
 
 def test_base_device_button_show_all_repeated(cell):
     cell.devices = [motor]
-    suite = cell.show_all()
-    cell.show_all()
-    assert suite == cell._suite
-    assert suite.devices == [motor]
+    screens1 = cell.show_all()
+    screens2 = cell.show_all()
+    assert screens1 == screens2
+    assert [sc.devices[0] for sc in screens1] == [motor]
 
 
 def test_indicator_cell_add_device(cell):

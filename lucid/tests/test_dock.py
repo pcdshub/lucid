@@ -11,14 +11,6 @@ from lucid.dock import LucidDock, LucidDockButton
 
 
 @pytest.fixture(scope="function")
-def lucid_dock(qtbot: QtBot) -> LucidDock:
-    dock = LucidDock()
-    dock.show()
-    qtbot.addWidget(dock)
-    return dock
-
-
-@pytest.fixture(scope="function")
 def dock_button(qtbot: QtBot) -> LucidDockButton:
     button = LucidDockButton()
     qtbot.addWidget(button)
