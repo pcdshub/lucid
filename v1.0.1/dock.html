@@ -1,0 +1,200 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lucid Dock Controls &mdash; lucid 1.0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=292eb321"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Remote Access" href="troubleshooting/remote_access.html" />
+    <link rel="prev" title="Lucid Toolbar Configuration" href="toolbar.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            lucid
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">User Documentation</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="launcher.html">Lucid Launcher Options</a></li>
+<li class="toctree-l1"><a class="reference internal" href="grid.html">Lucid Grid Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="toolbar.html">Lucid Toolbar Configuration</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Lucid Dock Controls</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#which-buttons-are-dock-buttons">Which Buttons are Dock Buttons?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#choosing-where-a-screen-opens">Choosing where a Screen Opens</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#attaching-and-detaching">Attaching and Detaching</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#multidocking">Multidocking</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#default-display">Default Display</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#already-open-displays">Already Open Displays</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#editing-open-displays">Editing Open Displays</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Troubleshooting</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="troubleshooting/remote_access.html">Remote Access</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">lucid</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Lucid Dock Controls</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/dock.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="lucid-dock-controls">
+<h1>Lucid Dock Controls<a class="headerlink" href="#lucid-dock-controls" title="Link to this heading"></a></h1>
+<p>The lucid dock is located on the right side of the sceen and is used to manage windows opened by the user.</p>
+<p>There are two sources for docked widgets:</p>
+<ol class="arabic simple">
+<li><p>Typhos displays opened from the lucid grid</p></li>
+<li><p>PyDM displays opened from dock buttons in the lucid toolbar</p></li>
+</ol>
+<p>Both sources have the same behavior.</p>
+<figure class="align-default">
+<a class="reference internal image-reference" href="_images/lucid_dock.png"><img alt="Lucid display with a filled dock" height="510" src="_images/lucid_dock.png" width="960" />
+</a>
+</figure>
+<section id="which-buttons-are-dock-buttons">
+<h2>Which Buttons are Dock Buttons?<a class="headerlink" href="#which-buttons-are-dock-buttons" title="Link to this heading"></a></h2>
+<p>You can identify the type of a button based on the mouseover cursor:</p>
+<ul class="simple">
+<li><p>Dock buttons have an anchor cursor</p></li>
+<li><p>Related display buttons have a new window cursor</p></li>
+<li><p>Shell command buttons have a gear cursor</p></li>
+</ul>
+</section>
+<section id="choosing-where-a-screen-opens">
+<h2>Choosing where a Screen Opens<a class="headerlink" href="#choosing-where-a-screen-opens" title="Link to this heading"></a></h2>
+<p>By default, when you open a dockable display it will replace the current active tab.
+One exception to this is when your display is too small to render the dock: in this case, the dockable display will open in a floating window instead.</p>
+<p>The user can choose different behavior in two ways:</p>
+<ol class="arabic simple">
+<li><p>By right-clicking the button and selecting a different option</p></li>
+<li><p>By using the ctrl and shift modifier keys:</p></li>
+</ol>
+<blockquote>
+<div><ul class="simple">
+<li><p>Pressing ctrl will cause the display to open in a new tab in the dock</p></li>
+<li><p>Pressing shift will cause the display to open in a floating window</p></li>
+</ul>
+</div></blockquote>
+<p>Note that being in a dockable floating window is different from being in a related display floating window because you will be able to attach this window to the dock later.</p>
+</section>
+<section id="attaching-and-detaching">
+<h2>Attaching and Detaching<a class="headerlink" href="#attaching-and-detaching" title="Link to this heading"></a></h2>
+<p>The current tab in the dock can be detached by clicking on the up arrow in the tab bar.</p>
+<p>A detached tab will tracked by the dock so that it can be reattached later.</p>
+<p>Any detached display can be reattached by clicking on the down arrow in the upper-right corner of thedock.</p>
+<p>If there is only one detached widget, that widget will be reattached immediately when the arrow is pressed.
+Otherwise, the user will be presented with a menu that contains the window titles of all the detached widgets.</p>
+<p>The reattach button will disable itself when there are no tracked floating windows that can be reattached.</p>
+</section>
+<section id="multidocking">
+<h2>Multidocking<a class="headerlink" href="#multidocking" title="Link to this heading"></a></h2>
+<p>Lucid will open with one dock area, but you can open more in a grid.</p>
+<p>You can do this by clicking on the anchor button and selecting a different number of rows and columns,
+then clicking “Apply.”</p>
+<p>When there are multiple docks open, widgets will automatically open up in the first available dock,
+counting left to right and then top to bottom. If all docks are full, widgets will open in the first dock.</p>
+<p>At any time you can attach widgets to any of the other docks using their respective attach buttons.</p>
+</section>
+<section id="default-display">
+<h2>Default Display<a class="headerlink" href="#default-display" title="Link to this heading"></a></h2>
+<p>If there are no dock widgets in the lucid toolbar, the dock will be blank when lucid launches.</p>
+<p>Otherwise, the first dock widget defined in the toolbar file will be opened automatically.
+If you would like a different dock widget to be opened automatically, you can set the <code class="docutils literal notranslate"><span class="pre">default</span></code> key to <code class="docutils literal notranslate"><span class="pre">True</span></code>
+for that dock widget in the yaml file.</p>
+<p>See the lucid toolbar documentation for more information.</p>
+</section>
+<section id="already-open-displays">
+<h2>Already Open Displays<a class="headerlink" href="#already-open-displays" title="Link to this heading"></a></h2>
+<p>If you try to open a display using the dock button, but that display is already open, instead that display will be moved
+to the selected target location. For example, if you have a typhos display open in a floating window, and then you click
+on its indicator in the lucid grid, the display will be moved into the dock.</p>
+</section>
+<section id="editing-open-displays">
+<h2>Editing Open Displays<a class="headerlink" href="#editing-open-displays" title="Link to this heading"></a></h2>
+<p>If you have a dockable PyDM display open, and then you edit the .ui file using designer, you can quickly iterate on the screen using lucid.
+Clicking on the dock button again will close the old version of the screen and open the new version.</p>
+<p>This is triggered by lucid noticing that the contents of the ui file have changed.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="toolbar.html" class="btn btn-neutral float-left" title="Lucid Toolbar Configuration" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="troubleshooting/remote_access.html" class="btn btn-neutral float-right" title="Remote Access" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2020, SLAC National Accelerator Laboratory.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
