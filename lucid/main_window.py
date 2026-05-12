@@ -2,8 +2,9 @@ import io
 import logging
 import pathlib
 
+from PyQt5.QtCore import QSize
 from qtpy.QtCore import Qt
-from qtpy.QtGui import QResizeEvent
+from qtpy.QtGui import QGuiApplication, QResizeEvent
 from qtpy.QtWidgets import QHBoxLayout, QLabel, QMainWindow, QSizePolicy, QSpacerItem, QTabWidget, QVBoxLayout, QWidget
 
 from .dock import LucidDock
@@ -123,11 +124,22 @@ class LucidMainWindow(QMainWindow):
         self.min_placeholder_space = gridw + 210
         self.original_min_width = minw
 
+        leftmost = min(screen.geometry().left() for screen in QGuiApplication.screens())
+        rightmost = max(screen.geometry().right() for screen in QGuiApplication.screens())
+        total_width = rightmost - leftmost
+
+        new_size = self.sizeHint()
+        new_size.setWidth(min(total_width, new_size.width()))
+        self.resize(new_size)
+
+    def get_best_width(self) -> int:
+        return self.grid.sizeHint().width() + self.dock.width() + 8
+
     def fixed_grid_selected(self):
         """
         Once the user picks an NxN grid size, we need to adjust our sizing.
         """
-        good_width = self.grid.sizeHint().width() + self.dock.width() + 5
+        good_width = self.get_best_width()
         if self.dock.dock_cols == 1:
             # Allow returning to tiny hidden dock mode
             self.setMinimumWidth(self.original_min_width)
@@ -137,3 +149,8 @@ class LucidMainWindow(QMainWindow):
         # Resize down if we're excessively big
         if self.width() > good_width + 200:
             self.resize(good_width, self.height())
+
+    def sizeHint(self) -> QSize:
+        size = super().sizeHint()
+        size.setWidth(self.get_best_width())
+        return size
