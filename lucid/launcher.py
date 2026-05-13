@@ -47,7 +47,6 @@ def get_parser():
         help="Path to the YAML file describing the entries for the Quick" + " Access Toolbar.",
         default=None,
         required=False,
-        type=argparse.FileType("r", encoding="UTF-8"),
     )
     parser.add_argument(
         "--row_group_key", help="The Happi field to use for row grouping.", default="location_group", required=False

@@ -6,8 +6,8 @@ Tab1:
   buttons:
     DOCK1:
         type: dock
-        filename: lucid/tests/dock1.ui
+        filename: dock1.ui
     DOCK2:
         type: dock
-        filename: lucid/tests/dock2.ui
+        filename: dock2.ui
         default: true

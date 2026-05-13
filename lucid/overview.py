@@ -315,19 +315,18 @@ class QuickAccessToolbar(QtWidgets.QWidget):
     def __init__(self, parent=None):
         super().__init__(parent=parent)
 
+        self._tools_file = ""
         self._tools = None
         self._default_config = {"cols": 4}
         self.default_dock_button = None
         self._setup_ui()
 
-    def set_tools_file(self, file):
+    def set_tools_file(self, file: str):
         if not file:
             return
-        if isinstance(file, (str, bytes, os.PathLike)):
-            with open(file) as tf:
-                self._tools = yaml.full_load(tf)
-        else:
-            self._tools = yaml.full_load(file)
+        self._tools_file = file
+        with open(file) as tf:
+            self._tools = yaml.full_load(tf)
         self._assemble_tabs()
 
     def _setup_ui(self):
@@ -383,6 +382,9 @@ class QuickAccessToolbar(QtWidgets.QWidget):
                 self.default_dock_button = btn
 
         for prop, val in config.items():
+            if prop == "filename":
+                if not os.path.isabs(val):
+                    val = os.path.join(os.path.dirname(self._tools_file), val)
             try:
                 setattr(btn, prop, val)
             except Exception as ex:
