@@ -1,4 +1,3 @@
-import io
 import logging
 import pathlib
 
@@ -33,7 +32,7 @@ class LucidMainWindow(QMainWindow):
         Standard qt parent argument
     """
 
-    def __init__(self, beamline: str, toolbar: str | io.StringIO | None, parent: QWidget | None = None):
+    def __init__(self, beamline: str, toolbar: str | None, parent: QWidget | None = None):
         super().__init__(parent=parent)
         self.beamline = beamline
         self.toolbar = toolbar

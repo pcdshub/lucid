@@ -9,6 +9,8 @@ from qtpy.QtWidgets import QWidget
 import lucid.dock
 from lucid.dock import LucidDock, LucidDockButton
 
+from .conftest import TESTS_DIR
+
 
 @pytest.fixture(scope="function")
 def dock_button(qtbot: QtBot) -> LucidDockButton:
@@ -238,7 +240,7 @@ def test_not_clean_minimized_widgets(lucid_dock: LucidDock, qtbot: QtBot):
 
 
 def test_build_widget(dock_button: LucidDockButton):
-    dock_button.setFilename("lucid/tests/dock1.ui")
+    dock_button.setFilename(str(TESTS_DIR / "dock1.ui"))
     widget1 = dock_button.build_widget()
     assert widget1.windowTitle() == "DOCK1"
     widget2 = dock_button.build_widget()
@@ -246,7 +248,7 @@ def test_build_widget(dock_button: LucidDockButton):
 
 
 def test_build_widget_ui_edited(dock_button: LucidDockButton, tmp_path: Path):
-    local_ui = Path(__file__).parent / "dock1.ui"
+    local_ui = TESTS_DIR / "dock1.ui"
     temp_ui = tmp_path / "dock1.ui"
 
     with open(local_ui, "r") as fd:

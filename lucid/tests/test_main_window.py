@@ -1,14 +1,14 @@
-from pathlib import Path
-
 import pytest
 from pytestqt.qtbot import QtBot
 
 from lucid.main_window import LucidMainWindow
 
+from .conftest import TESTS_DIR
+
 
 @pytest.fixture(scope="function")
 def main_window(qtbot: QtBot) -> LucidMainWindow:
-    main_window = LucidMainWindow(beamline="pytest", toolbar=str(Path(__file__).parent / "TST_toolbar.yaml"))
+    main_window = LucidMainWindow(beamline="pytest", toolbar=str(TESTS_DIR / "TST_toolbar.yaml"))
     main_window.resize(main_window.width_threshold + 100, main_window.height())
     qtbot.addWidget(main_window)
     return main_window
@@ -34,4 +34,4 @@ def test_dock_visibility(main_window: LucidMainWindow, qtbot: QtBot):
 
 
 def test_default_dock_widget(main_window: LucidMainWindow):
-    assert main_window.dock.tab_widgets[0][0].currentWidget().windowTitle() == "DOCK2"
+    assert main_window.dock.tab_widgets[0][0].currentWidget().windowTitle() == "DOCK2"  # type: ignore
