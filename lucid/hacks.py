@@ -17,7 +17,7 @@ def setup_rw_hack():
 
 def ensure_read_write_on_conn(instance):
     """
-    Subscripe our update function if and only if it is an EPICS signal
+    Subscribe our update function if and only if it is an EPICS signal
     """
     if not isinstance(instance, EpicsSignalBase):
         return
