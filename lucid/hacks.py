@@ -29,9 +29,9 @@ def update_rw(obj: EpicsSignalBase, connected: bool, **md):
     If the signal appears to be affected by the bug, reach into pyepics and get the access rights update.
     """
     if connected and not obj.read_access:
-        pv_objs: list[PV] = [obj._read_pv] # type: ignore
+        pv_objs: list[PV] = [obj._read_pv]  # type: ignore
         try:
-            pv_objs.append(obj._write_pv) # type: ignore
+            pv_objs.append(obj._write_pv)  # type: ignore
         except AttributeError:
             ...
         for pv in pv_objs:
