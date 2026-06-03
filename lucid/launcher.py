@@ -17,6 +17,7 @@ from qtpy import QtCore, QtWidgets
 import lucid
 
 from . import utils
+from .hacks import setup_rw_hack
 
 MODULE_PATH = pathlib.Path(__file__).parent
 
@@ -232,6 +233,7 @@ def main():
         timeout=timeout,
         connection_timeout=timeout,
     )
+    setup_rw_hack()
     launch(**kwargs)
 
 
